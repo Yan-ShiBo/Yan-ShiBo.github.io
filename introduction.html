@@ -1,4 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -12,7 +13,7 @@
 
         body {
             background: #fff;
-            width: 100%;
+            width: 90%;
             font: 76%/115% georgia, verdana, arial;
             text-align: left;
             line-height: 20px;
@@ -22,8 +23,9 @@
         #title {
             text-align: center;
             font-weight: bold;
-            font-size: 36px;
+            font-size: 40px;
             margin-top: 40px;
+            color: #d9534f;
         }
 
         #main {
@@ -33,8 +35,10 @@
         }
 
         h1 {
-            font-size: 20px;
-            padding: 5px 0 0 0;
+            font-size: 24px;
+            padding: 10px 0;
+            font-weight: bold;
+            color: #2a5d84;
         }
 
         ul {
@@ -44,26 +48,89 @@
 
         li {
             margin-bottom: 10px;
+            font-size: 18px;
         }
 
         .contact-info {
             font-weight: bold;
             color: #2a5d84;
         }
+
+        .highlight-red {
+            color: #d9534f;
+            font-weight: bold;
+        }
+
+        .profile-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .profile-image {
+            width: 120px;
+            height: 160px;
+            border-radius: 5%;
+            margin-right: 20px;
+        }
+        
+        @media only screen and (max-width: 768px) {
+            body {
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
+            #main {
+                width: 100%;
+                padding: 10px;
+            }
+
+            .profile-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .profile-image {
+                width: 100px;
+                height: 130px;
+                margin-bottom: 10px;
+            }
+
+            #sidebar {
+                width: 100%;
+                position: static;
+                margin-bottom: 20px;
+            }
+
+            .main-content {
+                width: 100%;
+                padding: 10px;
+            }
+
+            iframe {
+                height: 800px; /* 适应手机屏幕 */
+            }
+        }
+
+
     </style>
 </head>
 <body>
 <div id="main">
-  <h1>个人信息</h1>
-  <ul>
-      <li class="contact-info">姓名：闫士博</li>
-      <li class="contact-info">2001-01 男 河北石家庄</li>
-      <li class="contact-info">电话：15603111769</li>
-      <li class="contact-info">邮箱：<a href="mailto:y423314860@163.com" style="color: #e55353;">y423314860@163.com</a></li>
-      <li class="contact-info">地址：重庆</li>
-      <li class="contact-info">微信：royal-y-3425</li>
-      <li class="contact-info">个人主页：<a href="https://yan-shibo.github.io" target="_Blank" style="color: #e55353;">https://yan-shibo.github.io</a></li>
-  </ul>
+  <div class="profile-container">
+      <img src="./Homepage_files/photo.jpg" alt="Profile Picture" class="profile-image" />
+      <div>
+          <h1>个人信息</h1>
+          <ul>
+              <li class="contact-info">姓名：<span class="highlight-red">闫士博</span></li>
+              <li class="contact-info">2001-01 男 河北石家庄</li>
+              <li class="contact-info">电话：<span class="highlight-red">15603111769</span></li>
+              <li class="contact-info">邮箱：<a href="mailto:y423314860@163.com" style="color: #e55353; font-weight: bold;">y423314860@163.com</a></li>
+              <li class="contact-info">地址：<span class="highlight-red">重庆</span></li>
+              <li class="contact-info">微信：<span class="highlight-red">royal-y-3425</span></li>
+              <li class="contact-info">个人主页：<a href="https://yan-shibo.github.io" target="_Blank" style="color: #e55353; font-weight: bold;">https://yan-shibo.github.io</a></li>
+          </ul>
+      </div>
+  </div>
 </div>
 
 <div id="title">研究生期间</div>
@@ -71,9 +138,8 @@
   <div id="main">
       <h1>教育经历</h1>
       <ul>
-          <li>西南大学 （211 双一流）- 软件工程 硕士研究生 计算机与信息科学学院 软件学院 2024年9月 - </li>
+          <li>西南大学 （<span class="highlight-red">211 双一流</span>）- 软件工程 硕士研究生 计算机与信息科学学院 软件学院 2024年9月 - </li>
       </ul>
-
   </div>
 </div>
 
@@ -82,36 +148,36 @@
     <div id="main">
         <h1>教育经历</h1>
         <ul>
-            <li>西南大学 （211 双一流）- 软件工程 本科 计算机与信息科学学院 软件学院 2019年9月 - 2023年6月</li>
-            <li>学位课程排名前八（共124人），专业GPA: 3.95</li>
+            <li>西南大学 （<span class="highlight-red">211 双一流</span>）- 软件工程 本科 计算机与信息科学学院 软件学院 2019年9月 - 2023年6月</li>
+            <li><span class="highlight-red">学位课程排名前八</span>（共124人），专业GPA: 3.95</li>
             <li>核心课程：数据结构（98分）、概率论（98分）、数据挖掘（94分）、软件建模与设计（96分）</li>
             <li>选修本专业所有的专业选修课，知识面较广（已获得学分 > 160学分）</li>
         </ul>
 
         <h1>荣誉奖项</h1>
         <ul>
-            <li>2021年 二等奖学金；2019年 三等奖学金；2019、2021年 三好学生；2019年 精神文明奖</li>
-            <li>2020年 小美赛 Honourable Mention（二等奖）</li>
-            <li>2021-2022年 第十三届、第十四届全国大学生数学竞赛（重庆赛区）二等奖</li>
-            <li>2022年度 优秀共青团员</li>
+            <li>2021年 <span class="highlight-red">二等奖学金</span>；2019年 三等奖学金；2019、2021年 三好学生；2019年 精神文明奖</li>
+            <li>2020年 小美赛 Honourable Mention（<span class="highlight-red">二等奖</span>）</li>
+            <li>2021-2022年 第十三届、第十四届全国大学生数学竞赛（重庆赛区）<span class="highlight-red">二等奖</span></li>
+            <li>2022年度 <span class="highlight-red">优秀共青团员</span></li>
             <li>2019-2021年 多次参加美赛建模、两次亚太建模、国赛建模并获奖</li>
             <li>2019-2022年 多次参加算法大赛、互联网+、各种校级比赛（如： 微信小程序大赛等）等并获奖</li>
-            <li>百度松果菁英班，获优秀结课证书，结课时总积分排名第二</li>
+            <li>百度松果菁英班，获<span class="highlight-red">优秀结课证书</span>，结课时总积分排名第二</li>
         </ul>
 
         <h1>校园经历</h1>
         <ul>
-            <li>百度松果菁英班，获优秀结课证书，结课时总积分排名第二</li>
+            <li>百度松果菁英班，获<span class="highlight-red">优秀结课证书</span>，结课时总积分排名第二</li>
             <li>清华社全国高等学校计算机与产业实践资源建设专家委员会（TIPCC）聘请志愿者</li>
-            <li>沙坪坝区基层服务青年优才（项目宣传策划组组长）校级 2021-2022年度优秀项目</li>
-            <li>通过华为云微认证（鲲鹏技能认证 鲲鹏软件性能调优实践）</li>
+            <li>沙坪坝区基层服务青年优才（项目宣传策划组组长）校级 2021-2022年度<span class="highlight-red">优秀项目</span></li>
+            <li>通过华为云微认证（<span class="highlight-red">鲲鹏技能认证</span> 鲲鹏软件性能调优实践）</li>
             <li>西南大学计算机与信息科学学院 软件学院 科研助理</li>
         </ul>
 
         <h1>实训经历</h1>
         <ul>
             <li>重庆中软国际信息技术有限公司 - 项目经理 兼任 技术经理 开发部 2022年6月 - 2022年7月</li>
-            <li>荣誉：优秀实习生；学校实习评分：94分</li>
+            <li>荣誉：<span class="highlight-red">优秀实习生</span>；学校实习评分：94分</li>
             <li>项目名称：前后端分离的KTV管理系统</li>
             <li>项目需求：实现资金流、信息流的统一管理，实现内部信息通畅及人员管理，减少KTV运营成本、建立系统竞争优势</li>
             <li>使用技术：html&css，JavaScript进行前端开发，java，springboot框架进行后端开发，MySQL云数据库存储数据，axios函数进行前后端交互</li>
@@ -120,7 +186,7 @@
         <h1>项目\研究经历</h1>
         <ul>
             <li>毕业设计：基于人脸识别技术的多端考勤系统</li>
-            <li>荣誉：2023届西南大学本科优秀毕业论文（设计）二等奖</li>
+            <li>荣誉：2023届西南大学本科<span class="highlight-red">优秀毕业论文（设计）二等奖</span></li>
             <li>题目：基于人脸识别技术的多端考勤系统</li>
             <li>项目背景：该系统利用人脸检测与识别技术，通过调用摄像头拍照或照片上传，轻松识别到课学生，并生成出勤简表和阶段性报告；系统多端可用，方便、灵活，且杜绝考勤作弊行为，确保学生出勤记录公平公正，给师生带来极大便利</li>
             <li>使用技术：uni-app框架开发安卓APP端、微信小程序端和网页端，Spring Boot框架实现核心功能，mysql数据库存储数据，python技术进行图像处理</li>
@@ -134,10 +200,8 @@
 
         <h1>个人技能</h1>
         <ul>
-            <li>技能： 熟悉java，pathon，c，springboot等后端技术； 熟悉数据库相关原理，具备mysql的开发经
-              验； 熟悉JavaScript， Vue等前端技术，熟悉HTML、CSS技术，有uniapp，微信小程序等的开发经
-              验；</li>
-            <li>语言： 英语（CET-4）</li>
+            <li>技能： 熟悉java，python，c，springboot等后端技术； 熟悉数据库相关原理，具备mysql的开发经验； 熟悉JavaScript， Vue等前端技术，熟悉HTML、CSS技术，有uniapp，微信小程序等的开发经验；</li>
+            <li>语言： 英语（<span class="highlight-red">CET-4</span>）</li>
         </ul>
 
         <h1>个人总结</h1>
@@ -157,9 +221,9 @@
       </ul>
       <h1>荣誉奖项</h1>
       <ul>
-          <li>2018年7月 第十届“全国中学生数理化学科能力展示活动”总评（决赛）中 获高二组 物理学科能力展示（笔试+论文答辩+学科信息技术） 全国二等奖</li>
-          <li>2018年7月 第十届“全国中学生数理化学科能力展示活动”总评（决赛）中 获创新实践能力展示 全国一等奖</li>
-          <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 物理学科 一等奖</li>
+          <li>2018年7月 第十届“全国中学生数理化学科能力展示活动”总评（决赛）中 获高二组 物理学科能力展示（笔试+论文答辩+学科信息技术） 全国<span class="highlight-red">二等奖</span></li>
+          <li>2018年7月 第十届“全国中学生数理化学科能力展示活动”总评（决赛）中 获创新实践能力展示 全国<span class="highlight-red">一等奖</span></li>
+          <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 物理学科 <span class="highlight-red">一等奖</span></li>
           <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 数学学科 三等奖</li>
           <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 化学学科 三等奖</li>
           <li>2018年6月 第十届“全国中学生数理化学科能力展示活动”建模论文和实验报告评比中获 河北省 高二数学 二等奖</li>
@@ -181,6 +245,16 @@
       <ul>
           <li>2015年1月 第七届全国中学生数理化学科能力 解题技能展示活动中 获 河北省 八年级 数学学科 三等奖</li>
           <li>2014年6月 第二十五届希望杯全国数学邀请赛中 获 初中七年级三等奖（铜牌）</li>
+      </ul>
+  </div>
+</div>
+
+<div id="title">小学期间</div>
+<div>
+  <div id="main">
+      <h1>教育经历</h1>
+      <ul>
+          <li>河北 石家庄市 长安东路小学 2007年9月 - 2013年6月</li>
       </ul>
   </div>
 </div>
