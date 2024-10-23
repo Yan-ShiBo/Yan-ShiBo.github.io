@@ -24,8 +24,8 @@
 
         @media only screen and (max-width: 768px) {
             body {
-                font-size: 14px;
-                line-height: 1.5;
+                font-size: 12px; /* 调小字体大小适应手机端 */
+                line-height: 1.4;
             }
 
             #main {
@@ -56,12 +56,59 @@
             iframe {
                 height: 800px; /* 适应手机屏幕 */
             }
+
+            .navbar {
+                text-align: left;
+                padding: 10px;
+            }
+
+            .navbar #addidentity {
+                display: none;
+            }
+
+            .navbar-title {
+                padding-left: 20px;
+            }
+
+            .breadcrumbs {
+                display: flex;
+                justify-content: space-around;
+            }
+        }
+
+        /* 电脑端标题样式调整 */
+        @media only screen and (min-width: 769px) {
+            .navbar-title {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                padding-left: 50px; /* 增加左侧填充，使标题向右移动，露出图标 */
+            }
         }
     </style>
     <script>
         function resizeIframe() {
             const iframe = document.getElementById('man');
             iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px';
+
+            // 检查是否在手机端，并注入样式
+            if (window.innerWidth <= 768) {
+                const iframeDoc = iframe.contentWindow.document;
+                const style = iframeDoc.createElement('style');
+                style.innerHTML = `
+                    body {
+                        font-size: 13px !important; /* 设置字体大小适应手机端 */
+                        line-height: 1.4 !important; /* 调整行高以适应字体大小 */
+                    }
+                    h1, h2, h3, h4, h5, h6 {
+                        font-size: 1.2em !important; /* 调整标题的字体大小适应手机端 */
+                    }
+                    p, li {
+                        font-size: 13px !important; /* 调整段落和列表的字体大小适应手机端 */
+                    }
+                `;
+                iframeDoc.head.appendChild(style);
+            }
         }
 
         window.addEventListener('load', resizeIframe);
@@ -72,8 +119,8 @@
 
 <div class="main-container select" id="main-container">
     <div class="navbar navbar-default" id="navbar">
-        <div style="font-size: 200%;transform:scale(1.2,1.2);">
-            <i class="fa fa-cog fa-spin white" style="margin: 5px 5px 5px 100px;"> </i>
+        <div class="navbar-title" style="font-size: 200%; transform: scale(1.2,1.2);">
+            <i class="fa fa-cog fa-spin white" style="margin: 5px 5px 5px 0;"> </i>
             <span class="red">闫士博</span>
             <span class="white"> 的个人主页</span>
             
@@ -114,19 +161,17 @@
 
         <div class="main-content">
             <div class="breadcrumbs" id="breadcrumbs">
-                <span style="margin: 20px">welcome (Suggested computer side)</span>
-                
-                <a href="home.html" class="btn btn-sm btn-primary" target="main" style="margin-left: auto;">
+                <a href="home.html" class="btn btn-sm btn-primary" target="main">
                     <i class="fa fa-home"></i>
                     <span class="menu-text"> home </span>
                 </a>
                 
-                <a class="btn btn-sm btn-danger" href="introduction.html" target="main" style="margin-left: auto;">
+                <a class="btn btn-sm btn-danger" href="introduction.html" target="main">
                     <i class="fa fa-address-card"></i>
                     <span class="menu-text"> introduction </span>
                 </a>
                 
-                <a href="resume.html" class="btn btn-sm btn-primary" target="main" style="margin-left: auto;">
+                <a href="resume.html" class="btn btn-sm btn-primary" target="main">
                     <i class="fa fa-users"></i>
                     <span class="menu-text"> resume </span>
                 </a>
