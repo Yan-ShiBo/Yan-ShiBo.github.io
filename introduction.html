@@ -113,6 +113,25 @@
             display: block;
         }
 
+        .edu-story {
+            margin: 16px 0 24px;
+            padding: 12px 16px;
+            border-left: 4px solid #d9534f;
+            background: #fdf5f5;
+            border-radius: 6px;
+            color: #555;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .edu-story-title {
+            font-weight: bold;
+            color: #d9534f;
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+
+
         @media only screen and (max-width: 768px) {
           body {
               font-size: 14px;
@@ -135,23 +154,6 @@
               margin-bottom: 10px;
           }
 
-          .edu-story {
-            margin: 16px 0 24px;
-            padding: 12px 16px;
-            border-left: 4px solid #d9534f;
-            background: #fdf5f5;
-            border-radius: 6px;
-            color: #555;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .edu-story-title {
-            font-weight: bold;
-            color: #d9534f;
-            margin-bottom: 6px;
-            font-size: 15px;
-        }
         }
     </style>
 
@@ -200,8 +202,8 @@
 <div class="lang-switcher">
   <div class="lang-switcher-inner">
     <span style="font-size: 13px; color:#666;">Language:</span>
-    <button type="button" class="lang-btn active" data-lang="zh">中文</button>
-    <button type="button" class="lang-btn" data-lang="en">English</button>
+        <button type="button" class="lang-btn active" data-lang="zh">中文</button>
+        <button type="button" class="lang-btn" data-lang="en">English</button>
   </div>
 </div>
 
@@ -250,16 +252,22 @@
 
 
 
-        <div id="title">考研故事</div>
-            <div id="main">
-                <ul>
+  <div>
+    <div id="main">
+        <div class="edu-story">
+            <div class="edu-story-title">考研故事</div>
+            <p>
                 2022 年底首次考研时，正值疫情全面放开，临近考试前不久感染新冠，未能如愿考取中山大学。
-                此后用近一年的时间在全国各地旅行，反思个人的方向与节奏。
-                2023 年 10 月决定再次备考，西南大学的软件工程软件工程专业，最终以
-                <span class="highlight-red">专业综合成绩第一（初试373，复试89）</span> 的成绩考回母校。
-                </ul>
-            </div>
+            </p>
+            <p>
+                此后用近一年的时间在全国各地旅行，也在不断反思个人的方向与节奏。
+                2023 年 10 月决定再次备考，将目标明确为西南大学软件工程专业，
+                最终以 <span class="highlight-red">专业综合成绩第一（初试 373，复试 89）</span> 的成绩考回母校。
+            </p>
         </div>
+    </div>
+  </div>
+
 
 
 
@@ -429,39 +437,47 @@
 </div>  <!-- /英文版本 -->
 
 <!-- 语言切换脚本 -->
+<!-- 语言切换脚本（更稳的版本） -->
 <script>
-(function() {
-    var btns  = document.querySelectorAll('.lang-btn');
-    var langs = document.querySelectorAll('.lang-section');
+window.addEventListener('DOMContentLoaded', function () {
+    // 1) 拿到所有按钮和语言块
+    var btns  = document.getElementsByClassName('lang-btn');
+    var langs = document.getElementsByClassName('lang-section');
 
     function setLang(lang) {
-        langs.forEach(function (sec) {
+        // 切换内容区域
+        for (var i = 0; i < langs.length; i++) {
+            var sec = langs[i];
             if (sec.classList.contains('lang-' + lang)) {
                 sec.classList.add('active');
             } else {
                 sec.classList.remove('active');
             }
-        });
-        btns.forEach(function (btn) {
+        }
+        // 切换按钮高亮
+        for (var j = 0; j < btns.length; j++) {
+            var btn = btns[j];
             if (btn.getAttribute('data-lang') === lang) {
                 btn.classList.add('active');
             } else {
                 btn.classList.remove('active');
             }
+        }
+    }
+
+    // 绑定点击事件
+    for (var k = 0; k < btns.length; k++) {
+        btns[k].addEventListener('click', function () {
+            var lang = this.getAttribute('data-lang');
+            setLang(lang);
         });
     }
 
-    btns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var lang = btn.getAttribute('data-lang');
-            setLang(lang);
-        });
-    });
-
-    // 默认中文
+    // 默认展示中文
     setLang('zh');
-})();
+});
 </script>
+
 
 </body>
 </html>
