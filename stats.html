@@ -5,18 +5,20 @@
     <title>访客统计 - 闫士博的个人主页</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- 你项目里已有的样式路径 -->
+    <!-- 项目里已有的样式路径 -->
     <link href="./resource/bootstrap-5.1.3-dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
 
-    <!-- 不蒜子 PV / UV 统计脚本（第三方） -->
-    <script async src="https://busuanzi.icodeq.com/busuanzi.pure.mini.js"></script>
-
-    <!-- Mirror 1: 使用 jsDelivr + GitHub -->
-    <script async src="https://cdn.jsdelivr.net/gh/sukkaw/busuanzi@2.3/bsz.pure.mini.js"></script>
-
-    <!-- Mirror 2: 使用 jsDelivr + npm -->
-    <script async src="https://cdn.jsdelivr.net/npm/busuanzi@2.3.0"></script>
+    <!-- 百度统计：站点统计代码（2cb01162c5c5020cf51dcf2d5e3433ee） -->
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2cb01162c5c5020cf51dcf2d5e3433ee";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
 
     <style>
         * {
@@ -94,7 +96,7 @@
             <h1>访客统计</h1>
         </div>
         <p class="page-subtitle">
-            本页提供访客统计数据，帮助你了解自己与本站的互动情况。
+            本页一方面记录你与本站的互动历史，另一方面说明本站在“统计”这件事上的边界和态度。
         </p>
     </header>
 
@@ -107,7 +109,7 @@
         <div class="card-body">
             <p class="mb-3">
                 下方数据全部通过浏览器的 <code>localStorage</code> 保存，仅存在于你的设备本地，
-                不会上传到任何服务器！！！ 请放心查看。
+                不会上传到任何服务器，请放心查看。
             </p>
             <div class="row">
                 <div class="col-md-3 col-6 mb-3">
@@ -130,53 +132,38 @@
         </div>
     </div>
 
-    <!-- Card 2：第三方统计：PV / UV -->
+    <!-- Card 2：全站访问情况（百度统计说明，不强行在前端展示数字） -->
     <div class="card shadow-sm mt-4">
         <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
-            <span><i class="fa fa-globe"></i> 全站访问情况（第三方统计）</span>
-            <span class="badge bg-light text-success badge-pill">PV / UV 粗略计数</span>
+            <span><i class="fa fa-globe"></i> 全站访问情况（百度统计）</span>
+            <span class="badge bg-light text-success badge-pill">PV / UV 后台统计</span>
         </div>
         <div class="card-body">
             <p class="mb-3">
-                为了大致了解这个小站有没有被看到，我接入了第三方统计服务，只关心两个最基本的指标：
-                <strong>PV（页面浏览量）</strong> 和 <strong>UV（独立访客数）</strong>。
+                为了大致了解这个小站是不是还在被人偶尔翻到，我接入了
+                <strong>百度统计</strong> 来做全站维度的访问数据统计。
             </p>
 
-            <div class="row">
-                <div class="col-md-4 col-6 mb-3">
-                    <div class="text-muted">本站总访问量（PV）</div>
-                    <div class="stat-number">
-                        <!-- 不蒜子：站点总 PV -->
-                        <span id="busuanzi_value_site_pv">--</span>
-                    </div>
-                </div>
+            <p>
+                百度统计会在你访问页面时，自动记录一些<strong>基础技术信息</strong>，例如：
+                访问时间、页面地址、浏览器类型（User-Agent）、大致地区、引用来源（Referrer）、
+                以及一个用于区分访客的匿名标识符或 Cookie 等，用来估算：
+            </p>
+            <ul>
+                <li><strong>PV（Page Views，页面浏览量）</strong>：站点所有页面被打开的总次数；</li>
+                <li><strong>UV（Unique Visitors，独立访客数）</strong>：在一定时间窗口内，不同访客的大致数量。</li>
+            </ul>
 
-                <div class="col-md-4 col-6 mb-3">
-                    <div class="text-muted">本站独立访客（UV）</div>
-                    <div class="stat-number">
-                        <!-- 不蒜子：站点总 UV -->
-                        <span id="busuanzi_value_site_uv">--</span>
-                    </div>
-                </div>
-
-                <div class="col-md-4 col-12 mb-3">
-                    <div class="text-muted">本页访问量</div>
-                    <div class="stat-number">
-                        <!-- 不蒜子：当前页面 PV -->
-                        <span id="busuanzi_value_page_pv">--</span>
-                    </div>
-                </div>
-            </div>
-
-            <p class="text-muted small mb-2">
-                * PV 可以粗略理解为“页面被打开的总次数”，同一个人在不同时间刷新也会累计；
-                  UV 则尝试通过 Cookie / 浏览器指纹等方式区分“是不是不同的访客”，所以更接近“来访人数”，
-                  但始终只是近似值。
+            <p>
+                这些数据会被汇总到百度统计的后台报表中，用来观察整体趋势：
+                比如最近有没有人访问、哪几篇页面被打开得多一些，
+                而<strong>不会在本页直接展示具体的精确数字</strong>。
+                这样做是有意的：保持页面简洁，把“监视感”降到最低。
             </p>
 
             <p class="text-muted small mb-0">
-                * 这些数字由第三方统计脚本根据访问记录计算并回传，本地页面只负责<strong>展示最终结果</strong>，
-                不另外保存任何访问日志。
+                简单说：全站 PV / UV 的原始数据由百度托管，我只在后台看“温度计”的走势，
+                不会在前端嵌入任何能识别具体个体的详细信息。
             </p>
         </div>
     </div>
@@ -198,12 +185,13 @@
 
             <h5 class="mt-4 mb-3">2. 第三方统计：只做粗粒度的 PV / UV 计数</h5>
             <ul>
-                <li>为了大致了解“这个小站有没有被人看到”，我在页面中接入了第三方统计服务
-                    （如不蒜子、以及其他网站统计工具），由它们负责计算 PV / UV 并生成报表。</li>
+                <li>为了大致了解“这个小站有没有被人看到”，我在页面中接入了
+                    <strong>百度统计</strong> 等第三方统计服务，由它们负责计算 PV / UV 并生成报表。</li>
                 <li>这类统计一般会在你访问页面时，自动收集一些<strong>基础技术信息</strong>，
                     例如：访问时间、页面地址、浏览器类型（User-Agent）、大致地区、引用来源（Referrer）、
                     以及一个用于区分访客的匿名标识符或 Cookie 等。</li>
-                <li>这些信息的存储和使用方式，由第三方服务自己的隐私政策约束；我不会额外在自己的服务器上再建一个数据库去做二次整合，
+                <li>这些信息的存储和使用方式，由第三方服务自己的隐私政策约束；
+                    我不会额外在自己的服务器上再建一个数据库去做二次整合，
                     也不会尝试把这些技术信息和现实世界的个人身份绑定。</li>
             </ul>
 
@@ -217,7 +205,7 @@
                     <ul>
                         <li>在浏览器中屏蔽第三方统计脚本（如使用广告拦截 / NoScript 等扩展）；</li>
                         <li>使用无痕/隐身模式访问；</li>
-                        <li>完全关闭 JavaScript —— 此时 PV / UV 统计可能失效，但你仍然可以阅读大部分页面内容。</li>
+                        <li>完全关闭 JavaScript —— 此时统计功能可能失效，但你仍然可以阅读大部分页面内容。</li>
                     </ul>
                 </li>
             </ul>
