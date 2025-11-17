@@ -18,6 +18,7 @@
             text-align: left;
             line-height: 20px;
             color: #444;
+            margin: 0 auto;
         }
 
         #title {
@@ -72,10 +73,49 @@
             border-radius: 5%;
             margin-right: 20px;
         }
-        
+
+        /* 语言切换条 */
+        .lang-switcher {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #ffffffcc;
+            backdrop-filter: blur(4px);
+            padding: 8px 0;
+            margin-bottom: 8px;
+        }
+        .lang-switcher-inner {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            align-items: center;
+        }
+        .lang-switcher button {
+            border: 1px solid #2a5d84;
+            background: #fff;
+            color: #2a5d84;
+            padding: 4px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .lang-switcher button.active {
+            background: #2a5d84;
+            color: #fff;
+        }
+
+        .lang-section {
+            display: none;
+        }
+        .lang-section.active {
+            display: block;
+        }
+
         @media only screen and (max-width: 768px) {
           body {
-              font-size: 14px; /* 调小字体大小 */
+              font-size: 14px;
               line-height: 1.4;
           }
 
@@ -95,36 +135,36 @@
               margin-bottom: 10px;
           }
 
-          #sidebar {
-              width: 100%;
-              position: static;
-              margin-bottom: 20px;
-          }
+          .edu-story {
+            margin: 16px 0 24px;
+            padding: 12px 16px;
+            border-left: 4px solid #d9534f;
+            background: #fdf5f5;
+            border-radius: 6px;
+            color: #555;
+            font-size: 15px;
+            line-height: 1.6;
+        }
 
-          .main-content {
-              width: 100%;
-              padding: 10px;
-          }
-
-          iframe {
-              height: 800px; /* 适应手机屏幕 */
-          }
-      }
-
-
-
+        .edu-story-title {
+            font-weight: bold;
+            color: #d9534f;
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+        }
     </style>
 
+    <!-- 百度统计 -->
     <script>
     var _hmt = _hmt || [];
     (function() {
-    var hm = document.createElement("script");
-    hm.src = "https://hm.baidu.com/hm.js?2cb01162c5c5020cf51dcf2d5e3433ee";
-    var s = document.getElementsByTagName("script")[0]; 
-    s.parentNode.insertBefore(hm, s);
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?2cb01162c5c5020cf51dcf2d5e3433ee";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
     })();
     </script>
-
 
     <!-- 不蒜子：尝试 icodeq + jsDelivr 镜像，只加载成功的第一个 -->
     <script>
@@ -136,12 +176,11 @@
         ];
 
         function loadBusuanzi(i) {
-            if (i >= cdnList.length) return;  // 全挂就算了，页面上保持 "--"
+            if (i >= cdnList.length) return;
             var s = document.createElement("script");
             s.async = true;
             s.src = cdnList[i];
             s.onerror = function () {
-                // 当前源失败，试下一个
                 loadBusuanzi(i + 1);
             };
             document.head.appendChild(s);
@@ -153,51 +192,79 @@
 
     <!-- Vercount：另一套计数器 -->
     <script defer src="https://events.vercount.one/js"></script>
-
-
-
 </head>
+
 <body>
-<div id="main">
-  <div class="profile-container">
-      <img src="./Homepage_files/photo.jpg" alt="Profile Picture" class="profile-image" />
-      <div>
-          <h1>个人信息</h1>
-          <ul>
-              <li class="contact-info">姓名：<span class="highlight-red">闫士博</span></li>
-              <li class="contact-info">2001-01 男 河北石家庄</li>
-              <li class="contact-info">电话：<span class="highlight-red">15603111769</span></li>
-              <li class="contact-info">邮箱：<a href="mailto:y423314860@163.com" style="color: #e55353; font-weight: bold;">y423314860@163.com</a></li>
-              <li class="contact-info">地址：<span class="highlight-red">重庆</span></li>
-              <li class="contact-info">微信：<span class="highlight-red">royal-y-3425</span></li>
-              <li class="contact-info">个人主页：<a href="https://yan-shibo.github.io" target="_Blank" style="color: #e55353; font-weight: bold;">https://yan-shibo.github.io</a></li>
-          </ul>
-      </div>
+
+<!-- 语言切换条 -->
+<div class="lang-switcher">
+  <div class="lang-switcher-inner">
+    <span style="font-size: 13px; color:#666;">Language:</span>
+    <button type="button" class="lang-btn active" data-lang="zh">中文</button>
+    <button type="button" class="lang-btn" data-lang="en">English</button>
   </div>
 </div>
 
-<div id="title">研究生期间</div>
-<div>
-<div id="main">
-    <h1>论文情况</h1>
+<!-- ================= 中文版本 ================= -->
+<div class="lang-section lang-zh active">
+
+  <div id="main">
+    <div class="profile-container">
+        <img src="./Homepage_files/photo.jpg" alt="Profile Picture" class="profile-image" />
+        <div>
+            <h1>个人信息</h1>
+            <ul>
+                <li class="contact-info">姓名：<span class="highlight-red">闫士博</span></li>
+                <li class="contact-info">2001-01 男 河北石家庄</li>
+                <li class="contact-info">电话：<span class="highlight-red">15603111769</span></li>
+                <li class="contact-info">邮箱：<a href="mailto:y423314860@163.com" style="color: #e55353; font-weight: bold;">y423314860@163.com</a></li>
+                <li class="contact-info">地址：<span class="highlight-red">重庆</span></li>
+                <li class="contact-info">微信：<span class="highlight-red">royal-y-3425</span></li>
+                <li class="contact-info">个人主页：<a href="https://yan-shibo.github.io" target="_Blank" style="color: #e55353; font-weight: bold;">https://yan-shibo.github.io</a></li>
+            </ul>
+        </div>
+    </div>
+  </div>
+
+  <div id="title">研究生期间</div>
+  <div>
+    <div id="main">
+        <h1>论文情况</h1>
         <ul>
             <li>在投</li>
         </ul>
-    <h1>比赛情况</h1>
-    <ul>
-        <li>2024年 中国研究生创新实践系列大赛—“华为杯”第二十一届中国研究生数学建模竞赛 <span class="highlight-red">二等奖</span></li>
-        <li>2025年 中国研究生创新实践系列大赛—“华为杯”第二十二届中国研究生数学建模竞赛 <span class="highlight-red">三等奖</span></li>
-    </ul>
-    <h1>教育经历</h1>
-    <ul>
-        <li>西南大学 （<span class="highlight-red">211 双一流</span>）- 软件工程 硕士研究生 计算机与信息科学学院 软件学院 2024年9月 - </li>
-        <li>研究方向 <span class="highlight-red">形式化方法、神经网络的安全验证</span></li>
-    </ul>
-</div>
-</div>
 
-<div id="title">本科期间</div>
-<div>
+        <h1>比赛情况</h1>
+        <ul>
+            <li>2024年 中国研究生创新实践系列大赛—“华为杯”第二十一届中国研究生数学建模竞赛 <span class="highlight-red">二等奖</span></li>
+            <li>2025年 中国研究生创新实践系列大赛—“华为杯”第二十二届中国研究生数学建模竞赛 <span class="highlight-red">三等奖</span></li>
+        </ul>
+
+        <h1>教育经历</h1>
+        <ul>
+            <li>西南大学 （<span class="highlight-red">211 双一流</span>）- 软件工程 硕士研究生 计算机与信息科学学院 软件学院 2024年9月 - </li>
+            <li>研究方向 <span class="highlight-red">形式化方法、神经网络的安全验证</span></li>
+        </ul>
+    </div>
+  </div>
+
+
+
+        <div id="title">考研故事</div>
+            <div id="main">
+                <ul>
+                2022 年底首次考研时，正值疫情全面放开，临近考试前不久感染新冠，未能如愿考取中山大学。
+                此后用近一年的时间在全国各地旅行，反思个人的方向与节奏。
+                2023 年 10 月决定再次备考，西南大学的软件工程软件工程专业，最终以
+                <span class="highlight-red">专业综合成绩第一（初试373，复试89）</span> 的成绩考回母校。
+                </ul>
+            </div>
+        </div>
+
+
+
+  <div id="title">本科期间</div>
+  <div>
     <div id="main">
         <h1>教育经历</h1>
         <ul>
@@ -262,54 +329,139 @@
             <li>积极参加集体活动，与同学、老师关系融洽</li>
         </ul>
     </div>
-</div>
-
-<div id="title">高中期间</div>
-<div>
-  <div id="main">
-      <h1>教育经历</h1>
-      <ul>
-          <li>河北 衡水市 河北冀中中学 2016年9月 - 2019年6月</li>
-      </ul>
-      <h1>荣誉奖项</h1>
-      <ul>
-          <li>2018年7月 第十届“全国中学生数理化学科能力展示活动”总评（决赛）中 获高二组 物理学科能力展示（笔试+论文答辩+学科信息技术） 全国<span class="highlight-red">二等奖</span></li>
-          <li>2018年7月 第十届“全国中学生数理化学科能力展示活动”总评（决赛）中 获创新实践能力展示 全国<span class="highlight-red">一等奖</span></li>
-          <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 物理学科 <span class="highlight-red">一等奖</span></li>
-          <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 数学学科 三等奖</li>
-          <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 化学学科 三等奖</li>
-          <li>2018年6月 第十届“全国中学生数理化学科能力展示活动”建模论文和实验报告评比中获 河北省 高二数学 二等奖</li>
-          <li>2018年6月 第十届“全国中学生数理化学科能力展示活动”建模论文和实验报告评比中获 河北省 高二物理 二等奖</li>
-          <li>2018年6月 第十届“全国中学生数理化学科能力展示活动”建模论文和实验报告评比中获 河北省 高二化学 三等奖</li>
-          <li>2018年9月15日 在第三十五届全国中学生物理竞赛中获校级一等奖</li>
-      </ul>
   </div>
-</div>
 
-<div id="title">初中期间</div>
-<div>
-  <div id="main">
-      <h1>教育经历</h1>
-      <ul>
-          <li>河北 石家庄市 石家庄第四十四中学 2013年9月 - 2016年6月</li>
-      </ul>
-      <h1>荣誉奖项</h1>
-      <ul>
-          <li>2015年1月 第七届全国中学生数理化学科能力 解题技能展示活动中 获 河北省 八年级 数学学科 三等奖</li>
-          <li>2014年6月 第二十五届希望杯全国数学邀请赛中 获 初中七年级三等奖（铜牌）</li>
-      </ul>
+  <div id="title">高中期间</div>
+  <div>
+    <div id="main">
+        <h1>教育经历</h1>
+        <ul>
+            <li>河北 衡水市 河北冀中中学 2016年9月 - 2019年6月</li>
+        </ul>
+        <h1>荣誉奖项</h1>
+        <ul>
+            <li>2018年7月 第十届“全国中学生数理化学科能力展示活动”总评（决赛）中 获高二组 物理学科能力展示（笔试+论文答辩+学科信息技术） 全国<span class="highlight-red">二等奖</span></li>
+            <li>2018年7月 第十届“全国中学生数理化学科能力展示活动”总评（决赛）中 获创新实践能力展示 全国<span class="highlight-red">一等奖</span></li>
+            <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 物理学科 <span class="highlight-red">一等奖</span></li>
+            <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 数学学科 三等奖</li>
+            <li>2018年1月 第十届“全国中学生数理化学科能力展示活动”解题技能展示中 获河北赛区 高二年级 化学学科 三等奖</li>
+            <li>2018年6月 第十届“全国中学生数理化学科能力展示活动”建模论文和实验报告评比中获 河北省 高二数学 二等奖</li>
+            <li>2018年6月 第十届“全国中学生数理化学科能力展示活动”建模论文和实验报告评比中获 河北省 高二物理 二等奖</li>
+            <li>2018年6月 第十届“全国中学生数理化学科能力展示活动”建模论文和实验报告评比中获 河北省 高二化学 三等奖</li>
+            <li>2018年9月15日 在第三十五届全国中学生物理竞赛中获校级一等奖</li>
+        </ul>
+    </div>
   </div>
-</div>
 
-<div id="title">小学期间</div>
-<div>
-  <div id="main">
-      <h1>教育经历</h1>
-      <ul>
-          <li>河北 石家庄市 长安东路小学 2007年9月 - 2013年6月</li>
-      </ul>
+  <div id="title">初中期间</div>
+  <div>
+    <div id="main">
+        <h1>教育经历</h1>
+        <ul>
+            <li>河北 石家庄市 石家庄第四十四中学 2013年9月 - 2016年6月</li>
+        </ul>
+        <h1>荣誉奖项</h1>
+        <ul>
+            <li>2015年1月 第七届全国中学生数理化学科能力 解题技能展示活动中 获 河北省 八年级 数学学科 三等奖</li>
+            <li>2014年6月 第二十五届希望杯全国数学邀请赛中 获 初中七年级三等奖（铜牌）</li>
+        </ul>
+    </div>
   </div>
-</div>
+
+  <div id="title">小学期间</div>
+  <div>
+    <div id="main">
+        <h1>教育经历</h1>
+        <ul>
+            <li>河北 石家庄市 长安东路小学 2007年9月 - 2013年6月</li>
+        </ul>
+    </div>
+  </div>
+
+</div>  <!-- /中文版本 -->
+
+<!-- ================= 英文版本（骨架示例，你可以慢慢补全） ================= -->
+<div class="lang-section lang-en">
+
+  <div id="main">
+    <div class="profile-container">
+        <img src="./Homepage_files/photo.jpg" alt="Profile Picture" class="profile-image" />
+        <div>
+            <h1>Profile</h1>
+            <ul>
+                <li class="contact-info">Name: <span class="highlight-red">ShiBo Yan</span></li>
+                <li class="contact-info">Born: 2001-01, Male, Shijiazhuang, Hebei, China</li>
+                <li class="contact-info">Phone: <span class="highlight-red">+86 156 0311 1769</span></li>
+                <li class="contact-info">Email: <a href="mailto:y423314860@163.com" style="color: #e55353; font-weight: bold;">y423314860@163.com</a></li>
+                <li class="contact-info">Location: <span class="highlight-red">Chongqing, China</span></li>
+                <li class="contact-info">WeChat: <span class="highlight-red">royal-y-3425</span></li>
+                <li class="contact-info">Homepage: <a href="https://yan-shibo.github.io" target="_Blank" style="color: #e55353; font-weight: bold;">https://yan-shibo.github.io</a></li>
+            </ul>
+        </div>
+    </div>
+  </div>
+
+  <div id="title">Graduate Period</div>
+  <div>
+    <div id="main">
+        <h1>Publications</h1>
+        <ul>
+            <li>Under review.</li>
+        </ul>
+
+        <h1>Competitions</h1>
+        <ul>
+            <li>2024 &nbsp;Huawei Cup 21st China Graduate Mathematical Contest in Modeling – <span class="highlight-red">Second Prize</span></li>
+            <li>2025 &nbsp;Huawei Cup 22nd China Graduate Mathematical Contest in Modeling – <span class="highlight-red">Third Prize</span></li>
+        </ul>
+
+        <h1>Education</h1>
+        <ul>
+            <li>Southwest University (Double First-Class, Project 211), M.Eng. in Software Engineering, School of Computer and Information Science / Software School, Sept. 2024 – present</li>
+            <li>Research interests: <span class="highlight-red">Formal methods; safety verification for neural networks</span></li>
+        </ul>
+    </div>
+  </div>
+
+  <!-- 后面本科/高中/初中/小学部分，你可以按中文段落逐段翻译补上，
+       结构可以复用中文这套 h1 + ul 的形式。这里先留空或写 TODO。 -->
+
+</div>  <!-- /英文版本 -->
+
+<!-- 语言切换脚本 -->
+<script>
+(function() {
+    var btns  = document.querySelectorAll('.lang-btn');
+    var langs = document.querySelectorAll('.lang-section');
+
+    function setLang(lang) {
+        langs.forEach(function (sec) {
+            if (sec.classList.contains('lang-' + lang)) {
+                sec.classList.add('active');
+            } else {
+                sec.classList.remove('active');
+            }
+        });
+        btns.forEach(function (btn) {
+            if (btn.getAttribute('data-lang') === lang) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    btns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var lang = btn.getAttribute('data-lang');
+            setLang(lang);
+        });
+    });
+
+    // 默认中文
+    setLang('zh');
+})();
+</script>
 
 </body>
 </html>
