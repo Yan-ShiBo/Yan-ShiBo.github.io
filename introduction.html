@@ -126,6 +126,36 @@
     </script>
 
 
+    <!-- 不蒜子：尝试 icodeq + jsDelivr 镜像，只加载成功的第一个 -->
+    <script>
+    (function () {
+        var cdnList = [
+            "https://busuanzi.icodeq.com/busuanzi.pure.mini.js",
+            "https://cdn.jsdelivr.net/gh/sukkaw/busuanzi@2.3/bsz.pure.mini.js",
+            "https://cdn.jsdelivr.net/npm/busuanzi@2.3.0"
+        ];
+
+        function loadBusuanzi(i) {
+            if (i >= cdnList.length) return;  // 全挂就算了，页面上保持 "--"
+            var s = document.createElement("script");
+            s.async = true;
+            s.src = cdnList[i];
+            s.onerror = function () {
+                // 当前源失败，试下一个
+                loadBusuanzi(i + 1);
+            };
+            document.head.appendChild(s);
+        }
+
+        loadBusuanzi(0);
+    })();
+    </script>
+
+    <!-- Vercount：另一套计数器 -->
+    <script defer src="https://events.vercount.one/js"></script>
+
+
+
 </head>
 <body>
 <div id="main">
