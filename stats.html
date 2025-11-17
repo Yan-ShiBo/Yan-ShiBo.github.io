@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>访客统计 - 闫士博的个人主页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- 你项目里已有的样式路径 -->
+    <link href="./resource/bootstrap-5.1.3-dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+
+    <!-- 不蒜子 PV / UV 统计脚本（第三方） -->
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                         "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: radial-gradient(circle at top, #fdfbfb 0%, #ebedee 100%);
+            color: #333;
+        }
+        .page-wrapper {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
+        }
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .page-title i {
+            color: #2a5d84;
+        }
+        .page-title h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            color: #2a5d84;
+        }
+        .page-subtitle {
+            font-size: 0.95rem;
+            color: #777;
+            margin-bottom: 18px;
+        }
+        .card {
+            border-radius: 12px;
+            border: none;
+        }
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+        }
+        .card + .card {
+            margin-top: 1.2rem;
+        }
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2a5d84;
+        }
+        .badge-pill {
+            border-radius: 999px;
+        }
+        @media (max-width: 768px) {
+            .page-wrapper {
+                padding: 16px 10px 32px;
+            }
+            .page-title h1 {
+                font-size: 1.5rem;
+            }
+            .stat-number {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+    <!-- 顶部标题 -->
+    <header class="mb-3">
+        <div class="page-title">
+            <i class="fa fa-bar-chart fa-lg"></i>
+            <h1>访客统计</h1>
+        </div>
+        <p class="page-subtitle">
+            本页提供访客统计数据，帮助你了解自己与本站的互动情况。
+        </p>
+    </header>
+
+    <!-- Card 1：本机访问统计 -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+            <span><i class="fa fa-user"></i> 本站（本机）统计</span>
+            <span class="badge bg-light text-primary badge-pill">仅存本机，不上传</span>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">
+                下方数据全部通过浏览器的 <code>localStorage</code> 保存，仅存在于你的设备本地，
+                不会上传到任何服务器！！！ 请放心查看。
+            </p>
+            <div class="row">
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="text-muted">本机访问次数</div>
+                    <div id="local-visit-count" class="stat-number">--</div>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="text-muted">累计访问天数</div>
+                    <div id="local-visit-days" class="stat-number">--</div>
+                </div>
+                <div class="col-md-3 col-12 mb-3">
+                    <div class="text-muted">第一次访问</div>
+                    <div id="local-first-visit">--</div>
+                </div>
+                <div class="col-md-3 col-12 mb-3">
+                    <div class="text-muted">最近一次访问</div>
+                    <div id="local-last-visit">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2：第三方统计：PV / UV -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
+            <span><i class="fa fa-globe"></i> 全站访问情况（第三方统计）</span>
+            <span class="badge bg-light text-success badge-pill">PV / UV 粗略计数</span>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">
+                为了大致了解这个小站有没有被看到，我接入了第三方统计服务，只关心两个最基本的指标：
+                <strong>PV（页面浏览量）</strong> 和 <strong>UV（独立访客数）</strong>。
+            </p>
+
+            <div class="row">
+                <div class="col-md-4 col-6 mb-3">
+                    <div class="text-muted">本站总访问量（PV）</div>
+                    <div class="stat-number">
+                        <!-- 不蒜子：站点总 PV -->
+                        <span id="busuanzi_value_site_pv">--</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-6 mb-3">
+                    <div class="text-muted">本站独立访客（UV）</div>
+                    <div class="stat-number">
+                        <!-- 不蒜子：站点总 UV -->
+                        <span id="busuanzi_value_site_uv">--</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-12 mb-3">
+                    <div class="text-muted">本页访问量</div>
+                    <div class="stat-number">
+                        <!-- 不蒜子：当前页面 PV -->
+                        <span id="busuanzi_value_page_pv">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-muted small mb-2">
+                * PV 可以粗略理解为“页面被打开的总次数”，同一个人在不同时间刷新也会累计；
+                  UV 则尝试通过 Cookie / 浏览器指纹等方式区分“是不是不同的访客”，所以更接近“来访人数”，
+                  但始终只是近似值。
+            </p>
+
+            <p class="text-muted small mb-0">
+                * 这些数字由第三方统计脚本根据访问记录计算并回传，本地页面只负责<strong>展示最终结果</strong>，
+                不另外保存任何访问日志。
+            </p>
+        </div>
+    </div>
+
+    <!-- Card 3：统计方式与隐私边界说明 -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
+            <i class="fa fa-info-circle"></i> 统计方式与隐私边界说明
+        </div>
+        <div class="card-body">
+            <h5 class="mb-3">1. 本机统计：只存在于你的浏览器</h5>
+            <ul>
+                <li>本页展示的“本机访问次数 / 累计访问天数 / 第一次访问时间”等信息，
+                    是通过浏览器的 <code>localStorage</code> 保存的。</li>
+                <li>这些数据<strong>不会被上传到服务器，也不会被我看到</strong>，只在你的设备本地存在，
+                    更像是你和这个站点之间的一本小日记。</li>
+                <li>清空浏览器缓存、使用无痕/隐身模式、或者更换浏览器/设备，都会让这些记录消失或重新开始计数。</li>
+            </ul>
+
+            <h5 class="mt-4 mb-3">2. 第三方统计：只做粗粒度的 PV / UV 计数</h5>
+            <ul>
+                <li>为了大致了解“这个小站有没有被人看到”，我在页面中接入了第三方统计服务
+                    （如不蒜子、以及其他网站统计工具），由它们负责计算 PV / UV 并生成报表。</li>
+                <li>这类统计一般会在你访问页面时，自动收集一些<strong>基础技术信息</strong>，
+                    例如：访问时间、页面地址、浏览器类型（User-Agent）、大致地区、引用来源（Referrer）、
+                    以及一个用于区分访客的匿名标识符或 Cookie 等。</li>
+                <li>这些信息的存储和使用方式，由第三方服务自己的隐私政策约束；我不会额外在自己的服务器上再建一个数据库去做二次整合，
+                    也不会尝试把这些技术信息和现实世界的个人身份绑定。</li>
+            </ul>
+
+            <h5 class="mt-4 mb-3">3. 统计的边界：不是监控，而是一支温度计</h5>
+            <ul>
+                <li>对我来说，这些统计数字的作用更接近一支<strong>温度计</strong>：
+                    看看这个页面是不是一直无人问津，还是偶尔会有人路过。</li>
+                <li>我不关心“某个具体的人在这里看了多久、点了哪几个按钮”，
+                    也不会用这些数据去做画像、推送广告等行为。</li>
+                <li>如果你对隐私非常敏感，可以选择：
+                    <ul>
+                        <li>在浏览器中屏蔽第三方统计脚本（如使用广告拦截 / NoScript 等扩展）；</li>
+                        <li>使用无痕/隐身模式访问；</li>
+                        <li>完全关闭 JavaScript —— 此时 PV / UV 统计可能失效，但你仍然可以阅读大部分页面内容。</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <p class="text-muted small mb-0">
+                总之：<strong>本机统计只在你手里，第三方统计只给我一个宏观的访问趋势</strong>。
+                我更在意的是这个小站有没有在某个时刻给人一点帮助，而不是它能带来多少“流量价值”。
+            </p>
+        </div>
+    </div>
+
+</div>
+
+<!-- 本机统计脚本（localStorage） -->
+<script>
+(function () {
+    if (!window.localStorage) {
+        return;
+    }
+
+    const TOTAL_KEY = 'ysb_visit_total';
+    const FIRST_KEY = 'ysb_first_visit';
+    const LAST_KEY  = 'ysb_last_visit';
+    const DAYS_KEY  = 'ysb_visit_days';  // 存一个日期数组（去重）
+
+    function formatDate(d) {
+        if (!d) return '--';
+        const date = new Date(d);
+        if (isNaN(date.getTime())) return '--';
+        const y  = date.getFullYear();
+        const m  = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const hh = String(date.getHours()).padStart(2, '0');
+        const mm = String(date.getMinutes()).padStart(2, '0');
+        return y + '-' + m + '-' + dd + ' ' + hh + ':' + mm;
+    }
+
+    function todayStr() {
+        const d  = new Date();
+        const y  = d.getFullYear();
+        const m  = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + dd;
+    }
+
+    function loadJSON(key, defaultValue) {
+        try {
+            const v = localStorage.getItem(key);
+            if (!v) return defaultValue;
+            return JSON.parse(v);
+        } catch (e) {
+            return defaultValue;
+        }
+    }
+
+    function saveJSON(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function updateLocalStats() {
+        // 1) 总访问次数
+        let total = parseInt(localStorage.getItem(TOTAL_KEY) || '0', 10);
+        total += 1;
+        localStorage.setItem(TOTAL_KEY, String(total));
+
+        // 2) 第一次访问时间
+        let firstVisit = localStorage.getItem(FIRST_KEY);
+        if (!firstVisit) {
+            firstVisit = new Date().toISOString();
+            localStorage.setItem(FIRST_KEY, firstVisit);
+        }
+
+        // 3) 最近一次访问时间
+        const lastVisit = new Date().toISOString();
+        localStorage.setItem(LAST_KEY, lastVisit);
+
+        // 4) 访问日期集合
+        let days = loadJSON(DAYS_KEY, []);
+        const t = todayStr();
+        if (!days.includes(t)) {
+            days.push(t);
+            saveJSON(DAYS_KEY, days);
+        }
+
+        // 5) 填到页面
+        const elTotal = document.getElementById('local-visit-count');
+        const elDays  = document.getElementById('local-visit-days');
+        const elFirst = document.getElementById('local-first-visit');
+        const elLast  = document.getElementById('local-last-visit');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elDays)  elDays.textContent  = days.length;
+        if (elFirst) elFirst.textContent = formatDate(firstVisit);
+        if (elLast)  elLast.textContent  = formatDate(lastVisit);
+    }
+
+    document.addEventListener('DOMContentLoaded', updateLocalStats);
+})();
+</script>
+
+</body>
+</html>
