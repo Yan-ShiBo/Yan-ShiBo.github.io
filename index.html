@@ -11,136 +11,158 @@
 
     <style>
         :root {
-            --bg: #f4f7fb;
+            --bg: #f3f7ff;
             --surface: #ffffff;
             --text: #1f2937;
             --muted: #6b7280;
             --primary: #2563eb;
+            --primary-soft: #dbeafe;
             --border: #e5e7eb;
+            --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
         }
 
         * { box-sizing: border-box; }
 
         body {
             margin: 0;
-            background: var(--bg);
             color: var(--text);
             font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-        }
-
-        .page {
-            max-width: 1140px;
-            margin: 0 auto;
-            padding: 20px 14px 40px;
+            background:
+                radial-gradient(circle at 5% 5%, #dbeafe 0, transparent 34%),
+                radial-gradient(circle at 95% 0%, #e9d5ff 0, transparent 30%),
+                var(--bg);
         }
 
         .topbar {
             position: sticky;
             top: 0;
             z-index: 20;
-            backdrop-filter: blur(6px);
             background: rgba(15, 23, 42, 0.9);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .topbar-inner,
+        .page {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding-left: 14px;
+            padding-right: 14px;
         }
 
         .topbar-inner {
-            max-width: 1140px;
-            margin: 0 auto;
+            min-height: 64px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            padding: 12px 14px;
         }
 
         .brand {
-            font-size: clamp(18px, 2.4vw, 28px);
-            font-weight: 700;
-            color: #fff;
             display: flex;
-            gap: 8px;
             align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-size: clamp(18px, 2.2vw, 28px);
+            font-weight: 800;
         }
 
         .brand .name { color: #fb7185; }
 
         .menu {
             display: flex;
-            flex-wrap: wrap;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .menu a {
             color: #e5e7eb;
             text-decoration: none;
-            padding: 8px 12px;
             border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            padding: 6px 12px;
             font-size: 14px;
+            transition: background .2s ease;
         }
 
-        .menu a:hover { background: rgba(255,255,255,0.12); }
+        .menu a:hover { background: rgba(255,255,255,0.14); }
+
+        .page { padding-top: 20px; padding-bottom: 38px; }
 
         .hero {
             display: grid;
             grid-template-columns: 1.2fr 1fr;
-            gap: 18px;
-            margin-top: 20px;
+            gap: 16px;
         }
 
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
             padding: 20px;
         }
 
         .intro-title {
-            font-size: clamp(24px, 3.4vw, 38px);
-            font-weight: 800;
             margin: 0 0 10px;
+            font-size: clamp(26px, 3.2vw, 40px);
+            line-height: 1.2;
+            font-weight: 800;
         }
 
         .intro-sub {
             margin: 0;
-            line-height: 1.7;
             color: var(--muted);
+            line-height: 1.75;
         }
 
         .profile {
+            margin-top: 18px;
             display: flex;
             gap: 14px;
-            margin-top: 18px;
             align-items: center;
         }
 
         .profile img {
-            width: 90px;
-            height: 120px;
+            width: 96px;
+            height: 128px;
             object-fit: cover;
-            border-radius: 12px;
+            border-radius: 14px;
             border: 1px solid var(--border);
+        }
+
+        .stats {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge-lite {
+            color: #334155;
+            background: #f1f5ff;
+            border: 1px solid var(--primary-soft);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 14px;
         }
 
         .clock-box {
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            min-height: 100%;
-            background: linear-gradient(135deg, #eff6ff, #f8fafc);
+            align-items: center;
+            background: linear-gradient(135deg, #f8fbff, #ecf2ff);
         }
 
         .clock-title {
-            font-weight: 600;
-            margin-bottom: 10px;
+            margin: 0 0 10px;
             color: #334155;
+            font-weight: 700;
         }
 
         .clock-frame {
             width: min(100%, 420px);
-            margin: 0 auto;
             display: flex;
             justify-content: center;
             padding: 8px;
@@ -155,30 +177,36 @@
         .section-title {
             margin: 28px 0 12px;
             font-size: 22px;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 12px;
         }
 
         .quick-link {
-            display: block;
-            text-decoration: none;
-            color: inherit;
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: 16px;
             background: #fff;
             padding: 16px;
+            text-decoration: none;
+            color: inherit;
             transition: .2s ease;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
         }
 
         .quick-link:hover {
             transform: translateY(-2px);
             border-color: #bfdbfe;
-            box-shadow: 0 10px 18px rgba(37, 99, 235, 0.12);
+            box-shadow: 0 14px 24px rgba(37, 99, 235, 0.12);
+        }
+
+        .quick-link h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
         }
 
         .quick-link i {
@@ -186,32 +214,38 @@
             margin-right: 6px;
         }
 
-        .muted { color: var(--muted); margin: 8px 0 0; font-size: 14px; line-height: 1.6; }
-
-        .stats {
-            margin-top: 16px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+        .muted {
+            margin: 8px 0 0;
             color: var(--muted);
+            line-height: 1.65;
             font-size: 14px;
         }
 
-        .badge-lite {
-            background: #eef2ff;
-            border: 1px solid #dbeafe;
-            border-radius: 999px;
+        .sub-links {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sub-links a {
+            text-decoration: none;
+            color: var(--primary);
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
             padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
         }
 
         @media (max-width: 992px) {
             .hero { grid-template-columns: 1fr; }
-            .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         @media (max-width: 576px) {
             .menu { display: none; }
-            .page { padding: 16px 10px 30px; }
+            .page { padding-left: 10px; padding-right: 10px; }
             .grid { grid-template-columns: 1fr; }
             .profile { align-items: flex-start; }
         }
@@ -234,7 +268,6 @@
                 "https://cdn.jsdelivr.net/gh/sukkaw/busuanzi@2.3/bsz.pure.mini.js",
                 "https://cdn.jsdelivr.net/npm/busuanzi@2.3.0"
             ];
-
             function loadBusuanzi(i) {
                 if (i >= cdnList.length) return;
                 var s = document.createElement("script");
@@ -258,9 +291,8 @@
         </div>
         <nav class="menu">
             <a href="#home">首页</a>
-            <a href="#links">常用入口</a>
-            <a href="introduction.html">详细介绍</a>
-            <a href="resume_online.html">在线简历</a>
+            <a href="#archive">档案入口</a>
+            <a href="stats.html">访问统计</a>
         </nav>
     </div>
 </header>
@@ -268,8 +300,8 @@
 <main class="page" id="home">
     <section class="hero">
         <article class="card">
-            <h1 class="intro-title">欢迎来到我的个人主页</h1>
-            <p class="intro-sub">已重新调整为单页布局，不再依赖 iframe 子页面展示。页面针对手机和电脑都做了适配，重点内容会在同一屏内快速查看。</p>
+            <h1 class="intro-title">欢迎来到我的主页</h1>
+            <p class="intro-sub">根据你的建议已重新整合页面结构：不使用子页面方式展示首页核心信息，并将“个人简介 + 在线简历 + PDF简历”整合为统一入口，浏览路径更清晰。</p>
 
             <div class="profile">
                 <img src="./Homepage_files/photo.jpg" alt="闫士博头像" />
@@ -287,39 +319,29 @@
         </article>
 
         <aside class="card clock-box">
-            <div class="clock-title">当前时间</div>
+            <h3 class="clock-title">当前时间</h3>
             <div class="clock-frame">
                 <canvas id="clock" width="400" height="400"></canvas>
             </div>
         </aside>
     </section>
 
-    <section id="links">
-        <h2 class="section-title">常用入口</h2>
+    <section id="archive">
+        <h2 class="section-title">档案中心</h2>
         <div class="grid">
             <a class="quick-link" href="introduction.html">
-                <h3><i class="fa fa-address-card"></i>个人介绍</h3>
-                <p class="muted">查看完整的中英文简介、教育经历和联系方式。</p>
+                <h3><i class="fa fa-trophy"></i>个人档案与荣誉</h3>
+                <p class="muted">点击进入完整档案页面，集中查看个人简介与成长经历；页面顶部可直接访问在线简历与 PDF 简历。</p>
             </a>
-            <a class="quick-link" href="resume_online.html">
-                <h3><i class="fa fa-id-card"></i>在线简历</h3>
-                <p class="muted">浏览网页版简历，适合移动端快速查看。</p>
-            </a>
-            <a class="quick-link" href="resume.html">
-                <h3><i class="fa fa-file-pdf-o"></i>PDF 简历</h3>
-                <p class="muted">打开 PDF 版本，便于下载与打印。</p>
-            </a>
+
             <a class="quick-link" href="stats.html">
                 <h3><i class="fa fa-bar-chart"></i>访问统计</h3>
-                <p class="muted">查看页面访问量与访客相关数据。</p>
+                <p class="muted">查看页面访问量、访客趋势等统计信息。</p>
             </a>
-            <a class="quick-link" href="https://github.com" target="_blank" rel="noopener">
-                <h3><i class="fa fa-github"></i>GitHub</h3>
-                <p class="muted">外部项目入口（可按需替换为你的主页）。</p>
-            </a>
+
             <a class="quick-link" href="#home">
                 <h3><i class="fa fa-arrow-up"></i>返回顶部</h3>
-                <p class="muted">快速回到页面顶部区域。</p>
+                <p class="muted">快速回到页面首屏区域。</p>
             </a>
         </div>
     </section>
