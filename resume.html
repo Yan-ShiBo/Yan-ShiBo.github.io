@@ -1,45 +1,6 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF 简历 - 闫士博</title>
-    <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
-    <style>
-        :root { --bg:#f3f7ff; --primary:#2563eb; --border:#e5e7eb; }
-        body {
-            margin: 0;
-            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: var(--bg);
-            color: #1f2937;
-        }
-        .page { max-width: 980px; margin: 0 auto; padding: 20px 12px 30px; }
-        .quick-nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-        .quick-nav a {
-            text-decoration:none; color:var(--primary); border:1px solid #bfdbfe;
-            background:#eff6ff; border-radius:999px; padding:6px 12px; font-size:13px; font-weight:600;
-        }
-        .card {
-            background:#fff; border:1px solid var(--border); border-radius:16px;
-            box-shadow:0 10px 24px rgba(15,23,42,.06); padding:14px;
-        }
-        iframe { width:100%; min-height:85vh; border:0; border-radius:10px; background:#fff; }
-        .tip { color:#64748b; margin:0 0 10px; }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="quick-nav">
-        <a href="index.html"><i class="fa fa-home"></i> 返回主页</a>
-        <a href="introduction.html"><i class="fa fa-address-card"></i> 个人档案</a>
-        <a href="resume_online.html"><i class="fa fa-id-card"></i> 在线简历</a>
-        <a href="Homepage_files/Shibo_Yan-CV.pdf" download><i class="fa fa-download"></i> 下载 PDF</a>
-    </div>
-
-    <div class="card">
-        <p class="tip">若浏览器不支持内嵌 PDF，请点击“下载 PDF”按钮。</p>
-        <iframe src="./Homepage_files/Shibo_Yan-CV.pdf" title="Shibo Yan CV PDF"></iframe>
-    </div>
-</div>
-</body>
-</html>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>PDF简历 · 闫士博</title><link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+<style>:root{--bg:#f4f7ff;--card:#fff;--text:#1f2937;--muted:#667085;--border:#e4e7ec;--shadow:0 12px 28px rgba(15,23,42,.08)}*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}.topbar{position:sticky;top:0;background:rgba(15,23,42,.9);z-index:40}.topbar-inner,.wrap{max-width:1120px;margin:0 auto;padding:0 16px}.topbar-inner{min-height:64px;display:flex;justify-content:space-between;align-items:center;gap:8px}.brand{color:#fff;font-weight:800}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a,.lang button,.btn{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#e5e7eb;padding:6px 12px;border-radius:999px;text-decoration:none;font-size:13px}.lang button.active{background:#fff;color:#111827}.wrap{padding:24px 16px 36px}.card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px}.muted{color:var(--muted)}iframe{width:100%;height:76vh;border:1px solid var(--border);border-radius:12px;background:#fff}.actions{margin:12px 0}.actions .btn{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}.lang-section{display:none}.lang-section.active{display:block}@media(max-width:640px){.nav{display:none}}</style></head>
+<body><header class="topbar"><div class="topbar-inner"><div class="brand">PDF简历 / PDF Resume</div><nav class="nav"><a href="index.html">返回主页</a><a href="introduction.html">个人档案与荣誉</a><a href="resume_online.html">在线简历</a><a href="resume.html">PDF简历</a></nav><div class="lang"><button class="lang-btn active" data-lang="zh">中</button><button class="lang-btn" data-lang="en">EN</button></div></div></header>
+<main class="wrap"><section class="lang-section lang-zh active"><article class="card"><h1>PDF 简历</h1><p class="muted">支持在线查看与下载。</p><div class="actions"><a class="btn" href="./Homepage_files/Shibo_Yan-CV.pdf" download>下载 PDF</a></div><iframe src="./Homepage_files/Shibo_Yan-CV.pdf" title="PDF 简历"></iframe></article></section><section class="lang-section lang-en"><article class="card"><h1>PDF Resume</h1><p class="muted">Available for online preview and download.</p><div class="actions"><a class="btn" href="./Homepage_files/Shibo_Yan-CV.pdf" download>Download PDF</a></div><iframe src="./Homepage_files/Shibo_Yan-CV.pdf" title="PDF resume"></iframe></article></section></main>
+<script>window.addEventListener('DOMContentLoaded',function(){var b=document.querySelectorAll('.lang-btn'),s=document.querySelectorAll('.lang-section');function setL(l){s.forEach(function(x){x.classList.toggle('active',x.classList.contains('lang-'+l));});b.forEach(function(x){x.classList.toggle('active',x.dataset.lang===l);});document.documentElement.lang=l==='zh'?'zh-CN':'en';}b.forEach(function(x){x.onclick=function(){setL(this.dataset.lang);};});setL('zh');});</script>
+</body></html>
