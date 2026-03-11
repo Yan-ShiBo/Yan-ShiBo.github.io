@@ -1,60 +1,45 @@
 <!DOCTYPE html>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-<html>
-	<head>
-		<meta charset="utf-8">
-		<title></title>
-			<style>
-				* {
-				    margin: 0px;
-				    padding: 0px;
-				}
-				body {
-					/* background: yellow; */
-				}
-				#man{
-					margin-left: 0ch;
-					margin-top: 0ch;
-				}
-			</style>
-
-
-			    <!-- 不蒜子：尝试 icodeq + jsDelivr 镜像，只加载成功的第一个 -->
-    <script>
-    (function () {
-        var cdnList = [
-            "https://busuanzi.icodeq.com/busuanzi.pure.mini.js",
-            "https://cdn.jsdelivr.net/gh/sukkaw/busuanzi@2.3/bsz.pure.mini.js",
-            "https://cdn.jsdelivr.net/npm/busuanzi@2.3.0"
-        ];
-
-        function loadBusuanzi(i) {
-            if (i >= cdnList.length) return;  // 全挂就算了，页面上保持 "--"
-            var s = document.createElement("script");
-            s.async = true;
-            s.src = cdnList[i];
-            s.onerror = function () {
-                // 当前源失败，试下一个
-                loadBusuanzi(i + 1);
-            };
-            document.head.appendChild(s);
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF 简历 - 闫士博</title>
+    <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+    <style>
+        :root { --bg:#f3f7ff; --primary:#2563eb; --border:#e5e7eb; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: #1f2937;
         }
+        .page { max-width: 980px; margin: 0 auto; padding: 20px 12px 30px; }
+        .quick-nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+        .quick-nav a {
+            text-decoration:none; color:var(--primary); border:1px solid #bfdbfe;
+            background:#eff6ff; border-radius:999px; padding:6px 12px; font-size:13px; font-weight:600;
+        }
+        .card {
+            background:#fff; border:1px solid var(--border); border-radius:16px;
+            box-shadow:0 10px 24px rgba(15,23,42,.06); padding:14px;
+        }
+        iframe { width:100%; min-height:85vh; border:0; border-radius:10px; background:#fff; }
+        .tip { color:#64748b; margin:0 0 10px; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="quick-nav">
+        <a href="index.html"><i class="fa fa-home"></i> 返回主页</a>
+        <a href="introduction.html"><i class="fa fa-address-card"></i> 个人档案</a>
+        <a href="resume_online.html"><i class="fa fa-id-card"></i> 在线简历</a>
+        <a href="Homepage_files/Shibo_Yan-CV.pdf" download><i class="fa fa-download"></i> 下载 PDF</a>
+    </div>
 
-        loadBusuanzi(0);
-    })();
-    </script>
-
-    <!-- Vercount：另一套计数器 -->
-    <script defer src="https://events.vercount.one/js"></script>
-
-	</head>
-	<body>
-		<div >
-			<!-- <img id="man" src="./Homepage_files/resume.jpg" height=1248px width=850px " > -->
-			<img id="man" src="./Homepage_files/resume.jpg" class="img-fluid" alt="Resume Image">
-			<!-- 图片需要转换为渐进JPEG(Progressive JPEG)格式，以增快响应速度，方法为使用PS，文件->导出->存储为Web所用格式->勾选“连续”和“转换为sRGB”->存储 -->
-		</div>
-		
-	</body>
+    <div class="card">
+        <p class="tip">若浏览器不支持内嵌 PDF，请点击“下载 PDF”按钮。</p>
+        <iframe src="./Homepage_files/Shibo_Yan-CV.pdf" title="Shibo Yan CV PDF"></iframe>
+    </div>
+</div>
+</body>
 </html>
