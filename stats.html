@@ -38,19 +38,28 @@
     <script defer src="https://events.vercount.one/js"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            --bg: #f3f7ff;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --primary: #2563eb;
+            --border: #e5e7eb;
         }
+        * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
                          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-            background: radial-gradient(circle at top, #fdfbfb 0%, #ebedee 100%);
-            color: #333;
+            background:
+                radial-gradient(circle at 10% 0%, #dbeafe 0, transparent 35%),
+                radial-gradient(circle at 95% 0%, #ede9fe 0, transparent 32%),
+                var(--bg);
+            color: var(--text);
         }
         .page-wrapper {
-            max-width: 960px;
+            max-width: 980px;
             margin: 0 auto;
-            padding: 24px 16px 40px;
+            padding: 24px 14px 40px;
         }
         .page-title {
             display: flex;
@@ -58,37 +67,51 @@
             gap: 10px;
             margin-bottom: 8px;
         }
-        .page-title i {
-            color: #2a5d84;
-        }
+        .page-title i { color: var(--primary); }
         .page-title h1 {
-            font-size: 1.8rem;
+            font-size: 1.9rem;
             margin: 0;
-            color: #2a5d84;
+            color: #1e3a8a;
+            font-weight: 800;
         }
         .page-subtitle {
-            font-size: 0.95rem;
-            color: #777;
+            font-size: 0.96rem;
+            color: var(--muted);
             margin-bottom: 18px;
+            line-height: 1.7;
         }
-        .card {
-            border-radius: 12px;
-            border: none;
+        .quick-nav {
+            margin-bottom: 14px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
-        .card-header {
-            border-radius: 12px 12px 0 0 !important;
+        .quick-nav a {
+            text-decoration: none;
+            color: var(--primary);
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            border-radius: 999px;
+            padding: 6px 11px;
+            font-size: 13px;
             font-weight: 600;
         }
-        .card + .card {
-            margin-top: 1.2rem;
+        .card {
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+            overflow: hidden;
         }
+        .card-header {
+            font-weight: 700;
+            padding: 0.78rem 1rem;
+        }
+        .card + .card { margin-top: 1.2rem; }
         .stat-number {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #2a5d84;
-        }
-        .badge-pill {
-            border-radius: 999px;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #1e40af;
         }
 
         .topbar{position:sticky;top:0;z-index:30;background:rgba(15,23,42,.9);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.15);margin:-24px -16px 16px;}
@@ -98,15 +121,9 @@
         .topbar .nav a{text-decoration:none;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 10px;color:#e5e7eb;font-size:13px;background:rgba(255,255,255,.06);}
         @media (max-width: 768px){.topbar{margin:-16px -10px 12px;}.topbar .nav{display:none;}}
         @media (max-width: 768px) {
-            .page-wrapper {
-                padding: 16px 10px 32px;
-            }
-            .page-title h1 {
-                font-size: 1.5rem;
-            }
-            .stat-number {
-                font-size: 1.4rem;
-            }
+            .page-wrapper { padding: 16px 10px 32px; }
+            .page-title h1 { font-size: 1.55rem; }
+            .stat-number { font-size: 1.35rem; }
         }
     </style>
 </head>
@@ -135,6 +152,12 @@
             本页一方面记录你与本站的互动历史，另一方面说明本站在“统计”这件事上的边界和态度。
         </p>
     </header>
+
+    <div class="quick-nav">
+        <a href="index.html"><i class="fa fa-home"></i> 返回主页</a>
+        <a href="introduction.html"><i class="fa fa-address-card"></i> 个人档案</a>
+        <a href="resume.html"><i class="fa fa-file-pdf-o"></i> PDF 简历</a>
+    </div>
 
     <!-- Card 1：本机访问统计 -->
     <div class="card shadow-sm">
