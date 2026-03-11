@@ -1,98 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>home</title>
+    <title>首页 - 闫士博</title>
     <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
-    <link href="./resource/bootstrap-5.1.3-dist/css/bootstrap.min.css" rel="stylesheet"/>
     <style>
         body {
             margin: 0;
             font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: #f8fafc;
+            background: #f3f7ff;
             color: #1f2937;
         }
-
-        .home-wrapper {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 20px 14px;
+        .page { max-width: 960px; margin: 0 auto; padding: 22px 12px 30px; }
+        .quick-nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+        .quick-nav a {
+            text-decoration:none; color:#2563eb; border:1px solid #bfdbfe;
+            background:#eff6ff; border-radius:999px; padding:6px 12px; font-size:13px; font-weight:600;
         }
-
-        .hero-card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
-            padding: 20px;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 16px;
-            align-items: center;
+        .card {
+            background:#fff; border:1px solid #e5e7eb; border-radius:16px;
+            box-shadow:0 10px 24px rgba(15,23,42,.06); padding:20px;
+            display:grid; grid-template-columns:1fr auto; gap:16px; align-items:center;
         }
-
-        .hero-title {
-            margin: 0 0 10px;
-            font-size: clamp(20px, 4vw, 32px);
-            font-weight: 700;
-        }
-
-        .hero-sub {
-            margin: 0;
-            color: #6b7280;
-            line-height: 1.6;
-            font-size: 15px;
-        }
-
-        .clock-wrap {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #f3f4f6, #e5edff);
-            border-radius: 12px;
-            padding: 12px;
-        }
-
+        .title { margin:0 0 10px; font-size:clamp(22px, 4vw, 34px); }
+        .sub { margin:0; color:#6b7280; line-height:1.7; }
+        .clock-wrap { background:linear-gradient(135deg,#f1f5ff,#eef2ff); border-radius:12px; padding:12px; }
         canvas { max-width: 100%; height: auto; }
-
-        @media (max-width: 768px) {
-            .hero-card {
-                grid-template-columns: 1fr;
-                text-align: center;
-                padding: 16px;
-            }
-        }
+        @media (max-width: 768px) { .card { grid-template-columns:1fr; text-align:center; } }
     </style>
-
-    <script>
-    (function () {
-        var cdnList = [
-            "https://busuanzi.icodeq.com/busuanzi.pure.mini.js",
-            "https://cdn.jsdelivr.net/gh/sukkaw/busuanzi@2.3/bsz.pure.mini.js",
-            "https://cdn.jsdelivr.net/npm/busuanzi@2.3.0"
-        ];
-
-        function loadBusuanzi(i) {
-            if (i >= cdnList.length) return;
-            var s = document.createElement("script");
-            s.async = true;
-            s.src = cdnList[i];
-            s.onerror = function () { loadBusuanzi(i + 1); };
-            document.head.appendChild(s);
-        }
-        loadBusuanzi(0);
-    })();
-    </script>
-
-    <script defer src="https://events.vercount.one/js"></script>
 </head>
 <body>
-<div class="home-wrapper">
-    <section class="hero-card">
+<div class="page">
+    <div class="quick-nav">
+        <a href="index.html"><i class="fa fa-home"></i> 返回主页</a>
+        <a href="introduction.html"><i class="fa fa-address-card"></i> 个人档案</a>
+        <a href="resume_online.html"><i class="fa fa-id-card"></i> 在线简历</a>
+        <a href="stats.html"><i class="fa fa-bar-chart"></i> 访问统计</a>
+    </div>
+
+    <section class="card">
         <div>
-            <h1 class="hero-title">Welcome</h1>
-            <p class="hero-sub">这是闫士博的个人主页，已针对手机和电脑进行了自适应优化。你可以通过上方导航浏览简介、简历和访问统计。</p>
+            <h1 class="title">欢迎访问</h1>
+            <p class="sub">该页面已统一为与其他页面一致的视觉风格，并保留时钟组件展示。</p>
         </div>
         <div class="clock-wrap">
             <canvas height="260" id="clock" width="260"></canvas>
