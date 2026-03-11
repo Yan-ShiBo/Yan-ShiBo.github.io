@@ -1,6 +1,336 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>在线简历 · 闫士博</title><link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
-<style>:root{--bg:#f4f7ff;--card:#fff;--text:#1f2937;--muted:#667085;--border:#e4e7ec;--shadow:0 12px 28px rgba(15,23,42,.08)}*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}.topbar{position:sticky;top:0;background:rgba(15,23,42,.9);z-index:40}.topbar-inner,.wrap{max-width:1120px;margin:0 auto;padding:0 16px}.topbar-inner{min-height:64px;display:flex;justify-content:space-between;align-items:center;gap:8px}.brand{color:#fff;font-weight:800}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a,.lang button{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#e5e7eb;padding:6px 12px;border-radius:999px;text-decoration:none;font-size:13px}.lang button.active{background:#fff;color:#111827}.lang-section{display:none}.lang-section.active{display:block}.wrap{padding:24px 16px 36px}.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px;margin-bottom:14px}.muted{color:var(--muted);line-height:1.7}.chips{display:flex;gap:8px;flex-wrap:wrap}.chips span{background:#eff6ff;border:1px solid #bfdbfe;border-radius:999px;padding:5px 10px;font-size:13px}.preview{width:100%;border:1px solid var(--border);border-radius:12px}@media (max-width:640px){.nav{display:none}}</style></head>
-<body><header class="topbar"><div class="topbar-inner"><div class="brand">在线简历 / Online Resume</div><nav class="nav"><a href="index.html">返回主页</a><a href="introduction.html">个人档案与荣誉</a><a href="resume_online.html">在线简历</a><a href="resume.html">PDF简历</a></nav><div class="lang"><button class="lang-btn active" data-lang="zh">中</button><button class="lang-btn" data-lang="en">EN</button></div></div></header>
-<main class="wrap"><section class="lang-section lang-zh active"><article class="card"><h1>在线简历</h1><p class="muted">面向网页阅读的简历摘要，适合手机和电脑快速浏览。</p><div class="chips"><span>姓名：闫士博</span><span>方向：大语言模型 / 安全验证</span><span>邮箱：yanshibo2001@163.com</span></div></article><article class="card"><h3>简历预览图</h3><img class="preview" src="./Homepage_files/resume.jpg" alt="简历预览"></article></section><section class="lang-section lang-en"><article class="card"><h1>Online Resume</h1><p class="muted">A web-friendly summary optimized for both mobile and desktop reading.</p><div class="chips"><span>Name: ShiBo Yan</span><span>Research: LLMs / Safety Verification</span><span>Email: yanshibo2001@163.com</span></div></article><article class="card"><h3>Resume Preview</h3><img class="preview" src="./Homepage_files/resume.jpg" alt="resume preview"></article></section></main>
-<script>window.addEventListener('DOMContentLoaded',function(){var b=document.querySelectorAll('.lang-btn'),s=document.querySelectorAll('.lang-section');function setL(l){s.forEach(function(x){x.classList.toggle('active',x.classList.contains('lang-'+l));});b.forEach(function(x){x.classList.toggle('active',x.dataset.lang===l);});document.documentElement.lang=l==='zh'?'zh-CN':'en';}b.forEach(function(x){x.onclick=function(){setL(this.dataset.lang);};});setL('zh');});</script>
-</body></html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>在线简历 · 闫士博</title>
+  <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+  <style>
+    :root{
+      --bg:#f4f7ff;
+      --card:#fff;
+      --text:#1f2937;
+      --muted:#667085;
+      --primary:#2563eb;
+      --border:#e4e7ec;
+      --shadow:0 12px 28px rgba(15,23,42,.08)
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      background:
+        radial-gradient(circle at 10% -10%,#dbeafe 0,transparent 35%),
+        radial-gradient(circle at 90% -20%,#ede9fe 0,transparent 38%),
+        var(--bg);
+      color:var(--text)
+    }
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:40;
+      background:rgba(15,23,42,.9);
+      backdrop-filter:blur(8px);
+      border-bottom:1px solid rgba(255,255,255,.18)
+    }
+    .topbar-inner,.wrap{
+      max-width:1120px;
+      margin:0 auto;
+      padding:0 16px
+    }
+    .topbar-inner{
+      min-height:64px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px
+    }
+    .brand{
+      color:#fff;
+      font-weight:800;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      text-decoration:none
+    }
+    .brand .name{color:#fb7185}
+    .nav{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap
+    }
+    .nav a,.lang button{
+      border:1px solid rgba(255,255,255,.25);
+      background:rgba(255,255,255,.06);
+      color:#e5e7eb;
+      padding:6px 12px;
+      border-radius:999px;
+      text-decoration:none;
+      font-size:13px;
+      transition:.2s
+    }
+    .nav a:hover,.lang button:hover{
+      background:rgba(255,255,255,.16)
+    }
+    .lang{
+      display:flex;
+      gap:6px
+    }
+    .lang button.active{
+      background:#fff;
+      color:#111827
+    }
+    .lang-section{display:none}
+    .lang-section.active{display:block}
+    .wrap{
+      padding:24px 16px 36px
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      padding:20px;
+      margin-bottom:14px
+    }
+    h1{
+      margin:0 0 10px;
+      font-size:clamp(26px,4vw,36px)
+    }
+    h2{
+      margin:0 0 12px;
+      font-size:22px
+    }
+    h3{
+      margin:0 0 10px;
+      font-size:18px
+    }
+    .muted{
+      color:var(--muted);
+      line-height:1.75;
+      margin:0
+    }
+    .chips{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:14px
+    }
+    .chips span{
+      background:#eff6ff;
+      border:1px solid #bfdbfe;
+      border-radius:999px;
+      padding:6px 11px;
+      font-size:13px
+    }
+    .hero{
+      display:grid;
+      grid-template-columns:1.2fr .9fr;
+      gap:14px;
+      align-items:stretch
+    }
+    .info-list{
+      margin:0;
+      padding-left:18px;
+      color:var(--text);
+      line-height:1.8
+    }
+    .info-list li{
+      margin-bottom:6px
+    }
+    .preview{
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:12px;
+      display:block
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:16px
+    }
+    .btn{
+      display:inline-block;
+      text-decoration:none;
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--text);
+      border-radius:999px;
+      padding:9px 14px;
+      font-size:14px;
+      transition:.2s
+    }
+    .btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 10px 18px rgba(15,23,42,.08)
+    }
+    .btn.primary{
+      background:#eff6ff;
+      border-color:#bfdbfe;
+      color:#1d4ed8
+    }
+    .link{
+      color:var(--primary);
+      text-decoration:none;
+      word-break:break-all
+    }
+    .link:hover{text-decoration:underline}
+    @media (max-width:920px){
+      .hero{grid-template-columns:1fr}
+    }
+    @media (max-width:640px){
+      .nav{display:none}
+    }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <i class="fa fa-cog fa-spin"></i>
+      <span class="name">闫士博</span>
+      <span>/ ShiBo Yan</span>
+    </a>
+    <nav class="nav">
+      <a href="index.html">返回主页</a>
+      <a href="introduction.html">个人档案与荣誉</a>
+      <a href="resume_online.html">在线简历</a>
+      <a href="resume.html">PDF简历</a>
+    </nav>
+    <div class="lang">
+      <button class="lang-btn active" data-lang="zh">中</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="lang-section lang-zh active">
+    <div class="hero">
+      <article class="card">
+        <h1>在线简历</h1>
+        <p class="muted">
+          这是面向网页阅读的简历摘要页，适合手机和电脑快速浏览。
+          页面内容与个人主页保持一致，重点概括个人背景、研究方向与简历入口。
+        </p>
+
+        <div class="chips">
+          <span>姓名：闫士博</span>
+          <span>方向：随机控制系统 / 形式化方法与安全验证</span>
+          <span>邮箱：y423314860@163.com</span>
+        </div>
+
+        <div class="actions">
+          <a class="btn primary" href="resume.html">查看 PDF 简历</a>
+          <a class="btn" href="https://yan-shibo.github.io/" target="_blank" rel="noopener noreferrer">访问个人主页</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>基本信息</h3>
+        <ul class="info-list">
+          <li>姓名：闫士博</li>
+          <li>学校：西南大学 软件工程硕士研究生</li>
+          <li>研究方向：随机控制系统、形式化方法与安全验证、Reach-Avoid 控制、强化学习辅助控制器合成</li>
+          <li>邮箱：<a class="link" href="mailto:y423314860@163.com">y423314860@163.com</a></li>
+          <li>主页：<a class="link" href="https://yan-shibo.github.io/" target="_blank" rel="noopener noreferrer">https://yan-shibo.github.io/</a></li>
+        </ul>
+      </article>
+    </div>
+
+    <article class="card">
+      <h2>研究概况</h2>
+      <p class="muted">
+        我主要关注随机系统的安全控制与形式化保证，重点研究 reach-avoid 约束下的控制器合成、
+        强化学习辅助的可验证控制策略设计，以及基于随机 barrier-like certificates、
+        PAC 近似与 SOS 优化的后验证方法。
+      </p>
+    </article>
+
+    <article class="card">
+      <h2>简历预览图</h2>
+      <img class="preview" src="./Homepage_files/resume.jpg" alt="简历预览">
+    </article>
+  </section>
+
+  <section class="lang-section lang-en">
+    <div class="hero">
+      <article class="card">
+        <h1>Online Resume</h1>
+        <p class="muted">
+          This page provides a web-friendly summary of my resume for quick reading on both mobile and desktop devices.
+          Its content is aligned with my homepage, with an emphasis on my background, research interests, and resume access.
+        </p>
+
+        <div class="chips">
+          <span>Name: ShiBo Yan</span>
+          <span>Research: Stochastic Control Systems / Formal Methods and Safety Verification</span>
+          <span>Email: y423314860@163.com</span>
+        </div>
+
+        <div class="actions">
+          <a class="btn primary" href="resume.html">View PDF Resume</a>
+          <a class="btn" href="https://yan-shibo.github.io/" target="_blank" rel="noopener noreferrer">Visit Homepage</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Basic Information</h3>
+        <ul class="info-list">
+          <li>Name: ShiBo Yan</li>
+          <li>Institution: M.Eng. Candidate in Software Engineering, Southwest University</li>
+          <li>Research Interests: Stochastic Control Systems, Formal Methods and Safety Verification, Reach-Avoid Control, RL-Aided Controller Synthesis</li>
+          <li>Email: <a class="link" href="mailto:y423314860@163.com">y423314860@163.com</a></li>
+          <li>Homepage: <a class="link" href="https://yan-shibo.github.io/" target="_blank" rel="noopener noreferrer">https://yan-shibo.github.io/</a></li>
+        </ul>
+      </article>
+    </div>
+
+    <article class="card">
+      <h2>Research Summary</h2>
+      <p class="muted">
+        My research focuses on safe control and formal guarantees for stochastic systems.
+        I am particularly interested in reach-avoid controller synthesis, reinforcement-learning-aided verifiable control,
+        and post-verification methods based on stochastic barrier-like certificates, PAC approximation,
+        and sum-of-squares optimization.
+      </p>
+    </article>
+
+    <article class="card">
+      <h2>Resume Preview</h2>
+      <img class="preview" src="./Homepage_files/resume.jpg" alt="resume preview">
+    </article>
+  </section>
+
+</main>
+
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+  var buttons = document.querySelectorAll('.lang-btn');
+  var sections = document.querySelectorAll('.lang-section');
+
+  function setLang(lang) {
+    sections.forEach(function(section){
+      section.classList.toggle('active', section.classList.contains('lang-' + lang));
+    });
+    buttons.forEach(function(button){
+      button.classList.toggle('active', button.dataset.lang === lang);
+    });
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  }
+
+  buttons.forEach(function(button){
+    button.addEventListener('click', function(){
+      setLang(this.dataset.lang);
+    });
+  });
+
+  setLang('zh');
+});
+</script>
+
+</body>
+</html>
