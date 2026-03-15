@@ -1,0 +1,15 @@
+{
+  "name": "闫士博 | ShiBo Yan",
+  "short_name": "ShiBo Yan",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/Homepage_files/index.ico",
+      "sizes": "48x48 64x64 128x128",
+      "type": "image/x-icon"
+    }
+  ]
+}
