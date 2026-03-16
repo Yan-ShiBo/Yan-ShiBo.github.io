@@ -187,7 +187,69 @@
     nodes.forEach(function (node) { observer.observe(node); });
   }
 
-  function initYear() {
+function initLightbox() {
+  var triggers = document.querySelectorAll('[data-lightbox]');
+  if (!triggers.length) return;
+
+  var isZh = document.documentElement.lang && document.documentElement.lang.toLowerCase().indexOf('zh') === 0;
+  var closeText = isZh ? '关闭大图' : 'Close image preview';
+
+  var overlay = document.createElement('div');
+  overlay.className = 'lightbox';
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.innerHTML = '<div class="lightbox-dialog" role="dialog" aria-modal="true" aria-label="' + closeText + '"><button class="lightbox-close" type="button" aria-label="' + closeText + '"><i class="fa fa-times" aria-hidden="true"></i></button><img class="lightbox-image" alt=""><div class="lightbox-caption"></div></div>';
+  document.body.appendChild(overlay);
+
+  var dialog = overlay.querySelector('.lightbox-dialog');
+  var image = overlay.querySelector('.lightbox-image');
+  var caption = overlay.querySelector('.lightbox-caption');
+  var closeBtn = overlay.querySelector('.lightbox-close');
+  var activeTrigger = null;
+
+  function closeLightbox() {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('lightbox-open');
+    image.removeAttribute('src');
+    image.alt = '';
+    caption.textContent = '';
+    if (activeTrigger && activeTrigger.focus) activeTrigger.focus();
+    activeTrigger = null;
+  }
+
+  function openLightbox(trigger) {
+    activeTrigger = trigger;
+    image.src = trigger.getAttribute('href');
+    image.alt = trigger.querySelector('img') ? (trigger.querySelector('img').getAttribute('alt') || '') : '';
+    caption.textContent = trigger.getAttribute('data-caption') || '';
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('lightbox-open');
+    closeBtn.focus();
+  }
+
+  triggers.forEach(function (trigger) {
+    trigger.addEventListener('click', function (event) {
+      event.preventDefault();
+      openLightbox(trigger);
+    });
+  });
+
+  closeBtn.addEventListener('click', closeLightbox);
+  overlay.addEventListener('click', function (event) {
+    if (event.target === overlay) closeLightbox();
+  });
+  dialog.addEventListener('click', function (event) {
+    event.stopPropagation();
+  });
+  window.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && overlay.classList.contains('open')) {
+      closeLightbox();
+    }
+  });
+}
+
+function initYear() {
     document.querySelectorAll('[data-year]').forEach(function (node) {
       node.textContent = new Date().getFullYear();
     });
@@ -200,6 +262,7 @@
     initCopy();
     initBackToTop();
     initReveal();
+    initLightbox();
     initYear();
   });
 })();

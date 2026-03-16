@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>访问统计 · 闫士博</title>
-  <meta name="description" content="闫士博访问统计页：保留公开站点计数与本机本地记录，统一呈现并避免统计脚本失败时影响主要内容体验。">
+  <meta name="description" content="闫士博主页的公开访问统计与本机访问记录页面。">
   <meta name="theme-color" content="#f4f7ff">
   <meta name="color-scheme" content="light dark">
   <link rel="icon" href="./Homepage_files/index.ico" type="image/x-icon">
@@ -15,55 +15,49 @@
   <link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/stats.html">
   <meta property="og:type" content="website">
   <meta property="og:title" content="访问统计 · 闫士博">
-  <meta property="og:description" content="闫士博访问统计页：保留公开站点计数与本机本地记录，统一呈现并避免统计脚本失败时影响主要内容体验。">
+  <meta property="og:description" content="闫士博主页的公开访问统计与本机访问记录页面。">
   <meta property="og:url" content="https://yan-shibo.github.io/stats.html">
   <meta property="og:site_name" content="ShiBo Yan">
   <meta property="og:locale" content="zh_CN">
-  
+  <meta property="og:image" content="https://yan-shibo.github.io/Homepage_files/photo.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="访问统计 · 闫士博">
-  <meta name="twitter:description" content="闫士博访问统计页：保留公开站点计数与本机本地记录，统一呈现并避免统计脚本失败时影响主要内容体验。">
-  
+  <meta name="twitter:description" content="闫士博主页的公开访问统计与本机访问记录页面。">
+  <meta name="twitter:image" content="https://yan-shibo.github.io/Homepage_files/photo.jpg">
   <link rel="preconnect" href="https://busuanzi.icodeq.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="preconnect" href="https://events.vercount.one">
   <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link href="./resource/css/site.css" rel="stylesheet">
-  
-  <script defer src="https://events.vercount.one/js"></script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Person", "name": "闫士博", "alternateName": "ShiBo Yan", "url": "https://yan-shibo.github.io/", "image": "https://yan-shibo.github.io/Homepage_files/photo.jpg", "email": "mailto:y423314860@163.com", "alumniOf": {"@type": "CollegeOrUniversity", "name": "Southwest University"}, "homeLocation": {"@type": "Place", "name": "Chongqing, China"}}</script>
   <script defer src="./resource/js/site.js"></script>
+  <script defer src="https://events.vercount.one/js"></script>
+  <script defer src="./resource/js/stats.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">跳到正文</a>
-
-
 <header class="site-header">
   <div class="header-shell">
     <a class="brand" href="index.html">
       <span class="brand-mark" aria-hidden="true"></span>
       <span class="brand-text">
         <strong>闫士博 / ShiBo Yan</strong>
-        <span>随机控制系统 · 形式化方法 · 安全验证</span>
+        <span>随机系统 · Reach-Avoid 控制 · 形式化验证</span>
       </span>
     </a>
-
     <nav class="site-nav" aria-label="Primary">
       <a class="nav-link" href="index.html">主页</a>
 <a class="nav-link" href="introduction.html">个人档案</a>
 <a class="nav-link" href="research.html">研究方向</a>
 <a class="nav-link" href="projects.html">项目展示</a>
-<a class="nav-link" href="resume_online.html">在线简历</a>
-<a class="nav-link" href="resume.html">PDF简历</a>
+<a class="nav-link" href="resume.html">简历</a>
 <a class="nav-link" href="stats.html" aria-current="page">访问统计</a>
     </nav>
-
     <div class="header-actions">
-      
-    <div class="lang-switch" aria-label="Language switch">
-      <a class="active" href="./stats.html" lang="zh-CN">中</a>
-      <a class="" href="./en/stats.html" lang="en">EN</a>
-    </div>
-    
+      <div class="lang-switch" aria-label="Language switch">
+  <a class="active" href="./stats.html" lang="zh-CN">中</a>
+  <a class="" href="./en/stats.html" lang="en">EN</a>
+</div>
       <button class="icon-btn" type="button" data-theme-toggle data-label-dark="深色" data-label-light="浅色" aria-label="Toggle theme">
         <i class="fa fa-moon-o" aria-hidden="true"></i>
         <span class="visually-hidden theme-label">深色</span>
@@ -74,9 +68,8 @@
     </div>
   </div>
 </header>
-
 <div class="drawer-backdrop" data-drawer-backdrop></div>
-<aside class="drawer" id="site-drawer" data-drawer aria-hidden="true" aria-label="导航">
+<aside class="drawer" id="site-drawer" data-drawer aria-hidden="true" aria-label="Navigation">
   <div class="drawer-header">
     <div>
       <strong>导航</strong>
@@ -91,17 +84,14 @@
 <a href="introduction.html">个人档案<i class="fa fa-angle-right" aria-hidden="true"></i></a>
 <a href="research.html">研究方向<i class="fa fa-angle-right" aria-hidden="true"></i></a>
 <a href="projects.html">项目展示<i class="fa fa-angle-right" aria-hidden="true"></i></a>
-<a href="resume_online.html">在线简历<i class="fa fa-angle-right" aria-hidden="true"></i></a>
-<a href="resume.html">PDF简历<i class="fa fa-angle-right" aria-hidden="true"></i></a>
+<a href="resume.html">简历<i class="fa fa-angle-right" aria-hidden="true"></i></a>
 <a href="stats.html" aria-current="page">访问统计<i class="fa fa-angle-right" aria-hidden="true"></i></a>
   </nav>
   <div class="drawer-group">
-    
     <div class="lang-switch" aria-label="Language switch">
-      <a class="active" href="./stats.html" lang="zh-CN">中</a>
-      <a class="" href="./en/stats.html" lang="en">EN</a>
-    </div>
-    
+  <a class="active" href="./stats.html" lang="zh-CN">中</a>
+  <a class="" href="./en/stats.html" lang="en">EN</a>
+</div>
   </div>
   <div class="drawer-group">
     <button class="button subtle" type="button" data-theme-toggle data-label-dark="深色" data-label-light="浅色">
@@ -110,115 +100,72 @@
     </button>
   </div>
 </aside>
-
 <main id="main-content" class="main-shell">
-  <section class="surface page-hero" data-reveal>
-    <div class="surface-inner">
-      <span class="eyebrow"><i class="fa fa-line-chart" aria-hidden="true"></i> Visitor Statistics</span>
-      <h1>把统计信息从“脚本堆叠”改成 <span class="gradient-text">可解释的仪表板</span></h1>
-      <p class="lead">
-        这一页保留公开访问统计和当前浏览器本地记录，继续沿用你原先能稳定工作的 Busuanzi + Vercount 双来源方案，
-        同时保留新版页面的统一视觉和优雅降级体验。
-      </p>
-    </div>
-  </section>
 
-  <section class="section-block">
-    <div id="stats-status" class="status-note" data-state="warn">正在获取公开访问统计（Busuanzi / Vercount）…</div>
-    <div class="stats-grid">
-      <article class="stat-card" data-reveal>
-        <div class="stat-label">公开全站访问量（PV）</div>
-        <div id="site-pv" class="stat-value">--</div>
-        <div class="stat-tip">由公开统计脚本提供，反映站点被浏览的累计次数。</div>
-      </article>
-      <article class="stat-card" data-reveal>
-        <div class="stat-label">公开独立访客（UV）</div>
-        <div id="site-uv" class="stat-value">--</div>
-        <div class="stat-tip">由公开统计脚本提供，反映去重后的访客数量估计值。</div>
-      </article>
-      <article class="stat-card" data-reveal>
-        <div class="stat-label">公开当前页访问量</div>
-        <div id="page-pv" class="stat-value">--</div>
-        <div class="stat-tip">只显示当前页面的公开累计浏览次数。</div>
-      </article>
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="stats-grid two">
-      <article class="stat-card" data-reveal>
-        <div class="stat-label">本机总访问次数</div>
-        <div id="local-total" class="stat-value">--</div>
-        <div class="stat-tip">只保存在当前浏览器中，不会上传到服务器。</div>
-      </article>
-      <article class="stat-card" data-reveal>
-        <div class="stat-label">本机当前页打开次数</div>
-        <div id="local-page" class="stat-value">--</div>
-        <div class="stat-tip">统计你在这台设备上打开本页的次数。</div>
-      </article>
-      <article class="stat-card" data-reveal>
-        <div class="stat-label">累计访问天数</div>
-        <div id="local-days" class="stat-value">--</div>
-        <div class="stat-tip">按自然日去重后的访问记录。</div>
-      </article>
-      <article class="stat-card" data-reveal>
-        <div class="stat-label">第一次访问 / 最近访问</div>
-        <div class="stat-value" style="font-size:1.1rem;line-height:1.6;">
-          <div id="local-first">--</div>
-          <div id="local-last">--</div>
-        </div>
-        <div class="stat-tip">这些记录只和当前浏览器相关，清空缓存后会重置。</div>
-      </article>
-    </div>
-  </section>
-
-  <section class="grid-2">
-    <article class="panel" data-reveal>
-      <span class="kicker">How it works</span>
-      <h3>这页的统计来源</h3>
-      <ul class="note-list">
-        <li>公开计数：恢复为 Busuanzi 与 Vercount 双来源读取，优先展示先返回的有效数字。</li>
-        <li>本机记录：使用 localStorage 保存，完全在当前浏览器本地完成。</li>
-        <li>第三方统计脚本若被广告拦截器屏蔽，本地记录仍会继续工作。</li>
-      </ul>
-    </article>
-    <article class="panel" data-reveal>
-      <span class="kicker">Why this is better</span>
-      <h3>相较原版的改进点</h3>
-      <ul class="note-list">
-        <li>保留新版的统一视觉，但把公开统计逻辑改回和原版一致的双来源兜底。</li>
-        <li>新增公开状态提示，用户能知道是“暂不可用”而不是“站点坏了”。</li>
-        <li>新增当前页本机访问次数，页面更有互动感。</li>
-      </ul>
-    </article>
-  </section>
-
-  <div class="hidden-counter" aria-hidden="true">
-    <span id="busuanzi_value_site_pv">--</span>
-    <span id="busuanzi_value_site_uv">--</span>
-    <span id="busuanzi_value_page_pv">--</span>
+<section class="surface page-hero" data-reveal>
+  <div class="section-title-wrap">
+    <span class="kicker">Stats</span>
+    <h1>访问统计</h1>
+    <p class="lead">这里保留两类数据：公开访问统计和当前浏览器的本地记录。公开统计优先显示可用来源中的有效值；本地记录只保存在你当前使用的浏览器中。</p>
   </div>
+</section>
 
-  <div class="hidden-counter" aria-hidden="true">
-    <span id="vercount_value_site_pv">--</span>
-    <span id="vercount_value_site_uv">--</span>
-    <span id="vercount_value_page_pv">--</span>
+<section class="section-block" data-reveal>
+  <div id="stats-status" class="status-note" data-state="warn">正在获取公开访问统计（Busuanzi / Vercount）…</div>
+  <div class="stats-grid">
+    <article class="stat-card"><div class="stat-label">全站访问</div><div class="stat-value" id="site-pv">--</div><div class="stat-tip">第三方公开计数器返回的站点总访问量</div></article>
+    <article class="stat-card"><div class="stat-label">独立访客</div><div class="stat-value" id="site-uv">--</div><div class="stat-tip">第三方公开计数器返回的独立访客量</div></article>
+    <article class="stat-card"><div class="stat-label">当前页访问</div><div class="stat-value" id="page-pv">--</div><div class="stat-tip">当前页面对应的公开访问量</div></article>
   </div>
+</section>
+
+<section class="section-block" data-reveal>
+  <div class="section-header"><div class="section-title-wrap"><span class="kicker">Local record</span><h2>当前浏览器里的本地记录</h2><p>这部分数据仅保存在当前浏览器，换设备、清缓存或无痕模式都会重置。</p></div></div>
+  <div class="stats-grid two">
+    <article class="stat-card"><div class="stat-label">本机累计访问</div><div class="stat-value" id="local-total">--</div></article>
+    <article class="stat-card"><div class="stat-label">当前页本机访问</div><div class="stat-value" id="local-page">--</div></article>
+    <article class="stat-card"><div class="stat-label">活跃天数</div><div class="stat-value" id="local-days">--</div></article>
+    <article class="stat-card"><div class="stat-label">首次本机访问</div><div class="stat-value small-value" id="local-first">--</div></article>
+    <article class="stat-card"><div class="stat-label">最近一次本机访问</div><div class="stat-value small-value" id="local-last">--</div></article>
+  </div>
+</section>
+
+<section class="section-block" data-reveal>
+  <div class="section-header"><div class="section-title-wrap"><span class="kicker">Notes</span><h2>说明</h2></div></div>
+  <ul class="note-list">
+    <li>公开统计依赖第三方脚本。如果浏览器扩展、网络环境或隐私设置拦截了脚本，数字可能暂时显示为 “--”。</li>
+    <li>现在页面会同时读取 Busuanzi 与 Vercount 的结果，只要其中一方先返回有效值，就会显示出来。</li>
+    <li>主页首页也同步接入了这一套公开统计逻辑。</li>
+  </ul>
+</section>
+
+<div class="hidden-counter" aria-hidden="true">
+  <span id="busuanzi_value_site_pv">--</span>
+  <span id="busuanzi_value_site_uv">--</span>
+  <span id="busuanzi_value_page_pv">--</span>
+</div>
+<div class="hidden-counter" aria-hidden="true">
+  <span id="vercount_value_site_pv">--</span>
+  <span id="vercount_value_site_uv">--</span>
+  <span id="vercount_value_page_pv">--</span>
+</div>
+
 </main>
-
 <footer class="footer-shell">
   <div class="footer-card">
-    <div><strong>让内容更像研究者主页，而不是信息堆叠页。</strong><p>这套改版统一了视觉系统、移动端导航、暗色模式、结构化数据、英文独立链接与无障碍细节。</p></div>
     <div>
-      <div class="footer-actions"><a class="button small" href="mailto:y423314860@163.com"><i class="fa fa-envelope-o" aria-hidden="true"></i> y423314860@163.com</a><button class="button small subtle" type="button" data-copy="y423314860@163.com" data-copied-label="已复制"><i class="fa fa-copy" aria-hidden="true"></i> <span class="copy-label">复制邮箱</span></button><a class="button small subtle" href="index.html"><i class="fa fa-home" aria-hidden="true"></i> 返回主页</a></div>
-      <div style="margin-top:12px;"><p>© <span data-year></span> ShiBo Yan. Built with static HTML, CSS and JS.</p></div>
+      <p>© ShiBo Yan. Static site built with HTML, CSS and JavaScript.</p>
+    </div>
+    <div class="footer-actions">
+      <a class="button small subtle" href="mailto:y423314860@163.com"><i class="fa fa-envelope-o" aria-hidden="true"></i> 邮箱</a>
+      <a class="button small subtle" href="https://github.com/Yan-ShiBo" target="_blank" rel="noopener"><i class="fa fa-github" aria-hidden="true"></i> GitHub</a>
+      <a class="button small subtle" href="./docs/Shibo-Yan-Research-Paper.pdf" target="_blank" rel="noopener"><i class="fa fa-file-text-o" aria-hidden="true"></i> 论文 PDF</a>
+      <button class="button small subtle" type="button" data-back-to-top><i class="fa fa-arrow-up" aria-hidden="true"></i> 返回顶部</button>
     </div>
   </div>
 </footer>
 <button class="icon-btn back-to-top" type="button" data-back-to-top aria-label="Back to top">
   <i class="fa fa-arrow-up" aria-hidden="true"></i>
 </button>
-
-<script defer src="./resource/js/stats.js"></script>
 </body>
 </html>
