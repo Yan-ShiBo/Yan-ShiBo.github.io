@@ -21,15 +21,17 @@
   <meta property="og:locale" content="en_US">
   
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Visitor Stats · ShiBo Yan">
-  <meta name="twitter:description" content="ShiBo Yan&#x27;s stats page showing public site counters and local browser-based visit records with graceful fallback when third-party counters fail.">
+  <meta name="twitter:title" content="访问统计 · 闫士博">
+  <meta name="twitter:description" content="闫士博访问统计页：保留公开站点计数与本机本地记录，统一呈现并避免统计脚本失败时影响主要内容体验。">
   
   <link rel="preconnect" href="https://busuanzi.icodeq.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link href="../resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <link href="../resource/css/site.css" rel="stylesheet">
+  <link rel="preconnect" href="https://events.vercount.one">
+  <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="./resource/css/site.css" rel="stylesheet">
   
-  <script defer src="../resource/js/site.js"></script>
+  <script defer src="https://events.vercount.one/js"></script>
+  <script defer src="./resource/js/site.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -194,6 +196,12 @@
     <span id="busuanzi_value_site_pv">--</span>
     <span id="busuanzi_value_site_uv">--</span>
     <span id="busuanzi_value_page_pv">--</span>
+  </div>
+
+  <div class="hidden-counter" aria-hidden="true">
+    <span id="vercount_value_site_pv">--</span>
+    <span id="vercount_value_site_uv">--</span>
+    <span id="vercount_value_page_pv">--</span>
   </div>
 </main>
 
