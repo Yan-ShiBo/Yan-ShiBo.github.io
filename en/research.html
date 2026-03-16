@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Research · ShiBo Yan</title>
-  <meta name="description" content="ShiBo Yan&#x27;s research page covering stochastic control systems, formal methods and safety verification, reach-avoid control, RL-aided controller synthesis, PAC approximation, and SOS optimization.">
+  <meta name="description" content="Research page of ShiBo Yan, focused on reach-avoid control for stochastic systems, learning-aided controller synthesis, PAC approximation, and stochastic barrier certificates.">
   <meta name="theme-color" content="#f4f7ff">
   <meta name="color-scheme" content="light dark">
   <link rel="icon" href="../Homepage_files/index.ico" type="image/x-icon">
@@ -15,245 +15,29 @@
   <link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/research.html">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Research · ShiBo Yan">
-  <meta property="og:description" content="ShiBo Yan&#x27;s research page covering stochastic control systems, formal methods and safety verification, reach-avoid control, RL-aided controller synthesis, PAC approximation, and SOS optimization.">
+  <meta property="og:description" content="Research page of ShiBo Yan, focused on reach-avoid control for stochastic systems, learning-aided controller synthesis, PAC approximation, and stochastic barrier certificates.">
   <meta property="og:url" content="https://yan-shibo.github.io/en/research.html">
   <meta property="og:site_name" content="ShiBo Yan">
   <meta property="og:locale" content="en_US">
-  
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Research · ShiBo Yan">
-  <meta name="twitter:description" content="ShiBo Yan&#x27;s research page covering stochastic control systems, formal methods and safety verification, reach-avoid control, RL-aided controller synthesis, PAC approximation, and SOS optimization.">
-  
-  <link rel="preconnect" href="https://busuanzi.icodeq.com">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <meta name="twitter:description" content="Research page of ShiBo Yan, focused on reach-avoid control for stochastic systems, learning-aided controller synthesis, PAC approximation, and stochastic barrier certificates.">
   <link href="../resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link href="../resource/css/site.css" rel="stylesheet">
-  
   <script defer src="../resource/js/site.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
-
-
-<header class="site-header">
-  <div class="header-shell">
-    <a class="brand" href="index.html">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-text">
-        <strong>闫士博 / ShiBo Yan</strong>
-        <span>Stochastic Control · Formal Methods · Safety Verification</span>
-      </span>
-    </a>
-
-    <nav class="site-nav" aria-label="Primary">
-      <a class="nav-link" href="index.html">Home</a>
-<a class="nav-link" href="introduction.html">Profile</a>
-<a class="nav-link" href="research.html" aria-current="page">Research</a>
-<a class="nav-link" href="projects.html">Projects</a>
-<a class="nav-link" href="resume_online.html">Resume</a>
-<a class="nav-link" href="resume.html">PDF CV</a>
-<a class="nav-link" href="stats.html">Stats</a>
-    </nav>
-
-    <div class="header-actions">
-      
-    <div class="lang-switch" aria-label="Language switch">
-      <a class="" href="../research.html" lang="zh-CN">中</a>
-      <a class="active" href="./research.html" lang="en">EN</a>
-    </div>
-    
-      <button class="icon-btn" type="button" data-theme-toggle data-label-dark="Dark" data-label-light="Light" aria-label="Toggle theme">
-        <i class="fa fa-moon-o" aria-hidden="true"></i>
-        <span class="visually-hidden theme-label">Dark</span>
-      </button>
-      <button class="icon-btn menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-drawer" aria-label="Open navigation">
-        <i class="fa fa-bars" aria-hidden="true"></i>
-      </button>
-    </div>
-  </div>
-</header>
-
+<header class="site-header"><div class="header-shell"><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-text"><strong>闫士博 / ShiBo Yan</strong><span>Stochastic Systems · Reach-Avoid Control · Formal Verification</span></span></a><nav class="site-nav" aria-label="Primary"><a class="nav-link" href="index.html">Home</a><a class="nav-link" href="introduction.html">Profile</a><a class="nav-link" href="research.html" aria-current="page">Research</a><a class="nav-link" href="projects.html">Projects</a><a class="nav-link" href="resume.html">Resume</a><a class="nav-link" href="stats.html">Stats</a></nav><div class="header-actions"><div class="lang-switch" aria-label="Language switch"><a href="../research.html" lang="zh-CN">中</a><a class="active" href="./research.html" lang="en">EN</a></div><button class="icon-btn" type="button" data-theme-toggle data-label-dark="Dark" data-label-light="Light" aria-label="Toggle theme"><i class="fa fa-moon-o" aria-hidden="true"></i><span class="visually-hidden theme-label">Dark</span></button><button class="icon-btn menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-drawer" aria-label="Open navigation"><i class="fa fa-bars" aria-hidden="true"></i></button></div></div></header>
 <div class="drawer-backdrop" data-drawer-backdrop></div>
-<aside class="drawer" id="site-drawer" data-drawer aria-hidden="true" aria-label="Menu">
-  <div class="drawer-header">
-    <div>
-      <strong>Menu</strong>
-      <div style="color:var(--muted);font-size:.92rem;">闫士博 / ShiBo Yan</div>
-    </div>
-    <button class="icon-btn" type="button" data-menu-close aria-label="Close">
-      <i class="fa fa-times" aria-hidden="true"></i>
-    </button>
-  </div>
-  <nav class="drawer-nav" aria-label="Mobile">
-    <a href="index.html">Home<i class="fa fa-angle-right" aria-hidden="true"></i></a>
-<a href="introduction.html">Profile<i class="fa fa-angle-right" aria-hidden="true"></i></a>
-<a href="research.html" aria-current="page">Research<i class="fa fa-angle-right" aria-hidden="true"></i></a>
-<a href="projects.html">Projects<i class="fa fa-angle-right" aria-hidden="true"></i></a>
-<a href="resume_online.html">Resume<i class="fa fa-angle-right" aria-hidden="true"></i></a>
-<a href="resume.html">PDF CV<i class="fa fa-angle-right" aria-hidden="true"></i></a>
-<a href="stats.html">Stats<i class="fa fa-angle-right" aria-hidden="true"></i></a>
-  </nav>
-  <div class="drawer-group">
-    
-    <div class="lang-switch" aria-label="Language switch">
-      <a class="" href="../research.html" lang="zh-CN">中</a>
-      <a class="active" href="./research.html" lang="en">EN</a>
-    </div>
-    
-  </div>
-  <div class="drawer-group">
-    <button class="button subtle" type="button" data-theme-toggle data-label-dark="Dark" data-label-light="Light">
-      <i class="fa fa-adjust" aria-hidden="true"></i>
-      <span class="theme-label">Dark</span>
-    </button>
-  </div>
-</aside>
-
+<aside class="drawer" id="site-drawer" data-drawer aria-hidden="true" aria-label="Navigation"><div class="drawer-header"><div><strong>Navigation</strong><div style="color:var(--muted);font-size:.92rem;">闫士博 / ShiBo Yan</div></div><button class="icon-btn" type="button" data-menu-close aria-label="Close"><i class="fa fa-times" aria-hidden="true"></i></button></div><nav class="drawer-nav" aria-label="Mobile"><a href="index.html">Home<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="introduction.html">Profile<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="research.html" aria-current="page">Research<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="projects.html">Projects<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="resume.html">Resume<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="stats.html">Stats<i class="fa fa-angle-right" aria-hidden="true"></i></a></nav><div class="drawer-group"><div class="lang-switch" aria-label="Language switch"><a href="../research.html" lang="zh-CN">中</a><a class="active" href="./research.html" lang="en">EN</a></div></div><div class="drawer-group"><button class="button subtle" type="button" data-theme-toggle data-label-dark="Dark" data-label-light="Light"><i class="fa fa-adjust" aria-hidden="true"></i><span class="theme-label">Dark</span></button></div></aside>
 <main id="main-content" class="main-shell">
-  <section class="surface page-hero" data-reveal>
-    <div class="surface-inner">
-      <span class="eyebrow"><i class="fa fa-compass" aria-hidden="true"></i> Research Direction</span>
-      <h1>Research is not about stacking buzzwords, but about building a <span class="gradient-text">computable, verifiable, and reproducible</span> safety pipeline</h1>
-      <p class="lead">
-        My current theme can be summarized as <strong>Learning-Aided Reach-Avoid Controller Synthesis with Formal Guarantees for Stochastic Systems</strong>.
-        I work on safe control for nonlinear stochastic systems, aiming to find a practical balance between the flexibility of learning-based policy search and the reliability of formal guarantees.
-      </p>
-      <div class="action-row">
-        <a class="button primary" href="projects.html"><i class="fa fa-code" aria-hidden="true"></i> View Related Projects</a>
-        <a class="button" href="resume_online.html"><i class="fa fa-id-card-o" aria-hidden="true"></i> Resume Summary</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="grid-3">
-      <article class="panel" data-reveal>
-        <span class="feature-icon"><i class="fa fa-random" aria-hidden="true"></i></span>
-        <h3>Stochastic control systems</h3>
-        <p>In the presence of noise and uncertainty, a controller should do more than act—it should maintain safety in a probabilistic sense.</p>
-      </article>
-      <article class="panel" data-reveal>
-        <span class="feature-icon"><i class="fa fa-lock" aria-hidden="true"></i></span>
-        <h3>Safety verification</h3>
-        <p>The goal is to connect controller outputs with explicit safety specifications rather than relying only on empirical behavior.</p>
-      </article>
-      <article class="panel" data-reveal>
-        <span class="feature-icon"><i class="fa fa-superpowers" aria-hidden="true"></i></span>
-        <h3>Learning-aided synthesis</h3>
-        <p>Learning helps explore complex policy spaces, while formal tools provide the post-verification layer needed for trustworthiness.</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="section-header" data-reveal>
-      <div class="section-title-wrap">
-        <span class="kicker">Method Map</span>
-        <h2>Core methodological stack</h2>
-        <p>This page is designed to express your real research identity, not just your topic label.</p>
-      </div>
-    </div>
-    <div class="grid-2">
-      <article class="panel" data-reveal>
-        <h3>Reach-Avoid specifications</h3>
-        <p>I study how systems can avoid unsafe sets while still reaching target sets or preserving acceptable behavior trajectories.</p>
-      </article>
-      <article class="panel" data-reveal>
-        <h3>Stochastic barrier-like certificates</h3>
-        <p>These certificates provide a verifiable mathematical vehicle for reasoning about safety probability bounds in stochastic systems.</p>
-      </article>
-      <article class="panel" data-reveal>
-        <h3>PAC polynomial approximation</h3>
-        <p>This helps bridge approximation quality and probabilistic guarantees, balancing tractability with theoretical reliability.</p>
-      </article>
-      <article class="panel" data-reveal>
-        <h3>SOS optimization</h3>
-        <p>Sum-of-squares optimization turns some nonlinear verification tasks into tractable semidefinite programming pipelines.</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="section-header" data-reveal>
-      <div class="section-title-wrap">
-        <span class="kicker">Workflow</span>
-        <h2>Current research workflow</h2>
-      </div>
-    </div>
-    <div class="flow">
-      <article class="flow-step" data-reveal>
-        <h3>Specification</h3>
-        <p>Define stochastic dynamics, safe sets, target sets, and the reach-avoid objective.</p>
-      </article>
-      <article class="flow-step" data-reveal>
-        <h3>Policy Search</h3>
-        <p>Use RL or approximation-driven methods to generate candidate controllers in complex state spaces.</p>
-      </article>
-      <article class="flow-step" data-reveal>
-        <h3>Certificate Design</h3>
-        <p>Construct barrier-like certificates that connect policy behavior to safety boundaries.</p>
-      </article>
-      <article class="flow-step" data-reveal>
-        <h3>Optimization</h3>
-        <p>Use PAC approximation and SOS tools for solving, tuning, and validating the verification problem.</p>
-      </article>
-      <article class="flow-step" data-reveal>
-        <h3>Formal Guarantee</h3>
-        <p>Produce conclusions that are interpretable and reviewable instead of relying only on experimental screenshots.</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="grid-2">
-      <article class="panel" data-reveal>
-        <span class="kicker">Current status</span>
-        <h3>Papers and current stage</h3>
-        <ul class="note-list">
-          <li>Current paper status: <strong>under review</strong>.</li>
-          <li>The research narrative is now expressed as a “problem → method → guarantee” chain, which is easier for peers and advisors to understand.</li>
-          <li>Useful future links to add: Google Scholar, GitHub, ORCID, and arXiv once papers become public.</li>
-        </ul>
-      </article>
-      <article class="panel" data-reveal>
-        <span class="kicker">What this page fixes</span>
-        <h3>Why a dedicated research page matters</h3>
-        <ul class="note-list">
-          <li>The original homepage compressed all academic content into one dense paragraph, which reduced structural clarity.</li>
-          <li>With a dedicated research page, the homepage attracts attention while this page supports professional judgment.</li>
-          <li>This page is more suitable for sharing with advisors, collaborators, lab members, and academic contacts.</li>
-        </ul>
-      </article>
-    </div>
-  </section>
-
-  <section class="section-block" data-reveal>
-    <div class="code-surface">
-<pre>Research Keywords
-────────────────────────────────────────────
-Stochastic Control Systems
-Formal Methods and Safety Verification
-Reach-Avoid Control
-RL-Aided Controller Synthesis
-Stochastic Barrier-like Certificates
-PAC Approximation
-Sum-of-Squares Optimization</pre>
-    </div>
-  </section>
+<section class="surface page-hero" data-reveal><div class="section-title-wrap"><span class="kicker">Research</span><h1><span class="gradient-text">Reach-avoid control with probabilistic guarantees</span> for stochastic systems</h1><p class="lead">My current research focuses on reach-avoid control for stochastic systems. The system evolves under random disturbance, the controller should guide it toward a target set while keeping it away from unsafe regions, and the conclusion should come with a formal probability lower bound rather than rely on simulation alone. What matters most to me now is how learning, approximation, certification, and iteration can be connected into one usable research pipeline.</p><div class="action-row"><a class="button primary" href="resume.html"><i class="fa fa-id-card-o" aria-hidden="true"></i> Resume & materials</a><a class="button" href="projects.html"><i class="fa fa-code-fork" aria-hidden="true"></i> Projects</a></div></div></section>
+<section class="section-block" data-reveal><div class="section-header"><div class="section-title-wrap"><span class="kicker">Problem setting</span><h2>What is the concrete problem?</h2><p>In one sentence: once the initial set, target set, unsafe set, and required probability threshold are fixed, how can we obtain a controller that both works in control terms and comes with a formal lower bound on the success probability?</p></div></div><div class="grid-4"><article class="panel"><div class="feature-icon"><i class="fa fa-map-o" aria-hidden="true"></i></div><h3>Task definition</h3><p>I study infinite-horizon reach-avoid problems for discrete-time stochastic dynamical systems under explicit initial, target, unsafe, and probability requirements.</p></article><article class="panel"><div class="feature-icon"><i class="fa fa-bolt" aria-hidden="true"></i></div><h3>Candidate controller</h3><p>A reinforcement learning policy is first used as a workable starting point so the system already has a strong candidate controller.</p></article><article class="panel"><div class="feature-icon"><i class="fa fa-superscript" aria-hidden="true"></i></div><h3>Verifiable approximation</h3><p>The neural controller is then rewritten into a polynomial form that is more suitable for formal reasoning and optimization.</p></article><article class="panel"><div class="feature-icon"><i class="fa fa-shield" aria-hidden="true"></i></div><h3>Probability guarantee</h3><p>Stochastic barrier-like certificates together with SOS / SDP are used to compute the formal lower bound and indicate where the next iteration should go.</p></article></div></section>
+<section class="section-block" data-reveal><div class="grid-2"><article class="panel"><span class="kicker">Method chain</span><h3>The current pipeline</h3><div class="flow flow-stacked"><div class="flow-step"><h3>1. Write the specification clearly</h3><p>Fix the initial set, target set, unsafe set, and the probability requirement.</p></div><div class="flow-step"><h3>2. Learn a reference policy</h3><p>SAC is currently used to train a candidate controller that provides a strong starting point.</p></div><div class="flow-step"><h3>3. Build a PAC-guided approximation</h3><p>The learned controller is converted into a polynomial form that is easier to certify and optimize over.</p></div><div class="flow-step"><h3>4. Solve for certificates and bounds</h3><p>Stochastic barrier-like certificates and SOS / SDP are used to produce the probability lower bound.</p></div><div class="flow-step"><h3>5. Iterate when needed</h3><p>If the first result is still conservative, the next step is to update the controller or the certificate template rather than stop there.</p></div></div></article><article class="panel"><span class="kicker">What I care about</span><h3>Why this pipeline matters to me</h3><ul class="note-list"><li>I am not interested in treating learning and verification as two disconnected tasks.</li><li>The real goal is to connect policy learning, verifiable approximation, certification, and update decisions into one process.</li><li>That is also why I care about controller complexity, certificate complexity, and the direction of the next iteration—not only whether one simulation run looks good.</li></ul></article></div></section>
+<section class="section-block" data-reveal><div class="grid-2"><article class="panel"><span class="kicker">Related literature</span><h3>How this relates to verification-oriented work</h3><p>Work such as <em>Policy Verification in Stochastic Dynamical Systems Using Logarithmic Neural Certificates</em> is very relevant because it shows how high-probability reach-avoid specifications can be verified once a neural controller is already given.</p></article><article class="panel"><span class="kicker">My present focus</span><h3>Where my current work starts earlier</h3><p>My present focus begins one step earlier. The controller is not assumed to be fixed. It needs to be learned first, then converted into a certifiable form, and only then pushed through certificate solving and possible iteration. What matters most to me is how these stages can be connected into one usable workflow.</p></article></div></section>
+<section class="section-block" data-reveal><div class="section-header"><div class="section-title-wrap"><span class="kicker">Next step</span><h2>What I want to improve next</h2></div></div><div class="grid-4"><article class="panel"><h3>Controller updates</h3><p>I want to keep updating the controller when the first certified result is still conservative.</p></article><article class="panel"><h3>Better PAC approximation</h3><p>The trade-off among polynomial degree, sample size, and approximation error still needs to be improved.</p></article><article class="panel"><h3>More expressive certificates</h3><p>Harder geometries and higher-dimensional systems will require stronger certificate templates and steadier solvers.</p></article><article class="panel"><h3>More complex settings</h3><p>I also want to move toward more complex dynamics and tighter coordination between learning and verification.</p></article></div></section>
 </main>
-
-<footer class="footer-shell">
-  <div class="footer-card">
-    <div><strong>A portfolio site should feel curated, not crowded.</strong><p>This redesign unifies the visual language, mobile navigation, dark mode, structured data, standalone English URLs, and accessibility details.</p></div>
-    <div>
-      <div class="footer-actions"><a class="button small" href="mailto:y423314860@163.com"><i class="fa fa-envelope-o" aria-hidden="true"></i> y423314860@163.com</a><button class="button small subtle" type="button" data-copy="y423314860@163.com" data-copied-label="Copied"><i class="fa fa-copy" aria-hidden="true"></i> <span class="copy-label">Copy email</span></button><a class="button small subtle" href="index.html"><i class="fa fa-home" aria-hidden="true"></i> Home</a></div>
-      <div style="margin-top:12px;"><p>© <span data-year></span> ShiBo Yan. Built with static HTML, CSS and JS.</p></div>
-    </div>
-  </div>
-</footer>
-<button class="icon-btn back-to-top" type="button" data-back-to-top aria-label="Back to top">
-  <i class="fa fa-arrow-up" aria-hidden="true"></i>
-</button>
-
-</body>
-</html>
+<footer class="footer-shell"><div class="footer-card"><div><p>© ShiBo Yan. Static site built with HTML, CSS and JavaScript.</p></div><div class="footer-actions"><a class="button small subtle" href="mailto:y423314860@163.com"><i class="fa fa-envelope-o" aria-hidden="true"></i> Email</a><a class="button small subtle" href="https://github.com/Yan-ShiBo" target="_blank" rel="noopener"><i class="fa fa-github" aria-hidden="true"></i> GitHub</a><button class="button small subtle" type="button" data-back-to-top><i class="fa fa-arrow-up" aria-hidden="true"></i> Back to top</button></div></div></footer>
+<button class="icon-btn back-to-top" type="button" data-back-to-top aria-label="Back to top"><i class="fa fa-arrow-up" aria-hidden="true"></i></button>
+</body></html>
