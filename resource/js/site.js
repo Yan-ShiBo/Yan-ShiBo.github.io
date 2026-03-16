@@ -182,7 +182,10 @@
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.14 });
+    }, {
+      threshold: 0.01,
+      rootMargin: '0px 0px -8% 0px'
+    });
 
     nodes.forEach(function (node) { observer.observe(node); });
   }

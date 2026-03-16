@@ -1828,3 +1828,24 @@ body.lightbox-open{
     font-size:.92rem;
   }
 }
+
+
+#overview,
+#graduate,
+#undergraduate,
+#highschool,
+#junior,
+#primary{
+  scroll-margin-top:150px;
+}
+
+@media (max-width: 680px){
+  #overview,
+  #graduate,
+  #undergraduate,
+  #highschool,
+  #junior,
+  #primary{
+    scroll-margin-top:170px;
+  }
+}
