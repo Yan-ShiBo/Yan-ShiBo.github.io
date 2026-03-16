@@ -26,9 +26,11 @@
   
   <link rel="preconnect" href="https://busuanzi.icodeq.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://events.vercount.one">
   <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link href="./resource/css/site.css" rel="stylesheet">
   
+  <script defer src="https://events.vercount.one/js"></script>
   <script defer src="./resource/js/site.js"></script>
 </head>
 <body>
@@ -115,14 +117,14 @@
       <span class="eyebrow"><i class="fa fa-line-chart" aria-hidden="true"></i> Visitor Statistics</span>
       <h1>把统计信息从“脚本堆叠”改成 <span class="gradient-text">可解释的仪表板</span></h1>
       <p class="lead">
-        这一页保留公开访问统计和当前浏览器本地记录，但会在第三方脚本不可用时优雅降级，
-        避免整页只留下 “--” 或让用户误以为页面出错。
+        这一页保留公开访问统计和当前浏览器本地记录，继续沿用你原先能稳定工作的 Busuanzi + Vercount 双来源方案，
+        同时保留新版页面的统一视觉和优雅降级体验。
       </p>
     </div>
   </section>
 
   <section class="section-block">
-    <div id="stats-status" class="status-note" data-state="warn">正在获取公开访问统计…</div>
+    <div id="stats-status" class="status-note" data-state="warn">正在获取公开访问统计（Busuanzi / Vercount）…</div>
     <div class="stats-grid">
       <article class="stat-card" data-reveal>
         <div class="stat-label">公开全站访问量（PV）</div>
@@ -175,7 +177,7 @@
       <span class="kicker">How it works</span>
       <h3>这页的统计来源</h3>
       <ul class="note-list">
-        <li>公开计数：尝试从公开统计脚本加载，只作为展示趋势的轻量信息。</li>
+        <li>公开计数：恢复为 Busuanzi 与 Vercount 双来源读取，优先展示先返回的有效数字。</li>
         <li>本机记录：使用 localStorage 保存，完全在当前浏览器本地完成。</li>
         <li>第三方统计脚本若被广告拦截器屏蔽，本地记录仍会继续工作。</li>
       </ul>
@@ -184,7 +186,7 @@
       <span class="kicker">Why this is better</span>
       <h3>相较原版的改进点</h3>
       <ul class="note-list">
-        <li>不再同时把多套第三方统计细节直接暴露在主界面里。</li>
+        <li>保留新版的统一视觉，但把公开统计逻辑改回和原版一致的双来源兜底。</li>
         <li>新增公开状态提示，用户能知道是“暂不可用”而不是“站点坏了”。</li>
         <li>新增当前页本机访问次数，页面更有互动感。</li>
       </ul>
@@ -195,6 +197,12 @@
     <span id="busuanzi_value_site_pv">--</span>
     <span id="busuanzi_value_site_uv">--</span>
     <span id="busuanzi_value_page_pv">--</span>
+  </div>
+
+  <div class="hidden-counter" aria-hidden="true">
+    <span id="vercount_value_site_pv">--</span>
+    <span id="vercount_value_site_uv">--</span>
+    <span id="vercount_value_page_pv">--</span>
   </div>
 </main>
 

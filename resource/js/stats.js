@@ -1,4 +1,3 @@
-
 (function () {
   var PUBLIC_SCRIPT_CANDIDATES = [
     'https://busuanzi.icodeq.com/busuanzi.pure.mini.js',
@@ -19,20 +18,16 @@
 
   var i18n = {
     zh: {
-      loading: '正在获取公开访问统计…',
+      loading: '正在获取公开访问统计（Busuanzi / Vercount）…',
       ok: '公开访问统计已成功载入',
-      unavailable: '公开访问统计暂不可用，你的本机记录仍可正常显示。',
-      publicSitePv: '公开全站访问量',
-      publicSiteUv: '公开独立访客',
-      publicPagePv: '公开当前页访问量'
+      partial: '公开访问统计已载入，当前显示的是可用来源中的有效结果。',
+      unavailable: '公开访问统计暂不可用，你的本机记录仍可正常显示。'
     },
     en: {
-      loading: 'Loading public counters…',
+      loading: 'Loading public counters (Busuanzi / Vercount)…',
       ok: 'Public counters loaded successfully',
-      unavailable: 'Public counters are unavailable right now. Local visit records still work normally.',
-      publicSitePv: 'Public site PV',
-      publicSiteUv: 'Public site UV',
-      publicPagePv: 'Public page PV'
+      partial: 'Public counters loaded. Current values come from the available source.',
+      unavailable: 'Public counters are unavailable right now. Local visit records still work normally.'
     }
   };
 
@@ -62,6 +57,14 @@
     if (el) el.textContent = validCounter(value) ? value : '--';
   }
 
+  function pickCounter(ids) {
+    for (var i = 0; i < ids.length; i += 1) {
+      var value = readCounter(ids[i]);
+      if (validCounter(value)) return value;
+    }
+    return '--';
+  }
+
   function loadPublicScript(index) {
     if (index >= PUBLIC_SCRIPT_CANDIDATES.length) return;
     var script = document.createElement('script');
@@ -74,17 +77,29 @@
   }
 
   function syncPublicCounters() {
-    var sitePv = readCounter('busuanzi_value_site_pv');
-    var siteUv = readCounter('busuanzi_value_site_uv');
-    var pagePv = readCounter('busuanzi_value_page_pv');
+    var sitePv = pickCounter([
+      'busuanzi_value_site_pv',
+      'vercount_value_site_pv'
+    ]);
+    var siteUv = pickCounter([
+      'busuanzi_value_site_uv',
+      'vercount_value_site_uv'
+    ]);
+    var pagePv = pickCounter([
+      'busuanzi_value_page_pv',
+      'vercount_value_page_pv'
+    ]);
 
-    var found = validCounter(sitePv) || validCounter(siteUv) || validCounter(pagePv);
+    var validCount = 0;
+    if (validCounter(sitePv)) validCount += 1;
+    if (validCounter(siteUv)) validCount += 1;
+    if (validCounter(pagePv)) validCount += 1;
 
     writeValue('site-pv', sitePv);
     writeValue('site-uv', siteUv);
     writeValue('page-pv', pagePv);
 
-    return found;
+    return validCount;
   }
 
   function loadJSON(key, defaultValue) {
@@ -168,15 +183,23 @@
     var tries = 0;
     var timer = window.setInterval(function () {
       tries += 1;
-      if (syncPublicCounters()) {
+      var validCount = syncPublicCounters();
+      if (validCount === 3) {
         setStatus(text('ok'), 'ok');
         window.clearInterval(timer);
         return;
       }
-      if (tries >= 18) {
-        setStatus(text('unavailable'), 'warn');
+      if (validCount > 0) {
+        setStatus(text('partial'), 'ok');
+      }
+      if (tries >= 24) {
+        if (validCount > 0) {
+          setStatus(text('partial'), 'ok');
+        } else {
+          setStatus(text('unavailable'), 'warn');
+        }
         window.clearInterval(timer);
       }
-    }, 800);
+    }, 1000);
   });
 })();
