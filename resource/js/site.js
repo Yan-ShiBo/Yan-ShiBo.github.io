@@ -166,6 +166,45 @@
     });
   }
 
+    function initAnchorNav() {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.anchor-chip[href^="#"]'));
+    if (!links.length || !('IntersectionObserver' in window)) return;
+
+    var sections = links
+      .map(function (link) {
+        var id = link.getAttribute('href');
+        return id && id.length > 1 ? document.querySelector(id) : null;
+      })
+      .filter(Boolean);
+
+    function setCurrent(id) {
+      links.forEach(function (link) {
+        if (link.getAttribute('href') === '#' + id) {
+          link.setAttribute('aria-current', 'page');
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      });
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          setCurrent(entry.target.id);
+        }
+      });
+    }, {
+      rootMargin: '-45% 0px -45% 0px',
+      threshold: 0
+    });
+
+    sections.forEach(function (section) {
+      observer.observe(section);
+    });
+
+    if (sections[0]) setCurrent(sections[0].id);
+  }
+
   function initReveal() {
     var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var nodes = document.querySelectorAll('[data-reveal]');
@@ -265,6 +304,7 @@ function initYear() {
     initSpotlight();
     initCopy();
     initBackToTop();
+    initAnchorNav();
     initReveal();
     initLightbox();
     initYear();
