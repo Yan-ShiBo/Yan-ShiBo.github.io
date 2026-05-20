@@ -1153,7 +1153,8 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 .resume-main section + section{margin-top:32px}
 .resume-main h2{font-size:34px;margin-bottom:14px}
 .cv-grid{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:18px}
-.preview-frame,.pdf-preview{width:100%;border:1px solid var(--hairline);border-radius:var(--radius-lg);background:var(--canvas);overflow:hidden}
+.preview-frame,.pdf-preview{display:block;width:100%;border:1px solid var(--hairline);border-radius:var(--radius-lg);background:var(--canvas);overflow:hidden}
+.preview-frame{height:min(86vh, 1120px);min-height:720px}
 .pdf-preview{min-height:70vh}
 
 .project-card .headline{
@@ -1528,6 +1529,7 @@ body.lightbox-open{overflow:hidden}
   .proof-grid-compact{grid-template-columns:1fr;justify-content:stretch}
   .result-table{min-width:780px}
   .footer-card{padding:20px}
+  .preview-frame{height:72vh;min-height:520px;border-radius:var(--radius-md)}
   .pdf-preview{min-height:62vh}
   .lightbox{padding:12px}
   .lightbox-image{max-height:calc(100vh - 96px)}
