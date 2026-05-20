@@ -1,0 +1,1 @@
+Font files are intentionally not included in the delivered archive. Keep the original project folder `resource/font-awesome-4.7.0/fonts/` when replacing files, or apply `APPLE_REDESIGN_DIFF.patch` to your original repository so the existing font assets remain in place.

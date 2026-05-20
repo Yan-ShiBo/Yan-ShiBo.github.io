@@ -12,6 +12,14 @@
     days: 'ysb-visit-days'
   };
 
+  function getStorage() {
+    try {
+      return window.localStorage;
+    } catch (err) {
+      return null;
+    }
+  }
+
   function locale() {
     return document.documentElement.lang && document.documentElement.lang.toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en';
   }
@@ -103,8 +111,10 @@
   }
 
   function loadJSON(key, defaultValue) {
+    var storage = getStorage();
+    if (!storage) return defaultValue;
     try {
-      var raw = localStorage.getItem(key);
+      var raw = storage.getItem(key);
       if (!raw) return defaultValue;
       return JSON.parse(raw);
     } catch (err) {
@@ -113,8 +123,10 @@
   }
 
   function saveJSON(key, value) {
+    var storage = getStorage();
+    if (!storage) return;
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      storage.setItem(key, JSON.stringify(value));
     } catch (err) {
       /* ignore */
     }
@@ -141,37 +153,42 @@
   }
 
   function updateLocalCounters() {
-    if (!window.localStorage) return;
+    var storage = getStorage();
+    if (!storage) return;
 
-    var total = parseInt(localStorage.getItem(STORAGE_KEYS.total) || '0', 10) + 1;
-    localStorage.setItem(STORAGE_KEYS.total, String(total));
+    try {
+      var total = parseInt(storage.getItem(STORAGE_KEYS.total) || '0', 10) + 1;
+      storage.setItem(STORAGE_KEYS.total, String(total));
 
-    var firstVisit = localStorage.getItem(STORAGE_KEYS.first);
-    if (!firstVisit) {
-      firstVisit = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEYS.first, firstVisit);
+      var firstVisit = storage.getItem(STORAGE_KEYS.first);
+      if (!firstVisit) {
+        firstVisit = new Date().toISOString();
+        storage.setItem(STORAGE_KEYS.first, firstVisit);
+      }
+
+      var lastVisit = new Date().toISOString();
+      storage.setItem(STORAGE_KEYS.last, lastVisit);
+
+      var visitDays = loadJSON(STORAGE_KEYS.days, []);
+      var today = todayKey();
+      if (visitDays.indexOf(today) === -1) {
+        visitDays.push(today);
+        saveJSON(STORAGE_KEYS.days, visitDays);
+      }
+
+      var path = window.location.pathname || '/';
+      var pageKey = 'ysb-page:' + path;
+      var pageCount = parseInt(storage.getItem(pageKey) || '0', 10) + 1;
+      storage.setItem(pageKey, String(pageCount));
+
+      writeValue('local-total', String(total));
+      writeValue('local-page', String(pageCount));
+      writeValue('local-days', String(visitDays.length));
+      writeValue('local-first', formatDate(firstVisit));
+      writeValue('local-last', formatDate(lastVisit));
+    } catch (err) {
+      /* local counters are optional; public counters should still load */
     }
-
-    var lastVisit = new Date().toISOString();
-    localStorage.setItem(STORAGE_KEYS.last, lastVisit);
-
-    var visitDays = loadJSON(STORAGE_KEYS.days, []);
-    var today = todayKey();
-    if (visitDays.indexOf(today) === -1) {
-      visitDays.push(today);
-      saveJSON(STORAGE_KEYS.days, visitDays);
-    }
-
-    var path = window.location.pathname || '/';
-    var pageKey = 'ysb-page:' + path;
-    var pageCount = parseInt(localStorage.getItem(pageKey) || '0', 10) + 1;
-    localStorage.setItem(pageKey, String(pageCount));
-
-    writeValue('local-total', String(total));
-    writeValue('local-page', String(pageCount));
-    writeValue('local-days', String(visitDays.length));
-    writeValue('local-first', formatDate(firstVisit));
-    writeValue('local-last', formatDate(lastVisit));
   }
 
   document.addEventListener('DOMContentLoaded', function () {
