@@ -991,19 +991,100 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
   position:sticky;
   top:var(--header-h);
   z-index:90;
-  min-height:52px;
+  height:52px;
+  margin:0;
+  padding:0 var(--tile-pad-x);
   display:flex;
-  flex-wrap:wrap;
-  gap:8px;
   align-items:center;
-  padding:8px 0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  border:0;
+  border-bottom:1px solid rgba(0,0,0,.08);
+  border-radius:0;
   background:rgba(245,245,247,.82);
   backdrop-filter:saturate(180%) blur(20px);
-  border-bottom:1px solid var(--hairline);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  scrollbar-width:none;
 }
 
-.anchor-scroll{display:flex;flex-wrap:wrap;gap:8px}
-.anchor-chip:hover{text-decoration:none;color:var(--primary);border-color:var(--primary)}
+.anchor-bar::-webkit-scrollbar{display:none}
+
+:root[data-theme="dark"] .anchor-bar{
+  background:rgba(29,29,31,.82);
+  border-bottom-color:#333;
+}
+
+.anchor-scroll{
+  width:100%;
+  max-width:var(--max-site);
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-width:0;
+}
+
+.anchor-chip{
+  flex:0 0 auto;
+  min-height:36px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 15px;
+  border:1px solid var(--hairline);
+  border-radius:var(--radius-pill);
+  background:var(--canvas);
+  color:var(--ink);
+  text-decoration:none;
+  white-space:nowrap;
+  font-size:14px;
+  font-weight:400;
+  line-height:1.29;
+  letter-spacing:-.224px;
+  transition:color .16s ease, border-color .16s ease, transform .16s ease, background .16s ease;
+}
+
+.anchor-chip:hover,
+.anchor-chip[aria-current="page"]{
+  color:var(--primary);
+  border-color:var(--primary);
+}
+
+.anchor-chip:active{transform:scale(.95)}
+
+/* 避免 anchor-bar 下面第一屏空白过大 */
+.anchor-bar + .section-block{
+  padding-top:48px;
+}
+
+/* 点击页内锚点时，不让标题被 sticky 导航遮住 */
+.section-block[id],
+.timeline-stage[id]{
+  scroll-margin-top:calc(var(--header-h) + 64px);
+}
+
+@media (max-width:640px){
+  .anchor-bar{
+    padding:0 14px;
+  }
+
+  .anchor-scroll{
+    width:max-content;
+    min-width:100%;
+    justify-content:flex-start;
+  }
+
+  .anchor-chip{
+    min-height:34px;
+    padding:0 13px;
+    font-size:13px;
+  }
+
+  .anchor-bar + .section-block{
+    padding-top:40px;
+  }
+}
 
 .timeline-stage{
   position:relative;
