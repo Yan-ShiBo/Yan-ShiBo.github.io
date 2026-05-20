@@ -1,43 +1,141 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>研究方向 · 闫士博</title>
-  <meta name="description" content="闫士博的研究方向页，介绍随机系统 reach-avoid 控制、强化学习辅助控制器合成、PAC 近似与随机障碍证书。">
-  <meta name="theme-color" content="#f5f5f7">
-  <meta name="color-scheme" content="light dark">
-  <link rel="icon" href="./Homepage_files/index.ico" type="image/x-icon">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="canonical" href="https://yan-shibo.github.io/research.html">
-  <link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/research.html">
-  <link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/research.html">
-  <link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/research.html">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="研究方向 · 闫士博">
-  <meta property="og:description" content="闫士博的研究方向页，介绍随机系统 reach-avoid 控制、强化学习辅助控制器合成、PAC 近似与随机障碍证书。">
-  <meta property="og:url" content="https://yan-shibo.github.io/research.html">
-  <meta property="og:site_name" content="ShiBo Yan">
-  <meta property="og:locale" content="zh_CN">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="研究方向 · 闫士博">
-  <meta name="twitter:description" content="闫士博的研究方向页，介绍随机系统 reach-avoid 控制、强化学习辅助控制器合成、PAC 近似与随机障碍证书。">
-  <link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <link href="./resource/css/site.css" rel="stylesheet">
-  <script defer src="./resource/js/site.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>研究方向 · 闫士博</title>
+<meta content="闫士博的研究方向页，介绍随机系统 reach-avoid 控制、SAC 策略学习、PAC 近似与随机障碍证书。" name="description"/>
+<meta content="#f5f5f7" name="theme-color"/>
+<meta content="light dark" name="color-scheme"/>
+<link href="./Homepage_files/index.ico" rel="icon" type="image/x-icon"/>
+<link href="./manifest.webmanifest" rel="manifest"/>
+<link href="https://yan-shibo.github.io/research.html" rel="canonical"/>
+<link href="https://yan-shibo.github.io/research.html" hreflang="zh-CN" rel="alternate"/>
+<link href="https://yan-shibo.github.io/en/research.html" hreflang="en" rel="alternate"/>
+<link href="https://yan-shibo.github.io/research.html" hreflang="x-default" rel="alternate"/>
+<meta content="website" property="og:type"/>
+<meta content="研究方向 · 闫士博" property="og:title"/>
+<meta content="闫士博的研究方向页，介绍随机系统 reach-avoid 控制、SAC 策略学习、PAC 近似与随机障碍证书。" property="og:description"/>
+<meta content="https://yan-shibo.github.io/research.html" property="og:url"/>
+<meta content="ShiBo Yan" property="og:site_name"/>
+<meta content="zh_CN" property="og:locale"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="研究方向 · 闫士博" name="twitter:title"/>
+<meta content="闫士博的研究方向页，介绍随机系统 reach-avoid 控制、SAC 策略学习、PAC 近似与随机障碍证书。" name="twitter:description"/>
+<link href="./resource/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+<link href="./resource/css/site.css" rel="stylesheet"/>
+<script defer="" src="./resource/js/site.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">跳到正文</a>
-<header class="site-header"><div class="header-shell"><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-text"><strong>闫士博 / ShiBo Yan</strong><span>随机系统 · Reach-Avoid 控制 · 形式化验证</span></span></a><nav class="site-nav" aria-label="Primary"><a class="nav-link" href="index.html">主页</a><a class="nav-link" href="introduction.html">个人档案</a><a class="nav-link" href="research.html" aria-current="page">研究方向</a><a class="nav-link" href="projects.html">项目展示</a><a class="nav-link" href="resume.html">简历</a><a class="nav-link" href="stats.html">访问统计</a></nav><div class="header-actions"><div class="lang-switch" aria-label="Language switch"><a class="active" href="./research.html" lang="zh-CN">中</a><a href="./en/research.html" lang="en">EN</a></div><button class="icon-btn" type="button" data-theme-toggle data-label-dark="深色" data-label-light="浅色" aria-label="切换主题"><i class="fa fa-moon-o" aria-hidden="true"></i><span class="visually-hidden theme-label">深色</span></button><button class="icon-btn menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-drawer" aria-label="打开导航"><i class="fa fa-bars" aria-hidden="true"></i></button></div></div></header>
-<div class="drawer-backdrop" data-drawer-backdrop></div>
-<aside class="drawer" id="site-drawer" data-drawer aria-hidden="true" aria-label="Navigation"><div class="drawer-header"><div><strong>导航</strong><div style="color:var(--muted);font-size:.92rem;">闫士博 / ShiBo Yan</div></div><button class="icon-btn" type="button" data-menu-close aria-label="关闭"><i class="fa fa-times" aria-hidden="true"></i></button></div><nav class="drawer-nav" aria-label="Mobile"><a href="index.html">主页<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="introduction.html">个人档案<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="research.html" aria-current="page">研究方向<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="projects.html">项目展示<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="resume.html">简历<i class="fa fa-angle-right" aria-hidden="true"></i></a><a href="stats.html">访问统计<i class="fa fa-angle-right" aria-hidden="true"></i></a></nav><div class="drawer-group"><div class="lang-switch" aria-label="Language switch"><a class="active" href="./research.html" lang="zh-CN">中</a><a href="./en/research.html" lang="en">EN</a></div></div><div class="drawer-group"><button class="button subtle" type="button" data-theme-toggle data-label-dark="深色" data-label-light="浅色"><i class="fa fa-adjust" aria-hidden="true"></i><span class="theme-label">深色</span></button></div></aside>
-<main id="main-content" class="main-shell">
-<section class="surface page-hero" data-reveal><div class="section-title-wrap"><span class="kicker">Research</span><h1>随机系统中的 <span class="gradient-text">reach-avoid 控制与概率保证</span></h1><p class="lead">我现在主要研究随机系统里的 reach-avoid 控制：系统在随机扰动下运行，控制器既要尽量把状态带到目标区域，也要避免进入危险区域。现在更关心的是，怎样把策略学习、可求证近似和概率保证接成一条真正能反复迭代的方法链，而不是把它们分成互不相干的几块。</p><div class="action-row"><a class="button primary" href="resume.html"><i class="fa fa-id-card-o" aria-hidden="true"></i> 简历与材料</a><a class="button" href="projects.html"><i class="fa fa-code-fork" aria-hidden="true"></i> 项目展示</a></div></div></section>
-<section class="section-block" data-reveal><div class="section-header"><div class="section-title-wrap"><span class="kicker">Problem setting</span><h2>这个问题具体是什么</h2><p>如果只看一句话，那就是：在给定初始集、目标集、危险集和概率要求之后，怎样得到一个既能控制系统、又能给出明确概率下界的控制器。</p></div></div><div class="grid-4"><article class="panel"><div class="feature-icon"><i class="fa fa-map-o" aria-hidden="true"></i></div><h3>任务定义</h3><p>研究离散时间随机动力系统上的 infinite-horizon reach-avoid 问题，核心是目标集、危险集和概率阈值。</p></article><article class="panel"><div class="feature-icon"><i class="fa fa-bolt" aria-hidden="true"></i></div><h3>候选控制器</h3><p>先用强化学习得到一个可用的参考控制器，让系统先具备足够好的控制表现。</p></article><article class="panel"><div class="feature-icon"><i class="fa fa-superscript" aria-hidden="true"></i></div><h3>可求证近似</h3><p>再把神经控制器改写成更适合推理和优化求解的多项式形式，同时处理近似误差和置信度。</p></article><article class="panel"><div class="feature-icon"><i class="fa fa-shield" aria-hidden="true"></i></div><h3>概率保证</h3><p>通过随机障碍证书与 SOS / SDP 求解概率下界，并据此决定下一步还要不要继续迭代。</p></article></div></section>
-<section class="section-block" data-reveal><div class="grid-2"><article class="panel"><span class="kicker">Method chain</span><h3>现在的方法主线</h3><div class="flow flow-stacked"><div class="flow-step"><h3>1. 先把规格写清楚</h3><p>确定初始集、目标集、危险集和希望满足的概率要求。</p></div><div class="flow-step"><h3>2. 用 RL 学参考策略</h3><p>当前用 SAC 训练候选控制器，为后续求证提供一个性能较好的起点。</p></div><div class="flow-step"><h3>3. 做 PAC 多项式近似</h3><p>把神经控制器转成多项式控制器，让它能进入更可控的形式化求解环节。</p></div><div class="flow-step"><h3>4. 求证书和下界</h3><p>通过 stochastic barrier-like certificates 和 SOS / SDP 得到形式化的概率下界。</p></div><div class="flow-step"><h3>5. 根据需要继续更新</h3><p>如果第一次结果偏保守，就回到控制器或证书模板继续调整，而不是停在第一次求解上。</p></div></div></article><article class="panel"><span class="kicker">Why this matters</span><h3>我更关注什么</h3><ul class="note-list"><li>不是单独做一个控制器，也不是只做验证，而是让学习、近似、求证和更新连起来。</li><li>最终关心的不只是“能不能跑”，还包括“下界能不能说清楚”“哪里还需要继续改”。</li><li>这也是为什么我会同时看控制器复杂度、证书复杂度和后续迭代方向，而不是只看一次仿真的效果。</li></ul></article></div></section>
-<section class="section-block" data-reveal><div class="grid-2"><article class="panel"><span class="kicker">Related literature</span><h3>和已有验证工作的关系</h3><p>像 <em>Policy Verification in Stochastic Dynamical Systems Using Logarithmic Neural Certificates</em> 这类工作，更偏向“给定一个神经网络控制器以后，怎样把高概率的 reach-avoid 规格验证下来”。这条线对我很重要，因为它说明高概率验证本身是可以做得很细的。</p></article><article class="panel"><span class="kicker">My current focus</span><h3>我现在更靠前一步</h3><p>我现在关心的不只是“一个现成策略怎么验证”，而是“策略先怎么学出来、再怎么转成可求证形式、最后怎样进入证书求解和后续更新”。也就是说，我更在意整条研究流程怎样真正接起来。</p></article></div></section>
-<section class="section-block" data-reveal><div class="section-header"><div class="section-title-wrap"><span class="kicker">Next step</span><h2>接下来准备怎么推进</h2></div></div><div class="grid-4"><article class="panel"><h3>继续做控制器更新</h3><p>对第一次求证后仍偏保守的区域继续做控制器更新，而不是停在当前状态。</p></article><article class="panel"><h3>改进 PAC 近似</h3><p>继续平衡多项式次数、样本规模和近似误差，让控制器复杂度和求解代价更稳定。</p></article><article class="panel"><h3>增强证书表达能力</h3><p>当系统维数更高、几何结构更复杂时，需要更有表达力的证书模板和更稳的求解策略。</p></article><article class="panel"><h3>扩展到更复杂系统</h3><p>继续考虑非多项式动力学、更高维环境，以及学习与验证之间更自动化的配合方式。</p></article></div></section>
+<header class="site-header">
+<div class="header-shell">
+<a class="brand" href="index.html">
+<span aria-hidden="true" class="brand-mark"></span>
+<span class="brand-text">
+<strong>闫士博 / ShiBo Yan</strong>
+<span>随机系统 · Reach-Avoid 控制 · 形式化验证</span>
+</span>
+</a>
+<nav aria-label="Primary" class="site-nav">
+<a class="nav-link" href="index.html">主页</a><a class="nav-link" href="introduction.html">个人档案</a><a aria-current="page" class="nav-link" href="research.html">研究方向</a><a class="nav-link" href="projects.html">项目展示</a><a class="nav-link" href="resume.html">简历</a><a class="nav-link" href="stats.html">访问统计</a>
+</nav>
+<div class="header-actions">
+<div aria-label="Language switch" class="lang-switch">
+<a class="active" href="./research.html" lang="zh-CN">中</a>
+<a href="./en/research.html" lang="en">EN</a>
+</div>
+<button aria-label="Toggle theme" class="icon-btn" data-label-dark="深色" data-label-light="浅色" data-theme-toggle="" type="button">
+<i aria-hidden="true" class="fa fa-moon-o"></i>
+<span class="visually-hidden theme-label">深色</span>
+</button>
+<button aria-controls="site-drawer" aria-expanded="false" aria-label="打开导航" class="icon-btn menu-toggle" data-menu-toggle="" type="button">
+<i aria-hidden="true" class="fa fa-bars"></i>
+</button>
+</div>
+</div>
+</header>
+<div class="drawer-backdrop" data-drawer-backdrop=""></div>
+<aside aria-hidden="true" aria-label="Navigation" class="drawer" data-drawer="" id="site-drawer">
+<div class="drawer-header">
+<div>
+<strong>导航</strong>
+<div style="color:var(--muted);font-size:.92rem;">闫士博 / ShiBo Yan</div>
+</div>
+<button aria-label="关闭" class="icon-btn" data-menu-close="" type="button">
+<i aria-hidden="true" class="fa fa-times"></i>
+</button>
+</div>
+<nav aria-label="Mobile" class="drawer-nav">
+<a href="index.html">主页<i aria-hidden="true" class="fa fa-angle-right"></i></a><a href="introduction.html">个人档案<i aria-hidden="true" class="fa fa-angle-right"></i></a><a aria-current="page" href="research.html">研究方向<i aria-hidden="true" class="fa fa-angle-right"></i></a><a href="projects.html">项目展示<i aria-hidden="true" class="fa fa-angle-right"></i></a><a href="resume.html">简历<i aria-hidden="true" class="fa fa-angle-right"></i></a><a href="stats.html">访问统计<i aria-hidden="true" class="fa fa-angle-right"></i></a>
+</nav>
+<div class="drawer-group">
+<div aria-label="Language switch" class="lang-switch">
+<a class="active" href="./research.html" lang="zh-CN">中</a>
+<a href="./en/research.html" lang="en">EN</a>
+</div>
+</div>
+<div class="drawer-group">
+<button class="button subtle" data-label-dark="深色" data-label-light="浅色" data-theme-toggle="" type="button">
+<i aria-hidden="true" class="fa fa-adjust"></i>
+<span class="theme-label">深色</span>
+</button>
+</div>
+</aside>
+<main class="main-shell" id="main-content">
+<section class="surface page-hero research-hero" data-reveal="">
+<div class="section-title-wrap">
+<span class="kicker">Research</span>
+<h1>学习控制器，并给出可验证的概率保证。</h1>
+<p class="lead">我研究随机系统中的 reach-avoid 控制：让系统在随机扰动下到达目标区域，同时避开危险区域，并用形式化方法说明成功概率的下界。</p>
+<div class="action-row">
+<a class="button primary" href="#method-chain"><i aria-hidden="true" class="fa fa-long-arrow-down"></i> 查看方法主线</a>
+<a class="button" href="resume.html"><i aria-hidden="true" class="fa fa-id-card-o"></i> 简历与材料</a>
+</div>
+</div>
+</section>
+<section class="section-block" data-reveal="">
+<div class="section-header"><div class="section-title-wrap"><span class="kicker">Problem setting</span><h2>从规格开始。</h2><p>Reach-avoid 控制的核心，是在随机扰动下同时处理“到达目标”和“避开危险”两件事，并把结论写成可检查的概率下界。</p></div></div>
+<div class="grid-4">
+<article class="panel"><div class="feature-icon"><i aria-hidden="true" class="fa fa-map-o"></i></div><h3>集合与规格</h3><p>明确初始集、目标集、危险集，以及希望满足的概率要求。</p></article>
+<article class="panel"><div class="feature-icon"><i aria-hidden="true" class="fa fa-random"></i></div><h3>随机动力系统</h3><p>关注离散时间随机系统中扰动对安全与到达概率的影响。</p></article>
+<article class="panel"><div class="feature-icon"><i aria-hidden="true" class="fa fa-bolt"></i></div><h3>候选控制器</h3><p>先学习一个具有可用性能的参考策略，再进入求证流程。</p></article>
+<article class="panel"><div class="feature-icon"><i aria-hidden="true" class="fa fa-shield"></i></div><h3>概率保证</h3><p>用证书和优化求解给出下界，而不是只依赖仿真轨迹。</p></article>
+</div>
+</section>
+<section class="section-block tile-dark section-dark" data-reveal="" id="method-chain">
+<div class="grid-2">
+<article class="panel"><span class="kicker">Method chain</span><h3>当前方法主线</h3><div class="flow flow-stacked"><div class="flow-step"><h3>1. 写清楚规格</h3><p>固定初始集、目标集、危险集和概率阈值。</p></div><div class="flow-step"><h3>2. 学习参考策略</h3><p>使用 SAC 训练候选控制器，获得一个可继续处理的起点。</p></div><div class="flow-step"><h3>3. 做 PAC 多项式近似</h3><p>把学习策略转成更适合证书求解的多项式控制器。</p></div><div class="flow-step"><h3>4. 求证书与概率下界</h3><p>结合 stochastic barrier-like certificates 与 SOS / SDP 求解形式化下界。</p></div><div class="flow-step"><h3>5. 回到控制器或证书继续迭代</h3><p>如果结果偏保守，就调整控制器、证书模板或近似方案。</p></div></div></article>
+<article class="panel"><span class="kicker">Current focus</span><h3>重点是可迭代的保证。</h3><ul class="note-list"><li>学习、近似、求证和更新应该在同一条流程里相互反馈。</li><li>除了 reach-avoid 概率下界，也需要观察控制器复杂度、证书复杂度和求解代价。</li><li>研究目标不是只得到一次仿真表现，而是形成可以持续改进的安全控制流程。</li></ul></article>
+</div>
+</section>
+<section class="section-block" data-reveal="">
+<div class="grid-2">
+<article class="panel"><span class="kicker">Relation</span><h3>和验证工作的衔接</h3><p>已有验证工作通常从给定控制器出发，证明它是否满足高概率 reach-avoid 规格。我的当前工作把起点再向前移动一步：控制器需要先被学习出来，再转成可求证形式，最后进入证书求解和更新。</p></article>
+<article class="panel"><span class="kicker">Output</span><h3>每轮迭代留下可复查记录</h3><p>每轮不只记录一个概率下界，也记录控制器次数、证书次数、样本设置、求解时间和失败原因。这样下一轮更新才有明确方向。</p></article>
+</div>
+</section>
+<section class="section-block" data-reveal="">
+<div class="section-header"><div class="section-title-wrap"><span class="kicker">Next</span><h2>接下来推进的方向</h2></div></div>
+<div class="grid-4">
+<article class="panel"><h3>控制器更新</h3><p>在概率下界偏保守的区域继续改进策略，而不是停在第一次求解。</p></article>
+<article class="panel"><h3>PAC 近似</h3><p>平衡多项式次数、样本规模与近似误差，降低后续求解压力。</p></article>
+<article class="panel"><h3>证书模板</h3><p>面对更复杂几何结构时，提高 stochastic barrier-like certificates 的表达能力。</p></article>
+<article class="panel"><h3>更复杂系统</h3><p>逐步考虑非多项式动力学、更高维系统和更自动化的学习—验证闭环。</p></article>
+</div>
+</section>
 </main>
-<footer class="footer-shell"><div class="footer-card"><div><p>© ShiBo Yan. Static site built with HTML, CSS and JavaScript.</p></div><div class="footer-actions"><a class="button small subtle" href="mailto:y423314860@163.com"><i class="fa fa-envelope-o" aria-hidden="true"></i> 邮箱</a><a class="button small subtle" href="https://github.com/Yan-ShiBo" target="_blank" rel="noopener"><i class="fa fa-github" aria-hidden="true"></i> GitHub</a><button class="button small subtle" type="button" data-back-to-top><i class="fa fa-arrow-up" aria-hidden="true"></i> 返回顶部</button></div></div></footer>
-<button class="icon-btn back-to-top" type="button" data-back-to-top aria-label="Back to top"><i class="fa fa-arrow-up" aria-hidden="true"></i></button>
+<footer class="footer-shell">
+<div class="footer-card">
+<div><p>© <span data-year="">2026</span> ShiBo Yan. Research portfolio.</p></div>
+<div class="footer-actions">
+<a class="button small subtle" href="mailto:y423314860@163.com"><i aria-hidden="true" class="fa fa-envelope-o"></i> 邮箱</a>
+<a class="button small subtle" href="https://github.com/Yan-ShiBo" rel="noopener" target="_blank"><i aria-hidden="true" class="fa fa-github"></i> GitHub</a>
+<a class="button small subtle" href="resume.html"><i aria-hidden="true" class="fa fa-id-card-o"></i> 简历</a>
+<button class="button small subtle" data-back-to-top="" type="button"><i aria-hidden="true" class="fa fa-arrow-up"></i> 返回顶部</button>
+</div>
+</div>
+</footer>
+<button aria-label="Back to top" class="icon-btn back-to-top" data-back-to-top="" type="button"><i aria-hidden="true" class="fa fa-arrow-up"></i></button>
 </body></html>

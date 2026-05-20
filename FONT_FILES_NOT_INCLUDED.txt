@@ -1,1 +1,1 @@
-Font files are intentionally not included in the delivered archive. Keep the original project folder `resource/font-awesome-4.7.0/fonts/` when replacing files, or apply `APPLE_REDESIGN_DIFF.patch` to your original repository so the existing font assets remain in place.
+Font binary files under resource/font-awesome-4.7.0/fonts/ are excluded from this deliverable due to platform restrictions. Keep the original fonts folder from your repository when deploying, or copy these modified files over your original repository so the existing Font Awesome icons continue to render.

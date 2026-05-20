@@ -8,7 +8,8 @@
 - `introduction.html`：个人档案
 - `research.html`：研究方向
 - `projects.html`：项目展示
-- `resume.html`：简历页
+- `resume.html`：简历与材料页
+- `resume_online.html`：网页简历摘要页
 - `stats.html`：访问统计
 - `en/`：英文独立页面
 - `docs/`：论文、简历、本科成绩单 PDF
