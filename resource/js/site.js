@@ -150,23 +150,30 @@
   }
 
   function initBackToTop() {
-    var button = document.querySelector('[data-back-to-top]');
-    if (!button) return;
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-back-to-top]'));
+    if (!buttons.length) return;
+    var floatingButtons = buttons.filter(function (button) {
+      return button.classList.contains('back-to-top');
+    });
 
     function updateState() {
-      button.classList.toggle('show', window.scrollY > 520);
+      floatingButtons.forEach(function (button) {
+        button.classList.toggle('show', window.scrollY > 520);
+      });
     }
 
     window.addEventListener('scroll', updateState, { passive: true });
     updateState();
 
-    button.addEventListener('click', function () {
-      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+      });
     });
   }
 
-    function initAnchorNav() {
+  function initAnchorNav() {
     var links = Array.prototype.slice.call(document.querySelectorAll('.anchor-chip[href^="#"]'));
     if (!links.length || !('IntersectionObserver' in window)) return;
 
