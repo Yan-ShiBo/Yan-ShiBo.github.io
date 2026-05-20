@@ -1,6 +1,7 @@
 
 (function () {
   var root = document.documentElement;
+  root.classList.add('reveal-ready');
   var themeMeta = document.querySelector('meta[name="theme-color"]');
   var THEME_KEY = 'ysb-theme';
 
@@ -11,7 +12,7 @@
   function applyTheme(theme, persist) {
     root.setAttribute('data-theme', theme);
     if (themeMeta) {
-      themeMeta.setAttribute('content', theme === 'dark' ? '#07111f' : '#f4f7ff');
+      themeMeta.setAttribute('content', theme === 'dark' ? '#000000' : '#f5f5f7');
     }
     document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
       var icon = btn.querySelector('i');
