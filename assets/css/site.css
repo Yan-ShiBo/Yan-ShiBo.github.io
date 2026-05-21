@@ -1245,6 +1245,8 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 
 .status-note[data-state="ok"]{color:#1d1d1f;border-color:var(--hairline);background:var(--canvas)}
 .status-note[data-state="warn"]{color:var(--ink-muted-80);border-color:var(--hairline);background:var(--surface-pearl)}
+:root[data-theme="dark"] .status-note[data-state="ok"]{color:var(--text);border-color:var(--hairline);background:var(--surface-soft)}
+:root[data-theme="dark"] .status-note[data-state="warn"]{color:var(--ink-muted-80);border-color:var(--hairline);background:var(--surface-soft)}
 
 .hidden-counter{
   position:absolute;
