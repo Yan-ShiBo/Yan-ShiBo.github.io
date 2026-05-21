@@ -17,6 +17,13 @@
 - `resource/css/site.css`：全站样式
 - `resource/js/site.js`：主题、导航、返回顶部、图片放大
 - `resource/js/stats.js`：公开统计与本地统计逻辑
+- `scripts/generate-sitemap.js`：根据页面文件修改时间生成 `sitemap.xml`
+
+## 维护命令
+
+```bash
+node scripts/generate-sitemap.js
+```
 
 ## 主页地址
 
