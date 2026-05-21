@@ -279,8 +279,9 @@ This file is the single design reference for the live personal site. Historical 
 
 - The implementation follows the Apple-inspired system above: black global navigation, full-width light/parchment/near-black sections, SF Pro/system font stack, one Action Blue `#0066cc`, pill CTAs, quiet cards, and no decorative gradients or UI shadows.
 - The live CSS adapts the Apple reference for a Chinese-first bilingual site: font stacks are tokenized as Latin core + CJK fallback, letter spacing stays at `0`, and headline/stat sizes use stable breakpoints instead of viewport-width scaling.
-- Shared styling lives in `resource/css/site.css`; repeated spacing such as stage grids, story cards, proof sections, buttons, tiles, and responsive layouts should be expressed as classes instead of one-off inline styles.
-- The content structure preserves the original site information while reorganizing it into shareable Chinese and English pages: home, profile, research, projects, resume, online resume, stats, fallback home, and 404.
+- Shared styling lives in `assets/css/site.css`; repeated spacing such as stage grids, story cards, proof sections, buttons, tiles, and responsive layouts should be expressed as classes instead of one-off inline styles.
+- The content structure preserves the original site information while reorganizing it into shareable Chinese and English pages: index, profile, research, projects, resume, analytics, and 404.
+- Static assets are grouped by role under `assets/`: first-party images, profile media, icons, CSS, JS, and vendor runtime files. Keep public HTML filenames stable; use lowercase kebab-case for new asset filenames.
 - Accessibility and resilience are part of the design language: skip links, semantic landmarks, `aria-current`, reduced-motion handling, mobile drawer focus trapping, lightbox focus trapping, `inert` background handling, and reveal behavior that stays visible when JavaScript fails.
 - SEO and sharing metadata are maintained through canonical links, `hreflang`, page descriptions, JSON-LD on key pages, `robots.txt`, `manifest.webmanifest`, and generated `sitemap.xml`.
 - Build hygiene matters: avoid reintroducing unused framework bundles, keep a single resume PDF at `docs/Shibo-Yan-Resume.pdf`, and regenerate the sitemap before publishing.

@@ -6,18 +6,17 @@ const siteUrl = 'https://yan-shibo.github.io';
 
 const pagePairs = [
   ['/', 'en/index.html'],
-  ['introduction.html', 'en/introduction.html'],
+  ['profile.html', 'en/profile.html'],
   ['research.html', 'en/research.html'],
   ['projects.html', 'en/projects.html'],
-  ['resume_online.html', 'en/resume_online.html'],
   ['resume.html', 'en/resume.html'],
-  ['stats.html', 'en/stats.html']
+  ['analytics.html', 'en/analytics.html']
 ];
 
 const sharedFiles = [
-  'resource/css/site.css',
-  'resource/js/site.js',
-  'resource/js/stats.js'
+  'assets/css/site.css',
+  'assets/js/site.js',
+  'assets/js/stats.js'
 ];
 
 function toUrl(route) {

@@ -7,7 +7,7 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "/Homepage_files/index.ico",
+      "src": "/assets/icons/site.ico",
       "sizes": "48x48 64x64 128x128",
       "type": "image/x-icon"
     }
