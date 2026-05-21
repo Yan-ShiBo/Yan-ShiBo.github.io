@@ -4,6 +4,101 @@
   root.classList.add('reveal-ready');
   var themeMeta = document.querySelector('meta[name="theme-color"]');
   var THEME_KEY = 'ysb-theme';
+  var FOCUSABLE_SELECTOR = [
+    'a[href]',
+    'area[href]',
+    'button:not([disabled])',
+    'input:not([disabled]):not([type="hidden"])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    'iframe',
+    'object',
+    'embed',
+    '[contenteditable="true"]',
+    '[tabindex]:not([tabindex="-1"])'
+  ].join(',');
+
+  function getFocusable(container) {
+    if (!container) return [];
+    return Array.prototype.slice.call(container.querySelectorAll(FOCUSABLE_SELECTOR))
+      .filter(function (node) {
+        return !node.hasAttribute('disabled') &&
+          node.getAttribute('aria-hidden') !== 'true' &&
+          (node.offsetWidth > 0 || node.offsetHeight > 0 || node.getClientRects().length > 0);
+      });
+  }
+
+  function focusNode(node) {
+    if (!node || !node.focus) return;
+    try {
+      node.focus({ preventScroll: true });
+    } catch (err) {
+      node.focus();
+    }
+  }
+
+  function focusFirst(container, preferred) {
+    focusNode(preferred || getFocusable(container)[0] || container);
+  }
+
+  function trapFocus(event, container) {
+    if (event.key !== 'Tab' || !container) return;
+    var nodes = getFocusable(container);
+    if (!nodes.length) {
+      event.preventDefault();
+      focusNode(container);
+      return;
+    }
+
+    var first = nodes[0];
+    var last = nodes[nodes.length - 1];
+    var active = document.activeElement;
+
+    if (event.shiftKey && (active === first || !container.contains(active))) {
+      event.preventDefault();
+      focusNode(last);
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      focusNode(first);
+    }
+  }
+
+  function setElementInert(element, active) {
+    if (!element) return;
+    if (active) {
+      if (!element.hasAttribute('data-modal-inert')) {
+        element.setAttribute('data-modal-inert', '');
+        element.setAttribute(
+          'data-modal-aria-hidden',
+          element.hasAttribute('aria-hidden') ? element.getAttribute('aria-hidden') : '__unset__'
+        );
+      }
+      element.setAttribute('aria-hidden', 'true');
+      element.setAttribute('inert', '');
+      element.inert = true;
+      return;
+    }
+
+    if (!element.hasAttribute('data-modal-inert')) return;
+    var previousAria = element.getAttribute('data-modal-aria-hidden');
+    if (previousAria === '__unset__') {
+      element.removeAttribute('aria-hidden');
+    } else if (previousAria !== null) {
+      element.setAttribute('aria-hidden', previousAria);
+    }
+    element.removeAttribute('data-modal-inert');
+    element.removeAttribute('data-modal-aria-hidden');
+    element.removeAttribute('inert');
+    element.inert = false;
+  }
+
+  function setBackgroundInert(active, activeElements) {
+    var allowed = Array.isArray(activeElements) ? activeElements : [activeElements];
+    Array.prototype.slice.call(document.body.children).forEach(function (child) {
+      if (active && allowed.indexOf(child) !== -1) return;
+      setElementInert(child, active);
+    });
+  }
 
   function prefersDark() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -78,17 +173,32 @@
     var closeBtn = document.querySelector('[data-menu-close]');
     var drawer = document.querySelector('[data-drawer]');
     var backdrop = document.querySelector('[data-drawer-backdrop]');
+    var returnFocus = null;
+
+    if (drawer) drawer.setAttribute('tabindex', '-1');
 
     function closeMenu() {
+      var wasOpen = document.body.classList.contains('menu-open');
       document.body.classList.remove('menu-open');
       if (toggle) toggle.setAttribute('aria-expanded', 'false');
       if (drawer) drawer.setAttribute('aria-hidden', 'true');
+      setBackgroundInert(false);
+      if (wasOpen && returnFocus && returnFocus.focus && document.contains(returnFocus)) {
+        focusNode(returnFocus);
+      }
+      returnFocus = null;
     }
 
     function openMenu() {
+      if (document.body.classList.contains('menu-open')) return;
+      returnFocus = document.activeElement;
       document.body.classList.add('menu-open');
       if (toggle) toggle.setAttribute('aria-expanded', 'true');
       if (drawer) drawer.setAttribute('aria-hidden', 'false');
+      if (drawer) setBackgroundInert(true, [drawer, backdrop]);
+      window.requestAnimationFrame(function () {
+        focusFirst(drawer, closeBtn || drawer);
+      });
     }
 
     if (toggle) {
@@ -110,7 +220,12 @@
     }
 
     window.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') closeMenu();
+      if (!document.body.classList.contains('menu-open')) return;
+      if (event.key === 'Escape') {
+        closeMenu();
+      } else {
+        trapFocus(event, drawer);
+      }
     });
   }
 
@@ -237,69 +352,79 @@
     nodes.forEach(function (node) { observer.observe(node); });
   }
 
-function initLightbox() {
-  var triggers = document.querySelectorAll('[data-lightbox]');
-  if (!triggers.length) return;
+  function initLightbox() {
+    var triggers = document.querySelectorAll('[data-lightbox]');
+    if (!triggers.length) return;
 
-  var isZh = document.documentElement.lang && document.documentElement.lang.toLowerCase().indexOf('zh') === 0;
-  var closeText = isZh ? '关闭大图' : 'Close image preview';
+    var isZh = document.documentElement.lang && document.documentElement.lang.toLowerCase().indexOf('zh') === 0;
+    var closeText = isZh ? '关闭大图' : 'Close image preview';
 
-  var overlay = document.createElement('div');
-  overlay.className = 'lightbox';
-  overlay.setAttribute('aria-hidden', 'true');
-  overlay.innerHTML = '<div class="lightbox-dialog" role="dialog" aria-modal="true" aria-label="' + closeText + '"><button class="lightbox-close" type="button" aria-label="' + closeText + '"><i class="fa fa-times" aria-hidden="true"></i></button><img class="lightbox-image" alt=""><div class="lightbox-caption"></div></div>';
-  document.body.appendChild(overlay);
-
-  var dialog = overlay.querySelector('.lightbox-dialog');
-  var image = overlay.querySelector('.lightbox-image');
-  var caption = overlay.querySelector('.lightbox-caption');
-  var closeBtn = overlay.querySelector('.lightbox-close');
-  var activeTrigger = null;
-
-  function closeLightbox() {
-    overlay.classList.remove('open');
+    var overlay = document.createElement('div');
+    overlay.className = 'lightbox';
     overlay.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('lightbox-open');
-    image.removeAttribute('src');
-    image.alt = '';
-    caption.textContent = '';
-    if (activeTrigger && activeTrigger.focus) activeTrigger.focus();
-    activeTrigger = null;
-  }
+    overlay.innerHTML = '<div class="lightbox-dialog" role="dialog" aria-modal="true" aria-label="' + closeText + '" tabindex="-1"><button class="lightbox-close" type="button" aria-label="' + closeText + '"><i class="fa fa-times" aria-hidden="true"></i></button><img class="lightbox-image" alt=""><div class="lightbox-caption"></div></div>';
+    document.body.appendChild(overlay);
 
-  function openLightbox(trigger) {
-    activeTrigger = trigger;
-    image.src = trigger.getAttribute('href');
-    image.alt = trigger.querySelector('img') ? (trigger.querySelector('img').getAttribute('alt') || '') : '';
-    caption.textContent = trigger.getAttribute('data-caption') || '';
-    overlay.classList.add('open');
-    overlay.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('lightbox-open');
-    closeBtn.focus();
-  }
+    var dialog = overlay.querySelector('.lightbox-dialog');
+    var image = overlay.querySelector('.lightbox-image');
+    var caption = overlay.querySelector('.lightbox-caption');
+    var closeBtn = overlay.querySelector('.lightbox-close');
+    var activeTrigger = null;
 
-  triggers.forEach(function (trigger) {
-    trigger.addEventListener('click', function (event) {
-      event.preventDefault();
-      openLightbox(trigger);
-    });
-  });
-
-  closeBtn.addEventListener('click', closeLightbox);
-  overlay.addEventListener('click', function (event) {
-    if (event.target === overlay) closeLightbox();
-  });
-  dialog.addEventListener('click', function (event) {
-    event.stopPropagation();
-  });
-  window.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape' && overlay.classList.contains('open')) {
-      closeLightbox();
+    function closeLightbox() {
+      if (!overlay.classList.contains('open')) return;
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('lightbox-open');
+      setBackgroundInert(false);
+      image.removeAttribute('src');
+      image.alt = '';
+      caption.textContent = '';
+      if (activeTrigger && activeTrigger.focus && document.contains(activeTrigger)) {
+        focusNode(activeTrigger);
+      }
+      activeTrigger = null;
     }
-  });
-}
 
-function initYear() {
+    function openLightbox(trigger) {
+      activeTrigger = trigger;
+      image.src = trigger.getAttribute('href');
+      image.alt = trigger.querySelector('img') ? (trigger.querySelector('img').getAttribute('alt') || '') : '';
+      caption.textContent = trigger.getAttribute('data-caption') || '';
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('lightbox-open');
+      setBackgroundInert(true, [overlay]);
+      window.requestAnimationFrame(function () {
+        focusFirst(dialog, closeBtn || dialog);
+      });
+    }
+
+    triggers.forEach(function (trigger) {
+      trigger.addEventListener('click', function (event) {
+        event.preventDefault();
+        openLightbox(trigger);
+      });
+    });
+
+    closeBtn.addEventListener('click', closeLightbox);
+    overlay.addEventListener('click', function (event) {
+      if (event.target === overlay) closeLightbox();
+    });
+    dialog.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
+    window.addEventListener('keydown', function (event) {
+      if (!overlay.classList.contains('open')) return;
+      if (event.key === 'Escape') {
+        closeLightbox();
+      } else {
+        trapFocus(event, dialog);
+      }
+    });
+  }
+
+  function initYear() {
     document.querySelectorAll('[data-year]').forEach(function (node) {
       node.textContent = new Date().getFullYear();
     });

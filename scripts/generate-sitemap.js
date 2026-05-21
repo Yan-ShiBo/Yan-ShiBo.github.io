@@ -1,0 +1,69 @@
+const fs = require('fs');
+const path = require('path');
+
+const rootDir = path.resolve(__dirname, '..');
+const siteUrl = 'https://yan-shibo.github.io';
+
+const pagePairs = [
+  ['/', 'en/index.html'],
+  ['introduction.html', 'en/introduction.html'],
+  ['research.html', 'en/research.html'],
+  ['projects.html', 'en/projects.html'],
+  ['resume_online.html', 'en/resume_online.html'],
+  ['resume.html', 'en/resume.html'],
+  ['stats.html', 'en/stats.html']
+];
+
+const sharedFiles = [
+  'resource/css/site.css',
+  'resource/js/site.js',
+  'resource/js/stats.js'
+];
+
+function toUrl(route) {
+  return route === '/' ? siteUrl + '/' : siteUrl + '/' + route;
+}
+
+function localDate(date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+function fileLastmod(route) {
+  const file = route === '/' ? 'index.html' : route;
+  const pageMtime = fs.statSync(path.join(rootDir, file)).mtime;
+  const sharedMtime = sharedFiles
+    .map((sharedFile) => fs.statSync(path.join(rootDir, sharedFile)).mtime)
+    .reduce((latest, current) => current > latest ? current : latest, pageMtime);
+  return localDate(sharedMtime > pageMtime ? sharedMtime : pageMtime);
+}
+
+function entry(route, zhRoute, enRoute) {
+  return [
+    '  <url>',
+    `    <loc>${toUrl(route)}</loc>`,
+    `    <lastmod>${fileLastmod(route)}</lastmod>`,
+    `    <xhtml:link rel="alternate" hreflang="zh-CN" href="${toUrl(zhRoute)}" />`,
+    `    <xhtml:link rel="alternate" hreflang="en" href="${toUrl(enRoute)}" />`,
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${toUrl(zhRoute)}" />`,
+    '  </url>'
+  ].join('\n');
+}
+
+const entries = pagePairs.flatMap(([zhRoute, enRoute]) => {
+  return [
+    entry(zhRoute, zhRoute, enRoute),
+    entry(enRoute, zhRoute, enRoute)
+  ];
+});
+
+const xml = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
+  '        xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+  entries.join('\n'),
+  '</urlset>',
+  ''
+].join('\n');
+
+fs.writeFileSync(path.join(rootDir, 'sitemap.xml'), xml, 'utf8');
