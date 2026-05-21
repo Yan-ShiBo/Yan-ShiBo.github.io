@@ -16,18 +16,18 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/" />
   </url>
   <url>
-    <loc>https://yan-shibo.github.io/introduction.html</loc>
+    <loc>https://yan-shibo.github.io/profile.html</loc>
     <lastmod>2026-05-21</lastmod>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/introduction.html" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/introduction.html" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/introduction.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/profile.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/profile.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/profile.html" />
   </url>
   <url>
-    <loc>https://yan-shibo.github.io/en/introduction.html</loc>
+    <loc>https://yan-shibo.github.io/en/profile.html</loc>
     <lastmod>2026-05-21</lastmod>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/introduction.html" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/introduction.html" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/introduction.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/profile.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/profile.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/profile.html" />
   </url>
   <url>
     <loc>https://yan-shibo.github.io/research.html</loc>
@@ -58,20 +58,6 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/projects.html" />
   </url>
   <url>
-    <loc>https://yan-shibo.github.io/resume_online.html</loc>
-    <lastmod>2026-05-21</lastmod>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/resume_online.html" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/resume_online.html" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/resume_online.html" />
-  </url>
-  <url>
-    <loc>https://yan-shibo.github.io/en/resume_online.html</loc>
-    <lastmod>2026-05-21</lastmod>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/resume_online.html" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/resume_online.html" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/resume_online.html" />
-  </url>
-  <url>
     <loc>https://yan-shibo.github.io/resume.html</loc>
     <lastmod>2026-05-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/resume.html" />
@@ -86,17 +72,17 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/resume.html" />
   </url>
   <url>
-    <loc>https://yan-shibo.github.io/stats.html</loc>
+    <loc>https://yan-shibo.github.io/analytics.html</loc>
     <lastmod>2026-05-21</lastmod>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/stats.html" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/stats.html" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/stats.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/analytics.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/analytics.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/analytics.html" />
   </url>
   <url>
-    <loc>https://yan-shibo.github.io/en/stats.html</loc>
+    <loc>https://yan-shibo.github.io/en/analytics.html</loc>
     <lastmod>2026-05-21</lastmod>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/stats.html" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/stats.html" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/stats.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://yan-shibo.github.io/analytics.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://yan-shibo.github.io/en/analytics.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/analytics.html" />
   </url>
 </urlset>
