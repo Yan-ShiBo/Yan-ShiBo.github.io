@@ -1140,6 +1140,10 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 .stage-meta{color:var(--ink-muted-48);font-size:14px;line-height:1.43}
 .summary-row{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
 .info-grid{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:20px}
+.stage-grid{margin-top:18px}
+.stage-card > .story-box{margin-top:32px}
+.stage-section-header{margin-top:28px}
+.stage-section-title{margin:0}
 .info-card ul{margin:0;padding-left:1.1rem}
 .story-box p:last-child{margin-bottom:0}
 
