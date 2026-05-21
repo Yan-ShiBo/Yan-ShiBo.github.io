@@ -278,6 +278,7 @@ components:
 This file is the single design reference for the live personal site. Historical audit notes were consolidated here so the repository only keeps one design document and one README.
 
 - The implementation follows the Apple-inspired system above: black global navigation, full-width light/parchment/near-black sections, SF Pro/system font stack, one Action Blue `#0066cc`, pill CTAs, quiet cards, and no decorative gradients or UI shadows.
+- The live CSS adapts the Apple reference for a Chinese-first bilingual site: font stacks are tokenized as Latin core + CJK fallback, letter spacing stays at `0`, and headline/stat sizes use stable breakpoints instead of viewport-width scaling.
 - Shared styling lives in `resource/css/site.css`; repeated spacing such as stage grids, story cards, proof sections, buttons, tiles, and responsive layouts should be expressed as classes instead of one-off inline styles.
 - The content structure preserves the original site information while reorganizing it into shareable Chinese and English pages: home, profile, research, projects, resume, online resume, stats, fallback home, and 404.
 - Accessibility and resilience are part of the design language: skip links, semantic landmarks, `aria-current`, reduced-motion handling, mobile drawer focus trapping, lightbox focus trapping, `inert` background handling, and reveal behavior that stays visible when JavaScript fails.
