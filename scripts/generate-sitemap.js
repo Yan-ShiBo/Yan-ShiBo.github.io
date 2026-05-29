@@ -5,18 +5,12 @@ const rootDir = path.resolve(__dirname, '..');
 const siteUrl = 'https://yan-shibo.github.io';
 
 const pagePairs = [
-  ['/', 'en/index.html'],
+  ['/', 'en/'],
   ['profile.html', 'en/profile.html'],
   ['research.html', 'en/research.html'],
   ['projects.html', 'en/projects.html'],
   ['resume.html', 'en/resume.html'],
   ['analytics.html', 'en/analytics.html']
-];
-
-const sharedFiles = [
-  'assets/css/site.css',
-  'assets/js/site.js',
-  'assets/js/stats.js'
 ];
 
 function toUrl(route) {
@@ -28,13 +22,16 @@ function localDate(date) {
   return local.toISOString().slice(0, 10);
 }
 
+function routeToFile(route) {
+  if (route === '/') return 'index.html';
+  if (route.endsWith('/')) return route + 'index.html';
+  return route;
+}
+
 function fileLastmod(route) {
-  const file = route === '/' ? 'index.html' : route;
+  const file = routeToFile(route);
   const pageMtime = fs.statSync(path.join(rootDir, file)).mtime;
-  const sharedMtime = sharedFiles
-    .map((sharedFile) => fs.statSync(path.join(rootDir, sharedFile)).mtime)
-    .reduce((latest, current) => current > latest ? current : latest, pageMtime);
-  return localDate(sharedMtime > pageMtime ? sharedMtime : pageMtime);
+  return localDate(pageMtime);
 }
 
 function entry(route, zhRoute, enRoute) {

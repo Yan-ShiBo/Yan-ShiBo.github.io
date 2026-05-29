@@ -173,6 +173,9 @@
       var today = todayKey();
       if (visitDays.indexOf(today) === -1) {
         visitDays.push(today);
+        if (visitDays.length > 365) {
+          visitDays = visitDays.slice(-365);
+        }
         saveJSON(STORAGE_KEYS.days, visitDays);
       }
 

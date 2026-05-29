@@ -1,10 +1,13 @@
 {
   "name": "闫士博 | ShiBo Yan",
   "short_name": "ShiBo Yan",
+  "description": "Personal research portfolio of ShiBo Yan",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f5f5f7",
-  "theme_color": "#000000",
+  "lang": "zh-CN",
+  "background_color": "#f0f2f5",
+  "theme_color": "#f0f2f5",
   "icons": [
     {
       "src": "/assets/icons/site.ico",

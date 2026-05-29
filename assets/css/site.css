@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap');
 :root{
   color-scheme:light;
   --primary:#0066cc;
@@ -12,7 +13,7 @@
   --divider-soft:#f0f0f0;
   --hairline:#e0e0e0;
   --canvas:#ffffff;
-  --canvas-parchment:#f5f5f7;
+  --canvas-parchment:#f0f2f5;
   --surface-pearl:#fafafc;
   --surface-tile-1:#272729;
   --surface-tile-2:#2a2a2c;
@@ -45,11 +46,11 @@
   --header-h:44px;
   --section-space:80px;
   --card-space:24px;
-  --theme-color:#f5f5f7;
-  --font-latin-core:"SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --theme-color:#f0f2f5;
+  --font-latin-core:"Inter", "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   --font-cjk:"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC";
   --font-sans:var(--font-latin-core), var(--font-cjk), sans-serif;
-  --font-display:"SF Pro Display", var(--font-latin-core), var(--font-cjk), sans-serif;
+  --font-display:"Outfit", "SF Pro Display", var(--font-latin-core), var(--font-cjk), sans-serif;
   --font-mono:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
@@ -77,10 +78,11 @@
   --theme-color:#000000;
 }
 
-*{box-sizing:border-box}
+*,*::before,*::after{box-sizing:border-box}
 
 html{
   scroll-behavior:smooth;
+  -webkit-text-size-adjust:100%;
   text-size-adjust:100%;
 }
 
@@ -362,6 +364,8 @@ textarea{
   border-left:1px solid var(--hairline);
   transform:translateX(100%);
   transition:transform .28s ease;
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
   backdrop-filter:saturate(180%) blur(20px);
 }
 
@@ -1660,6 +1664,7 @@ body.lightbox-open{overflow:hidden}
 .button,
 .anchor-chip,
 .tag{
+  white-space:nowrap;
   text-wrap:nowrap;
 }
 
