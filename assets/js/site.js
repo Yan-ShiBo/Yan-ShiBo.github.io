@@ -107,7 +107,7 @@
   function applyTheme(theme, persist) {
     root.setAttribute('data-theme', theme);
     if (themeMeta) {
-      themeMeta.setAttribute('content', theme === 'dark' ? '#000000' : '#f0f2f5');
+      themeMeta.setAttribute('content', theme === 'dark' ? '#000000' : '#ececee');
     }
     document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
       var icon = btn.querySelector('i');
@@ -282,7 +282,14 @@
       });
     }
 
-    window.addEventListener('scroll', updateState, { passive: true });
+    var scrollRAF = 0;
+    window.addEventListener('scroll', function () {
+      if (scrollRAF) return;
+      scrollRAF = requestAnimationFrame(function () {
+        updateState();
+        scrollRAF = 0;
+      });
+    }, { passive: true });
     updateState();
 
     buttons.forEach(function (button) {
