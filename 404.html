@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="zh-CN">
+<html dir="ltr" lang="zh-CN">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -86,11 +86,11 @@
 </div>
 </aside>
 <main class="main-shell" id="main-content">
-<section class="surface page-hero" data-reveal=""><div class="section-title-wrap"><span class="kicker">404</span><h1>没有找到这个页面。</h1><p class="lead">可能是旧链接或输入错误。可以从主页、研究方向、项目展示或简历页继续浏览。</p><div class="action-row"><a class="button primary" href="index.html"><i aria-hidden="true" class="fa fa-home"></i> 返回主页</a><a class="button" href="research.html"><i aria-hidden="true" class="fa fa-compass"></i> 研究方向</a><a class="button" href="projects.html"><i aria-hidden="true" class="fa fa-code"></i> 项目展示</a><a class="button" href="resume.html"><i aria-hidden="true" class="fa fa-id-card-o"></i> 简历</a></div></div></section>
+<section class="surface page-hero" data-reveal=""><div class="section-title-wrap"><span class="kicker">404</span><h1>没有找到这个页面。</h1><p class="lead">可能是旧链接或输入错误。可以从主页、研究方向、项目展示或简历页继续浏览。</p><div class="action-row"><a class="button primary" href="index.html"><i aria-hidden="true" class="fa fa-home"></i> 返回主页</a><a class="button" href="research.html"><i aria-hidden="true" class="fa fa-compass"></i> 研究方向</a><a class="button" href="projects.html"><i aria-hidden="true" class="fa fa-code"></i> 项目展示</a><a class="button" href="resume.html"><i aria-hidden="true" class="fa fa-id-card-o"></i> 简历</a></div><p class="lead" style="margin-top:16px;font-size:14px;color:var(--ink-muted-48);"><span data-countdown>5</span> 秒后自动返回首页…</p></div></section>
 </main>
 <footer class="footer-shell">
 <div class="footer-card">
-<div><p>© <span data-year="">2026</span> ShiBo Yan. Research portfolio.</p></div>
+<div><p>© 2024–<span data-year="">2026</span> ShiBo Yan. Research portfolio.</p></div>
 <div class="footer-actions">
 <a class="button small subtle" href="mailto:y423314860@163.com"><i aria-hidden="true" class="fa fa-envelope-o"></i> 邮箱</a>
 <a class="button small subtle" href="https://github.com/Yan-ShiBo" rel="noopener noreferrer" target="_blank"><i aria-hidden="true" class="fa fa-github"></i> GitHub</a>
@@ -102,5 +102,20 @@
 <button aria-label="Back to top" class="icon-btn back-to-top" data-back-to-top="" type="button">
 <i aria-hidden="true" class="fa fa-arrow-up"></i>
 </button>
+<script>
+(function(){
+  var el = document.querySelector('[data-countdown]');
+  if (!el) return;
+  var n = 5;
+  var t = setInterval(function(){
+    n--;
+    el.textContent = n;
+    if (n <= 0) {
+      clearInterval(t);
+      window.location.href = '/';
+    }
+  }, 1000);
+})();
+</script>
 </body>
 </html>
