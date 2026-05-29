@@ -107,7 +107,7 @@
   function applyTheme(theme, persist) {
     root.setAttribute('data-theme', theme);
     if (themeMeta) {
-      themeMeta.setAttribute('content', theme === 'dark' ? '#000000' : '#f5f5f7');
+      themeMeta.setAttribute('content', theme === 'dark' ? '#000000' : '#f0f2f5');
     }
     document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
       var icon = btn.querySelector('i');
@@ -231,9 +231,14 @@
 
   function initSpotlight() {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var spotlightRAF = 0;
     window.addEventListener('pointermove', function (event) {
-      root.style.setProperty('--pointer-x', event.clientX + 'px');
-      root.style.setProperty('--pointer-y', event.clientY + 'px');
+      if (spotlightRAF) return;
+      spotlightRAF = requestAnimationFrame(function () {
+        root.style.setProperty('--pointer-x', event.clientX + 'px');
+        root.style.setProperty('--pointer-y', event.clientY + 'px');
+        spotlightRAF = 0;
+      });
     }, { passive: true });
   }
 
@@ -302,7 +307,7 @@
     function setCurrent(id) {
       links.forEach(function (link) {
         if (link.getAttribute('href') === '#' + id) {
-          link.setAttribute('aria-current', 'page');
+          link.setAttribute('aria-current', 'true');
         } else {
           link.removeAttribute('aria-current');
         }
@@ -389,7 +394,8 @@
     function openLightbox(trigger) {
       activeTrigger = trigger;
       image.src = trigger.getAttribute('href');
-      image.alt = trigger.querySelector('img') ? (trigger.querySelector('img').getAttribute('alt') || '') : '';
+      var triggerImg = trigger.querySelector('img');
+      image.alt = triggerImg ? (triggerImg.getAttribute('alt') || '') : '';
       caption.textContent = trigger.getAttribute('data-caption') || '';
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
