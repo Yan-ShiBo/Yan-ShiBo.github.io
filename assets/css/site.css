@@ -1363,9 +1363,9 @@ html.reveal-ready [data-reveal].is-visible{opacity:1;transform:none}
 .media-card figcaption strong{font-size:17px;font-weight:600;line-height:1.24}
 
 .hero-stats{margin-top:10px}
-.hero-stats + .status-note{margin-top:14px;margin-bottom:0}
-.compact-stat{min-height:unset;padding:18px}
-.compact-stat .stat-value{font-size:38px;line-height:1.1;margin-top:8px}
+.hero-stats + .status-note{margin-top:10px;margin-bottom:0}
+.compact-stat{min-height:unset;padding:12px 14px}
+.compact-stat .stat-value{font-size:28px;line-height:1.1;margin-top:4px}
 .small-value{font-size:17px !important;line-height:1.47;word-break:break-word}
 .figure-card{overflow:hidden}
 .figure-card img{display:block;width:100%;border-radius:var(--radius-sm);border:1px solid var(--hairline);background:var(--canvas-parchment)}
@@ -1553,7 +1553,7 @@ body.lightbox-open{overflow:hidden}
   .page-hero .action-row{justify-content:flex-start}
   .lead{font-size:19px;line-height:1.38}
   .stat-value{font-size:40px}
-  .compact-stat .stat-value{font-size:36px}
+  .compact-stat .stat-value{font-size:28px}
   .hero .hero-copy,.hero .hero-side,.page-hero,.section-block,.main-shell > .grid-2,.main-shell > .resume-layout,.footer-shell{padding-left:16px;padding-right:16px}
   .profile-card{grid-template-columns:1fr}
   .quick-stats,.stats-grid,.stats-grid.two,.kv-grid,.info-grid,.cv-grid,.grid-2,.grid-3,.grid-4,.flow,.proof-grid,.proof-grid-wide,.proof-grid-project,.doc-grid{grid-template-columns:1fr}
@@ -1571,7 +1571,7 @@ body.lightbox-open{overflow:hidden}
   .section-title-wrap h2,.resume-main h2{font-size:30px}
   .lead{font-size:17px;line-height:1.47}
   .stat-value{font-size:36px}
-  .compact-stat .stat-value{font-size:34px}
+  .compact-stat .stat-value{font-size:24px}
   .button{width:100%}
   .button.small{width:auto}
   .action-row{align-items:stretch}
@@ -1642,8 +1642,15 @@ body.lightbox-open{overflow:hidden}
 }
 
 .home-hero .lead{max-width:800px}
-.hero-side .stats-grid.hero-stats{grid-template-columns:1fr}
+.hero-side .stats-grid.hero-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .hero-side .compact-stat{min-height:auto}
+.hero-side .profile-body h2{font-size:24px;margin-bottom:4px}
+.hero-side .profile-body p{font-size:14px}
+.hero-side .inline-list{margin-top:8px;gap:6px}
+.hero-side .inline-list .tag{min-height:32px;padding:0 10px;font-size:13px;gap:5px}
+.hero-side .meta-card{padding:16px}
+.hero-side .meta-card h3{font-size:17px;margin-bottom:8px}
+.hero-side .surface-inner{gap:12px}
 
 .section-title-wrap h2{
   max-width:780px;
