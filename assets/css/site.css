@@ -964,7 +964,7 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 
 .kicker{
   display:inline-block;
-  color:var(--primary);
+  color:var(--ink-muted-48);
   font-size:12px;
   font-weight:600;
   line-height:1;
@@ -1458,7 +1458,7 @@ body.lightbox-open{overflow:hidden}
 .main-shell > .section-block.tile-dark .proof-caption span,
 .main-shell > .section-block.tile-dark .media-card figcaption span,
 .main-shell > .section-block.tile-dark .kicker{
-  color:var(--primary-on-dark);
+  color:var(--body-muted);
 }
 
 .main-shell > .section-block.tile-dark .button:not(.primary){
