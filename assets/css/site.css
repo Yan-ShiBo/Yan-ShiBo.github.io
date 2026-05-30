@@ -1136,6 +1136,7 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 }
 
 .timeline-stage + .timeline-stage{margin-top:24px}
+.section-block + .timeline-stage{margin-top:40px}
 .timeline-stage::before,
 .timeline-stage::after{display:none}
 
