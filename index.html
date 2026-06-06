@@ -68,11 +68,11 @@
 </div>
 </header>
 <div class="drawer-backdrop" data-drawer-backdrop=""></div>
-<aside aria-hidden="true" aria-label="Navigation" class="drawer" data-drawer="" id="site-drawer">
+<aside aria-hidden="true" inert="" aria-label="Navigation" class="drawer" data-drawer="" id="site-drawer">
 <div class="drawer-header">
 <div>
 <strong>导航</strong>
-<div style="color:var(--muted);font-size:.92rem;">闫士博 / ShiBo Yan</div>
+<div class="drawer-subtitle">闫士博 / ShiBo Yan</div>
 </div>
 <button aria-label="关闭" class="icon-btn" data-menu-close="" type="button">
 <i aria-hidden="true" class="fa fa-times"></i>
@@ -95,7 +95,7 @@
 </div>
 </aside>
 <main class="main-shell" id="main-content">
-<section class="hero">
+<section class="hero home-hero">
 <article class="surface" data-reveal="">
 <div class="surface-inner hero-copy">
 <span class="eyebrow"><i aria-hidden="true" class="fa fa-flask"></i> Research Portfolio</span>
@@ -125,9 +125,9 @@
 </div>
 </div>
 </div>
-<div class="meta-card" style="padding:14px 16px;">
-<p style="margin:0;font-size:13px;line-height:1.8;letter-spacing:0.05em;color:var(--ink-muted-48);text-align:center;">十年以后当思我，举国犹狂欲语谁。<br/>世界无穷愿无尽，海天寥廓立多时。</p>
-<p style="margin:4px 0 0;font-size:11px;color:var(--ink-muted-48);text-align:center;letter-spacing:0.03em;">—— 梁启超《自励》</p>
+<div class="meta-card quote-card">
+<p class="poem-note">十年以后当思我，举国犹狂欲语谁。<br/>世界无穷愿无尽，海天寥廓立多时。</p>
+<p class="poem-source">—— 梁启超《自励》</p>
 </div>
 <div class="meta-card">
 <h3>研究关键词</h3>
@@ -240,10 +240,10 @@
 </article>
 </div>
 </section>
-<section class="section-block tile-dark" data-reveal="" style="min-height:42vh;display:flex;align-items:center;justify-content:center;">
-<blockquote style="max-width:680px;margin:0 auto;text-align:center;border:0;padding:0;">
-<p style="font-family:var(--font-display);font-size:28px;font-weight:400;line-height:1.8;letter-spacing:0.08em;color:var(--on-dark);margin:0;">十年以后当思我，举国犹狂欲语谁。<br/>世界无穷愿无尽，海天寥廓立多时。</p>
-<footer style="margin-top:24px;color:var(--body-muted);font-size:14px;letter-spacing:0.04em;">—— 梁启超《自励二首 · 其二》</footer>
+<section class="section-block tile-dark quote-band" data-reveal="">
+<blockquote class="quote-block">
+<p class="quote-text">十年以后当思我，举国犹狂欲语谁。<br/>世界无穷愿无尽，海天寥廓立多时。</p>
+<footer class="quote-source">—— 梁启超《自励二首 · 其二》</footer>
 </blockquote>
 </section>
 <div aria-hidden="true" class="hidden-counter">
@@ -268,7 +268,7 @@
 </div>
 </div>
 </footer>
-<button aria-label="Back to top" class="icon-btn back-to-top" data-back-to-top="" type="button">
+<button aria-hidden="true" aria-label="Back to top" class="icon-btn back-to-top" data-back-to-top="" tabindex="-1" type="button">
 <i aria-hidden="true" class="fa fa-arrow-up"></i>
 </button>
 </body>

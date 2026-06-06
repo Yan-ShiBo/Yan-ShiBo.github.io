@@ -175,14 +175,34 @@
     var backdrop = document.querySelector('[data-drawer-backdrop]');
     var returnFocus = null;
 
-    if (drawer) drawer.setAttribute('tabindex', '-1');
+    function notifyMenuStateChange() {
+      window.dispatchEvent(new Event('ysb:menu-state-change'));
+    }
+
+    function setDrawerHidden(hidden) {
+      if (!drawer) return;
+      drawer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+      if (hidden) {
+        drawer.setAttribute('inert', '');
+        drawer.inert = true;
+      } else {
+        drawer.removeAttribute('inert');
+        drawer.inert = false;
+      }
+    }
+
+    if (drawer) {
+      drawer.setAttribute('tabindex', '-1');
+      setDrawerHidden(true);
+    }
 
     function closeMenu() {
       var wasOpen = document.body.classList.contains('menu-open');
       document.body.classList.remove('menu-open');
       if (toggle) toggle.setAttribute('aria-expanded', 'false');
-      if (drawer) drawer.setAttribute('aria-hidden', 'true');
+      setDrawerHidden(true);
       setBackgroundInert(false);
+      notifyMenuStateChange();
       if (wasOpen && returnFocus && returnFocus.focus && document.contains(returnFocus)) {
         focusNode(returnFocus);
       }
@@ -194,8 +214,9 @@
       returnFocus = document.activeElement;
       document.body.classList.add('menu-open');
       if (toggle) toggle.setAttribute('aria-expanded', 'true');
-      if (drawer) drawer.setAttribute('aria-hidden', 'false');
+      setDrawerHidden(false);
       if (drawer) setBackgroundInert(true, [drawer, backdrop]);
+      notifyMenuStateChange();
       window.requestAnimationFrame(function () {
         focusFirst(drawer, closeBtn || drawer);
       });
@@ -278,7 +299,10 @@
 
     function updateState() {
       floatingButtons.forEach(function (button) {
-        button.classList.toggle('show', window.scrollY > 520);
+        var visible = window.scrollY > 520 && !document.body.classList.contains('menu-open');
+        button.classList.toggle('show', visible);
+        button.setAttribute('aria-hidden', visible ? 'false' : 'true');
+        button.tabIndex = visible ? 0 : -1;
       });
     }
 
@@ -290,6 +314,7 @@
         scrollRAF = 0;
       });
     }, { passive: true });
+    window.addEventListener('ysb:menu-state-change', updateState);
     updateState();
 
     buttons.forEach(function (button) {
@@ -370,11 +395,12 @@
 
     var isZh = document.documentElement.lang && document.documentElement.lang.toLowerCase().indexOf('zh') === 0;
     var closeText = isZh ? '关闭大图' : 'Close image preview';
+    var previewText = isZh ? '图片预览' : 'Image preview';
 
     var overlay = document.createElement('div');
     overlay.className = 'lightbox';
     overlay.setAttribute('aria-hidden', 'true');
-    overlay.innerHTML = '<div class="lightbox-dialog" role="dialog" aria-modal="true" aria-label="' + closeText + '" tabindex="-1"><button class="lightbox-close" type="button" aria-label="' + closeText + '"><i class="fa fa-times" aria-hidden="true"></i></button><img class="lightbox-image" alt=""><div class="lightbox-caption"></div></div>';
+    overlay.innerHTML = '<div class="lightbox-dialog" role="dialog" aria-modal="true" aria-label="' + closeText + '" tabindex="-1"><button class="lightbox-close" type="button" aria-label="' + closeText + '"><i class="fa fa-times" aria-hidden="true"></i></button><img class="lightbox-image" alt="' + previewText + '" width="1" height="1" loading="lazy" decoding="async"><div class="lightbox-caption"></div></div>';
     document.body.appendChild(overlay);
 
     var dialog = overlay.querySelector('.lightbox-dialog');
@@ -390,7 +416,9 @@
       document.body.classList.remove('lightbox-open');
       setBackgroundInert(false);
       image.removeAttribute('src');
-      image.alt = '';
+      image.alt = previewText;
+      image.setAttribute('width', '1');
+      image.setAttribute('height', '1');
       caption.textContent = '';
       if (activeTrigger && activeTrigger.focus && document.contains(activeTrigger)) {
         focusNode(activeTrigger);
@@ -402,7 +430,13 @@
       activeTrigger = trigger;
       image.src = trigger.getAttribute('href');
       var triggerImg = trigger.querySelector('img');
-      image.alt = triggerImg ? (triggerImg.getAttribute('alt') || '') : '';
+      image.alt = triggerImg ? (triggerImg.getAttribute('alt') || previewText) : previewText;
+      if (triggerImg && triggerImg.hasAttribute('width')) {
+        image.setAttribute('width', triggerImg.getAttribute('width'));
+      }
+      if (triggerImg && triggerImg.hasAttribute('height')) {
+        image.setAttribute('height', triggerImg.getAttribute('height'));
+      }
       caption.textContent = trigger.getAttribute('data-caption') || '';
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
