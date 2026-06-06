@@ -26,6 +26,8 @@ colors:
   surface-tile-2: "#2a2a2c"
   surface-tile-3: "#252527"
   surface-black: "#000000"
+  icon-surface: "rgba(15, 118, 110, .10)"
+  icon-border: "rgba(15, 118, 110, .22)"
   on-primary: "#ffffff"
   on-dark: "#ffffff"
 
@@ -125,6 +127,19 @@ components:
     height: 52px
     backgroundColor: "rgba(236, 236, 238, .82)"
     behavior: "sticky under global nav"
+  nav-icon:
+    source: "Font Awesome 4.7"
+    size: 12px
+    opacity: .78
+    mapping: "home/profile/research/projects/resume/analytics by href"
+  metric-icon:
+    source: "Font Awesome 4.7"
+    size: 15px
+    frame: "36px square, 8px radius, icon-surface fill"
+  field-icon:
+    source: "Font Awesome 4.7"
+    size: 12px
+    frame: "24px square, 8px radius, icon-surface fill"
 ---
 
 # Design System
@@ -172,7 +187,7 @@ The live direction is "research archive with product-quality restraint":
 
 ### Navigation
 
-The global header is a 44px black/frosted bar. Current page state is shown with a subtle bottom rule, not a font-weight jump. Mobile drawer links are inert while closed and receive focus trapping while open.
+The global header is a 44px black/frosted bar. Current page state is shown with a subtle bottom rule, not a font-weight jump. Desktop and drawer navigation use the same Font Awesome page-type icons, mapped by destination: home, profile, research, projects, resume, and analytics. Mobile drawer links are inert while closed and receive focus trapping while open.
 
 ### Buttons
 
@@ -181,6 +196,18 @@ Primary buttons are filled blue pills. Secondary buttons are white or pearl pill
 ### Cards
 
 Cards are for repeated items, panels, proof tiles, and framed tools. They use a 1px hairline border, 8px radius, 24px padding, and a restrained hover lift. Do not nest cards inside cards.
+
+### Iconography
+
+Icons come from the existing `assets/vendor/font-awesome-4.7.0` bundle. Do not add a second icon library unless the whole system is migrated.
+
+- Icons are semantic, not decorative filler: navigation identifies destinations, metrics identify achievement/data, project fields identify role/process/repository, and evidence media identifies visual proof.
+- Navigation icons are 12px, monochrome, and inherit the nav state.
+- Framed field icons use a 24px square frame with `icon-surface`, `icon-border`, and `accent`.
+- Metric icons use a 36px square frame placed in the card corner so they do not change the reading order.
+- Technology tags use the code icon; research keyword chips use the lab icon.
+- Icon-only controls must keep visible `aria-label`s. Pseudo-element icons are decorative and must not be the only accessible label.
+- Do not mix emoji, bitmap icons, or unrelated icon styles with Font Awesome.
 
 ### Evidence Media
 
