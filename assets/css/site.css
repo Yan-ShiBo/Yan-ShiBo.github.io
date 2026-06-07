@@ -1330,8 +1330,8 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
   }
 
   .anchor-chip{
-    min-height:34px;
-    padding:0 13px;
+    min-height:40px;
+    padding:0 14px;
     font-size:13px;
   }
 
@@ -2163,13 +2163,32 @@ body.lightbox-open{overflow:hidden}
 @media (max-width:640px){
   .main-shell > .resume-layout{padding-left:16px;padding-right:16px}
   .anchor-bar{padding-left:14px;padding-right:14px}
+  .brand{min-height:var(--header-h)}
+  .header-actions .icon-btn{
+    width:40px;
+    height:40px;
+  }
+  .lang-switch{
+    min-height:40px;
+  }
+  .lang-switch a{
+    min-width:36px;
+    min-height:36px;
+  }
   .hero .hero-copy{padding-top:32px;padding-bottom:12px}
   .hero h1{margin:14px 0 12px}
   .hero .quick-stats{margin-top:20px}
   .hero .quick-stats .metric{
-    flex-basis:212px;
+    flex-basis:min(86vw, 340px);
     min-height:112px;
-    padding:14px;
+    padding:14px 56px 14px 14px;
+  }
+  .hero .quick-stats .metric::before{
+    top:12px;
+    right:12px;
+    width:30px;
+    height:30px;
+    font-size:13px;
   }
   .hero .quick-stats .metric strong{
     margin-bottom:6px;
@@ -2179,7 +2198,21 @@ body.lightbox-open{overflow:hidden}
     font-size:13px;
     line-height:1.38;
   }
-  .hero .hero-side{align-items:flex-start;padding-bottom:0}
+  .hero .hero-side{
+    align-items:flex-start;
+    padding-left:0 !important;
+    padding-right:0 !important;
+    padding-top:20px;
+    padding-bottom:0;
+    border-top:1px solid var(--hairline);
+    scroll-padding-inline:16px;
+  }
+  .hero .hero-side > :first-child{
+    margin-left:16px;
+  }
+  .hero .hero-side > :last-child{
+    margin-right:16px;
+  }
   .hero-side .profile-card{padding:12px}
   .hero-side .avatar{width:64px}
   .hero-side .profile-body h2{font-size:20px}
