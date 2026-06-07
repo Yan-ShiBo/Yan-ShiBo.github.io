@@ -417,6 +417,7 @@ textarea{
   background:rgba(0,0,0,.42);
   opacity:0;
   pointer-events:none;
+  touch-action:none;
   transition:opacity .22s ease;
 }
 
@@ -439,12 +440,17 @@ textarea{
   transition:transform .28s ease;
   -webkit-backdrop-filter:saturate(180%) blur(20px);
   backdrop-filter:saturate(180%) blur(20px);
+  pointer-events:none;
+  touch-action:pan-y;
 }
 
 :root[data-theme="dark"] .drawer{background:rgba(29,29,31,.92)}
 
 body.menu-open{overflow:hidden}
-body.menu-open .drawer{transform:none}
+body.menu-open .drawer{
+  transform:none;
+  pointer-events:auto;
+}
 body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 
 .drawer-header{
@@ -476,6 +482,7 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
   background:var(--canvas);
   color:var(--text);
   text-decoration:none;
+  touch-action:manipulation;
 }
 
 .drawer-nav a .fa-angle-right{margin-left:auto}
@@ -1932,7 +1939,8 @@ body.lightbox-open{overflow:hidden}
     gap:12px;
     overflow-x:auto;
     padding-bottom:4px;
-    scroll-snap-type:x proximity;
+    scroll-snap-type:x mandatory;
+    overscroll-behavior-inline:contain;
     scrollbar-width:none;
   }
   .hero .quick-stats::-webkit-scrollbar,
@@ -1941,10 +1949,12 @@ body.lightbox-open{overflow:hidden}
     flex:0 0 220px;
     min-height:142px;
     scroll-snap-align:start;
+    scroll-snap-stop:always;
   }
   .hero .hero-side > *{
     flex:0 0 min(86vw, 340px);
     scroll-snap-align:start;
+    scroll-snap-stop:always;
   }
   .hero-side .profile-card{grid-template-columns:auto 1fr}
   .hero-side .avatar{width:86px}
@@ -2182,6 +2192,7 @@ body.lightbox-open{overflow:hidden}
     flex-basis:min(86vw, 340px);
     min-height:112px;
     padding:14px 56px 14px 14px;
+    scroll-margin-inline-start:16px;
   }
   .hero .quick-stats .metric::before{
     top:12px;
@@ -2199,28 +2210,103 @@ body.lightbox-open{overflow:hidden}
     line-height:1.38;
   }
   .hero .hero-side{
+    --hero-rail-card: min(86vw, 340px);
+    --hero-rail-gutter: calc((100vw - var(--hero-rail-card)) / 2);
     align-items:flex-start;
     padding-left:0 !important;
     padding-right:0 !important;
     padding-top:20px;
-    padding-bottom:0;
+    padding-bottom:28px;
     border-top:1px solid var(--hairline);
-    scroll-padding-inline:16px;
+    scroll-padding-inline:var(--hero-rail-gutter);
+  }
+  .hero .hero-side > *{
+    flex-basis:var(--hero-rail-card);
+    scroll-snap-align:center;
+    scroll-margin-inline-start:0;
   }
   .hero .hero-side > :first-child{
-    margin-left:16px;
+    margin-left:var(--hero-rail-gutter);
   }
   .hero .hero-side > :last-child{
-    margin-right:16px;
+    margin-right:var(--hero-rail-gutter);
+  }
+  .hero-side .profile-card,
+  .hero-side .meta-card{
+    min-height:150px;
   }
   .hero-side .profile-card{padding:12px}
   .hero-side .avatar{width:64px}
   .hero-side .profile-body h2{font-size:20px}
   .hero-side .profile-body p{font-size:13px}
-  .hero-side .stats-grid.hero-stats{
-    grid-template-columns:repeat(3,minmax(0,1fr));
+  .hero-side .meta-card .chip-list{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
     gap:8px;
   }
-  .hero-side .compact-stat{padding:10px}
-  .hero-stats + .status-note{padding:10px 12px;font-size:13px}
+  .hero-side .meta-card .chip-list .tag{
+    width:100%;
+    min-width:0;
+    min-height:32px;
+    padding:0 9px;
+    font-size:12px;
+    justify-content:flex-start;
+  }
+  .hero-side .stats-grid.hero-stats{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+  }
+  .hero-side .compact-stat{
+    min-width:0;
+    min-height:68px;
+    overflow:hidden;
+    padding:8px 7px;
+  }
+  .hero-side .compact-stat .stat-label{
+    min-width:0;
+    gap:3px;
+    overflow:hidden;
+    font-size:10px;
+    line-height:1.1;
+    white-space:nowrap;
+  }
+  .hero-side .compact-stat .stat-label::before{
+    width:18px;
+    height:18px;
+    flex-basis:18px;
+    font-size:10px;
+  }
+  .hero-side .compact-stat .stat-value{
+    max-width:100%;
+    margin:6px 0 0;
+    overflow:visible;
+    text-overflow:clip;
+    font-size:clamp(18px, 5.2vw, 22px);
+    line-height:1.05;
+  }
+  .hero-stats + .status-note{
+    width:100%;
+    box-sizing:border-box;
+    padding:10px 12px;
+    font-size:13px;
+  }
+  #undergraduate .stage-card > .proof-grid{
+    display:flex;
+    grid-template-columns:none;
+    gap:12px;
+    overflow-x:auto;
+    padding-bottom:6px;
+    scroll-padding-inline:0;
+    scroll-snap-type:x mandatory;
+    overscroll-behavior-inline:contain;
+    scrollbar-width:none;
+  }
+  #undergraduate .stage-card > .proof-grid::-webkit-scrollbar{
+    display:none;
+  }
+  #undergraduate .stage-card > .proof-grid .proof-item{
+    flex:0 0 min(78vw, 292px);
+    scroll-snap-align:start;
+    scroll-snap-stop:always;
+  }
 }
