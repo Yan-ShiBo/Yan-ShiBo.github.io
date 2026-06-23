@@ -234,7 +234,7 @@ textarea{
   overflow:hidden;
 }
 
-.brand-mark::before{content:"\f0c3"}
+.brand-mark::before{content:"\f120"}
 .brand-mark::after{display:none}
 
 .brand-text{min-width:0}
@@ -2089,8 +2089,18 @@ body.lightbox-open{overflow:hidden}
 
 @media (min-width:1069px){
   .hero{grid-template-columns:minmax(0,1.08fr) minmax(380px,.92fr)}
-  .hero .hero-copy{padding-right:64px}
-  .hero .hero-side{padding-left:64px}
+  .hero .hero-copy{
+    max-width:none;
+    margin-left:0;
+    padding-left:max(24px, calc((100vw - var(--max-width)) / 2));
+    padding-right:64px;
+  }
+  .hero .hero-side{
+    max-width:none;
+    margin-right:0;
+    padding-right:max(24px, calc((100vw - var(--max-width)) / 2));
+    padding-left:64px;
+  }
 }
 
 @media (min-width:1069px) and (max-width:1320px){
