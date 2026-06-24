@@ -1371,7 +1371,8 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 
 .stage-meta{color:var(--ink-muted-48);font-size:14px;line-height:1.43}
 .summary-row{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
-.info-grid{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:20px}
+.info-grid{column-count:2;column-gap:20px;display:block}
+.info-grid > * {break-inside:avoid;margin-bottom:20px}
 .info-grid-spaced{margin-top:18px}
 .stage-grid{margin-top:18px}
 .stage-card > .story-box{margin-top:32px}
@@ -1901,7 +1902,7 @@ body.lightbox-open{overflow:hidden}
   .hero .hero-copy,.hero .hero-side,.page-hero,.section-block,.main-shell > .grid-2,.main-shell > .resume-layout{padding-left:24px;padding-right:24px}
   .page-hero > .surface-inner,.page-hero > .section-title-wrap{text-align:left}
   .page-hero .action-row{justify-content:flex-start}
-  .quick-stats,.stats-grid,.stats-grid.two,.kv-grid,.info-grid,.cv-grid{grid-template-columns:repeat(2, minmax(0, 1fr))}
+  .quick-stats,.stats-grid,.stats-grid.two,.kv-grid,.cv-grid{grid-template-columns:repeat(2, minmax(0, 1fr))}
   .grid-2,.grid-3,.grid-4{grid-template-columns:repeat(2, minmax(0, 1fr))}
   .flow{grid-template-columns:repeat(2, minmax(0, 1fr))}
   .section-header,.stage-head,.footer-card,.project-card .headline{align-items:flex-start;flex-direction:column}
@@ -1951,7 +1952,8 @@ body.lightbox-open{overflow:hidden}
   .hero-side .profile-card{grid-template-columns:auto 1fr}
   .hero-side .avatar{width:86px}
   .hero-side .stats-grid.hero-stats{grid-template-columns:1fr}
-  .quick-stats,.stats-grid,.stats-grid.two,.kv-grid,.info-grid,.cv-grid,.grid-2,.grid-3,.grid-4,.flow,.proof-grid,.proof-grid-wide,.proof-grid-project,.doc-grid{grid-template-columns:1fr}
+  .quick-stats,.stats-grid,.stats-grid.two,.kv-grid,.cv-grid,.grid-2,.grid-3,.grid-4,.flow,.proof-grid,.proof-grid-wide,.proof-grid-project,.doc-grid{grid-template-columns:1fr}
+  .info-grid{column-count:1}
   .proof-grid-compact{grid-template-columns:1fr;justify-content:stretch}
   .result-table{min-width:780px}
   .footer-card{padding:20px}

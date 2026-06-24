@@ -389,3 +389,18 @@ python -m http.server 8000 --bind 127.0.0.1
 
 **防退化检查**：
 - 组合不同的区块（`.section-block`, `.timeline-stage`, `.hero`）时，留意首尾元素的边距表现，避免因父容器无 Padding 或相邻无 Margin 导致的背景粘连。
+
+## 24. 局部排版需求引发的级联崩溃与数据丢失 (2026-06-24)
+
+**现象**：
+当用户提出“右边的个人总结放到左边大面积空白处是不是更好”这样一个局部排版微调时，AI 执行了错误的 Python 脚本，导致整个网页 CSS 布局网格（Masonry 瀑布流）彻底崩溃。随后 AI 在没有提前检查状态的情况下执行了 `git restore`，导致用户未提交（untracked）的证明图片和 HTML 标签全部丢失。
+
+**根本原因分析**：
+1. **过度执行 (Over-execution)**：面对一个单纯的移动请求，AI 为了“全局排版统一”，过度推断并试图重新应用整个对话上下文中的所有排版变更，而不是采取“只修改目标区块”的外科手术式更新。
+2. **错误的技术选型 (Fragile HTML Parsing)**：AI 使用了带有正则表达式（`re.search(r'<div class="info-card">.*?</div\>')`）的 Python 脚本来解析 HTML。因为 HTML 存在大量的嵌套标签（如 `.info-card` 内部嵌套了新加的 `.project-list`），非贪婪正则匹配到了第一个遇到的 `</div>` 就提前终止，直接切断了 HTML 元素。这导致闭合标签大量丢失，结构被破坏。
+3. **缺乏本地状态感知与盲目回滚 (Blind Rollback)**：AI 在执行具有破坏性的全局脚本前，没有检查 `git status`。弄坏页面后，AI 理所当然地使用了 `git restore profile.html`。然而它忽略了用户近期在本地手动放入的图片和新写的 HTML 标签都处于“未提交 (uncommitted/untracked)”状态，这直接抹除了用户的工作成果。
+
+**防退化策略**：
+- **精准局部修改 (Surgical Precision)**：处理后续排版或跟进需求时，**必须**只针对目标元素做精确的字符串替换，严禁“一刀切”式地运行全局正则替换脚本来重构整个文件。
+- **严禁使用正则解析嵌套结构 (No Regex for HTML)**：在任何情况下修改 HTML，**永远不要使用正则表达式提取包含嵌套子节点的标签**。应当使用精准字符串替换工具（精确匹配），或依赖真正的解析器（如 BeautifulSoup）。
+- **执行风险操作前必检 Git (Pre-flight Git Check)**：在执行大范围代码修改脚本，或在准备使用 `git restore/reset` 等可能覆盖本地文件的命令前，**必须先执行 `git status`**。如果存在 uncommitted/untracked 的变更，必须先警告并停止操作，或者使用更为精细的还原手段。
