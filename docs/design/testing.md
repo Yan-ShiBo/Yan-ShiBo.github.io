@@ -351,7 +351,8 @@ sitemap 检查：
 - 非首屏图片使用 `loading="lazy"`。
 - 大图没有导致布局位移，因为 HTML 写了 width/height。
 - Font Awesome 本地字体没有 404。
-- Google Fonts 加载失败时系统字体 fallback 正常。
+- 不得使用外部字体服务（如 Google Fonts），所有所需字体文件必须本地化存放在 `assets/fonts/` 并在 `fonts.css` 中引入，彻底根除首屏阻塞风险。
+- **第三方外链脚本规范**：严禁在 HTML 的 `<head>` 或 `<body>` 阶段直接使用同步或异步（`async` / `defer`）外链加载非关键第三方脚本（例如流量统计）。必须统一封装并在 `window.addEventListener('load')` 后通过 DOM 动态创建并注入，确保不阻塞浏览器的首屏加载闭环（原生的 `window.onload` 和标签页 Loading 动画的停止）。
 - JS 报错数为 0。
 
 目标：
