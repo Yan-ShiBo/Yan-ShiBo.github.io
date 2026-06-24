@@ -455,6 +455,24 @@ python -m http.server 8000 --bind 127.0.0.1
 **根因**：手动复制页面或更新时漏贴元信息模板，未能遵循自动化或标准化的 `<head>` 管理流程。
 **解决方式**：通过全局 Python 脚本重新解析与组装，为所有的页面（共 14 个）严格统一样板化生成了带有 `title`, `description`, `canonical`, `hreflang`, `Open Graph`, `Twitter` 和 `JSON-LD` 结构化数据的最新 `<head>` 块。
 
+## 31. 跨平台开发行尾换行符污染 (CRLF vs LF)
+
+**现象**：在 Windows 系统上执行批处理或使用脚本重组文件后，HTML 文件的换行符被意外转为 CRLF。这导致在进行 `git diff --check` 测试时产生高达 5000+ 行的追踪噪声，将换行符误判为 trailing whitespace。
+**根因**：Git 的 `core.autocrlf` 默认在 Windows 下自动进行 CRLF 和 LF 转换，但在 AI 脚本或部分 IDE 写入文件时绕过了这种判定，导致工作区直接引入了大量被 Git 认为非规范的行尾。
+**解决方式**：在仓库根目录添加了 `.gitattributes` 文件明确要求 `* text=auto eol=lf`，并对二进制资源声明了 `binary`。随后执行 `git add --renormalize .` 从根源上消除跨平台换行符干扰。
+
+## 32. 404 死链页面缺乏爬虫拦截
+
+**现象**：`404.html` 与 `en/404.html` 尽管功能正常，但在它们的 `<head>` 区域缺少防止搜索引擎抓取的 `<meta name="robots" content="noindex">` 标签。
+**根因**：虽然 `testing.md` 文档中有明确的验收要求，但实际编码时产生了疏漏。
+**解决方式**：在两个 404 页面的 `<head>` 中补充上了 `<meta name="robots" content="noindex">`，彻底杜绝死链死角被误收入搜索引擎索引库中。
+
+## 33. 中英双语简历页面导航栏图标丢失
+
+**现象**：简历页面（`resume.html` 和 `en/resume.html`）顶部的导航栏中，Font Awesome 的图标均变为方框，无法正常显示。
+**根因**：之前做全局 SEO 和字体拆分整理 `<head>` 时，未留意到这两页原先就遗失了对 `font-awesome.min.css` 的外部链接，自动化清洗进一步暴露了此隐患。
+**解决方式**：为这两个孤立的页面重新加回了正确的相对路径 `<link href=".../font-awesome.min.css" rel="stylesheet"/>`，恢复了导航栏视觉效果。
+
 ## 安全漏洞处理策略 (Security Policy)
 
 为了保障闫士博个人主页的运行安全以及防范潜在的网络攻击或数据泄露，我们建立了本安全漏洞上报机制。
@@ -485,6 +503,17 @@ python -m http.server 8000 --bind 127.0.0.1
 ## 更新日志 (Changelog)
 
 本项目的版本变更遵循 [语义化版本 2.0.0 (SemVer)](https://semver.org/lang/zh-CN/) 规范，并且格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
+
+---
+
+### [1.3.1] - 2026-06-25
+
+#### Added
+* 在根目录加入 `.gitattributes` 并配置 `* text=auto eol=lf`，彻底消除由于 Windows / Unix 跨平台修改产生的 CRLF/LF Git Diff 噪音。
+* 为 `404.html` 与 `en/404.html` 增加了严格的 `<meta name="robots" content="noindex">` 拦截标签。
+
+#### Fixed
+* 修复了由于自动重构导致的 `resume.html` 与 `en/resume.html` 顶部导航栏图标因为缺失 `font-awesome` 链接而失效的问题。
 
 ---
 
