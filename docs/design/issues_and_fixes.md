@@ -232,20 +232,21 @@ python -m http.server 8000 --bind 127.0.0.1
 - 更换 favicon 后用 `Ctrl+F5` 强制刷新确认浏览器不使用缓存。
 - 保持 `manifest.webmanifest` 图标路径不变，维持 ICO 格式以最大化兼容性。
 
-## 13. Brand-mark 图标从烧瓶改为终端
+## 13. Brand-mark 图标统一为专属几何符号
 
-**现象**：左上角品牌图标 (brand-mark) 使用的是烧瓶图标 (\f0c3)，与计算机科学研究方向不够匹配。
+**现象**：左上角品牌图标 (brand-mark) 之前使用的是终端图标 (\f120)，为了与全新的 Favicon 保持视觉统一，现将其更换为专属的字母 Y 几何符号。
 
-**根因**：初始设计时选择了实验室烧瓶图标代表"研究"，但对于计算机科学背景的研究者，终端图标更贴切。
+**根因**：个人主页的视觉识别系统需要保持一致，Favicon 和导航栏 Brand-mark 使用相同的专属符号有助于建立强烈的个人品牌印象。
 
 **解决方式**：
-- 在 `assets/css/site.css` 中将 `.brand-mark::before{content:"\f0c3"}` 改为 `content:"\f120"`（Font Awesome 4.7 的 terminal 图标）。
-- 该样式在所有页面通过共享 CSS 生效，无需逐页修改。
+- 在 `assets/icons/` 下生成了小尺寸的专属 `brand-mark.png` 图像。
+- 在 `assets/css/site.css` 中，将 `.brand-mark` 的实现从 Font Awesome 图标更改为使用 `background-image` 加载该 PNG 图片。
+- 移除了原有的 `::before` 和 Font Awesome 字体定义，直接让 `.brand-mark` 以正方形图片的形式展示。
 
 **防退化检查**：
-- 确认 `site.css` 中只有一处 `.brand-mark::before` 声明。
-- 确认 brand-mark 在浅色和深色主题下都能看清（白色圆底 + 深色图标）。
-- 不要在 HTML 中用内联样式覆盖 brand-mark 图标。
+- 确认 `brand-mark` 显示清晰，且不被拉伸变形。
+- 以后若要更新符号，应直接替换 `assets/icons/brand-mark.png` 图片，并在设计上依然保持大面积几何体和深蓝色背景。
+- 不要在 HTML 中用内联样式覆盖 brand-mark 的背景图。
 
 ## 14. 文档体系从模板化清理为项目实际内容
 

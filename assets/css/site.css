@@ -221,21 +221,13 @@ textarea{
   width:16px;
   height:16px;
   flex:0 0 16px;
-  border-radius:50%;
-  background:var(--on-dark);
-  color:var(--surface-black);
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  font-family:FontAwesome;
-  font-size:8px;
-  line-height:1;
-  position:relative;
-  overflow:hidden;
+  background-image:url('../icons/brand-mark.png');
+  background-size:contain;
+  background-position:center;
+  background-repeat:no-repeat;
+  display:inline-block;
+  border-radius:2px; /* Soften the sharp corners of the square slightly if needed, or remove for sharp square. The original had 50% */
 }
-
-.brand-mark::before{content:"\f120"}
-.brand-mark::after{display:none}
 
 .brand-text{min-width:0}
 
