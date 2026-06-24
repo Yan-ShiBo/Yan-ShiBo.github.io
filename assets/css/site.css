@@ -2507,3 +2507,52 @@ body.lightbox-open{overflow:hidden}
     font-size:13px;
   }
 }
+
+/* Profile Project List Extracted Inline Styles */
+.profile-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.profile-project-item {
+  /* Container for individual project in profile */
+}
+
+.profile-project-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.profile-project-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+
+.profile-project-date {
+  font-size: 0.9rem;
+  color: var(--ink-muted-48);
+  font-weight: 500;
+}
+
+.profile-project-stack {
+  margin-bottom: 0.8rem;
+}
+
+.profile-project-desc {
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.profile-project-notes {
+  margin: 0;
+  font-size: 0.95rem;
+}
