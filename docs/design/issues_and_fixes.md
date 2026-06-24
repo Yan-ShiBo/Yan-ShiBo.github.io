@@ -404,3 +404,18 @@ python -m http.server 8000 --bind 127.0.0.1
 - **精准局部修改 (Surgical Precision)**：处理后续排版或跟进需求时，**必须**只针对目标元素做精确的字符串替换，严禁“一刀切”式地运行全局正则替换脚本来重构整个文件。
 - **严禁使用正则解析嵌套结构 (No Regex for HTML)**：在任何情况下修改 HTML，**永远不要使用正则表达式提取包含嵌套子节点的标签**。应当使用精准字符串替换工具（精确匹配），或依赖真正的解析器（如 BeautifulSoup）。
 - **执行风险操作前必检 Git (Pre-flight Git Check)**：在执行大范围代码修改脚本，或在准备使用 `git restore/reset` 等可能覆盖本地文件的命令前，**必须先执行 `git status`**。如果存在 uncommitted/untracked 的变更，必须先警告并停止操作，或者使用更为精细的还原手段。
+
+## 25. 首页长时白屏与长时间转圈卡顿
+
+**现象**：无论本地还是线上，每次打开页面都会卡住长达几十秒处于白屏状态，或者内容显示后浏览器标签页依然长时间转圈（Loading）。
+**根因**：
+1. **外部字体同步请求阻塞渲染**：原先使用了 `<link rel="stylesheet" href="https://fonts.googleapis.com/...">` 的同步形式。现代浏览器将外部 CSS 视作渲染阻塞资源。由于国内连接 Google Fonts 极易超时，导致浏览器为了等这个 CSS 完全停止了所有内容的初次绘制（引发长时白屏）。
+2. **异步统计脚本阻塞 Load 事件**：虽然 `Vercount` 和 `Busuanzi` 统计脚本使用了 `<script async>`，但在现代浏览器中，解析 HTML 阶段注入的异步脚本依然会强制阻塞 `window.onload` 事件的触发。当这些域名的网络连接较慢时，标签页的加载指示器会一直旋转直到超时，造成极差的“慢速加载”错觉。
+
+**解决方式**：
+1. **字体彻底本地化**：将所需字体的 woff2 文件下载至 `assets/fonts/inter/` 目录，并在独立的 `assets/css/fonts.css` 文件中通过 `@font-face` 本地引用，配置 `font-display: swap`。全站 14 个 HTML 彻底移除外部谷歌字体请求。
+2. **统计脚本懒加载**：将原本直接写在 HTML 或在 `DOMContentLoaded` 时执行的外部请求注入代码，全部转移到 `window.addEventListener('load', ...)` 之后执行。确保页面图文等核心资产完成加载后，立刻触发原生 `load` 事件（停止转圈），再于后台静默下载第三方统计数据。
+
+**防退化检查**：
+- 未来新增任何页面、组件或引入新字体资源时，**严禁引入任何外部字库服务的 CSS 连接**。所有字体必须下载至 `assets/fonts/` 并在 `fonts.css` 中引入。
+- 严禁在 HTML 源码中直接写入带有外部 URL 的 `<script src="...">`（即使带有 `async` 或 `defer`）。必须在 `stats.js` 或其他初始化脚本中通过监听 `window.onload` 来懒加载此类第三方非核心功能脚本。

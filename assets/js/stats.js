@@ -196,8 +196,15 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     updateLocalCounters();
+  });
 
-    setStatus(text('loading'), 'warn');
+  window.addEventListener('load', function () {
+    // Inject Vercount script dynamically AFTER load to avoid blocking spinner
+    var vercountScript = document.createElement('script');
+    vercountScript.src = 'https://events.vercount.one/js';
+    vercountScript.async = true;
+    document.head.appendChild(vercountScript);
+
     loadPublicScript(0);
 
     var tries = 0;
