@@ -57,12 +57,17 @@
   }
 
   function validCounter(value) {
-    return !!value && value !== '--' && value !== 'null' && value !== 'undefined' && value !== 'NaN' && value !== 'Loading';
+    return /^[0-9]+$/.test(value);
   }
 
-  function writeValue(id, value) {
+  function writeCounter(id, value) {
     var el = document.getElementById(id);
     if (el) el.textContent = validCounter(value) ? value : '--';
+  }
+
+  function writeText(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value || '--';
   }
 
   function pickCounter(ids) {
@@ -103,9 +108,9 @@
     if (validCounter(siteUv)) validCount += 1;
     if (validCounter(pagePv)) validCount += 1;
 
-    writeValue('site-pv', sitePv);
-    writeValue('site-uv', siteUv);
-    writeValue('page-pv', pagePv);
+    writeCounter('site-pv', sitePv);
+    writeCounter('site-uv', siteUv);
+    writeCounter('page-pv', pagePv);
 
     return validCount;
   }
@@ -184,11 +189,11 @@
       var pageCount = parseInt(storage.getItem(pageKey) || '0', 10) + 1;
       storage.setItem(pageKey, String(pageCount));
 
-      writeValue('local-total', String(total));
-      writeValue('local-page', String(pageCount));
-      writeValue('local-days', String(visitDays.length));
-      writeValue('local-first', formatDate(firstVisit));
-      writeValue('local-last', formatDate(lastVisit));
+      writeCounter('local-total', String(total));
+      writeCounter('local-page', String(pageCount));
+      writeCounter('local-days', String(visitDays.length));
+      writeText('local-first', formatDate(firstVisit));
+      writeText('local-last', formatDate(lastVisit));
     } catch (err) {
       /* local counters are optional; public counters should still load */
     }

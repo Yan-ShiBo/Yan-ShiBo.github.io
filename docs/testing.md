@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 41 个零依赖 `node:test` 用例；
+- `scripts/validate-site.test.js` 包含 45 个零依赖 `node:test` 用例；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -28,8 +28,8 @@ git diff --check
 当前成功输出应包含：
 
 ```text
-tests 41
-pass 41
+tests 45
+pass 45
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
@@ -85,7 +85,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 其他页面不误加载统计脚本；
 - Busuanzi、jsDelivr 与 Vercount 的统计专用 preconnect 只出现在这四页。
 
-它不会访问第三方计数服务，也不会判断返回数字是否真实、递增或为正整数。
+它不会访问第三方计数服务，因此不能证明线上值真实或递增；验证器会在隔离沙箱中执行实际 `stats.js`，核对非负 ASCII 十进制整数格式、`0` 与前导零、全角数字等异常主来源回退、超长数字不丢失、全部异常降级，以及本地日期文本不受计数校验影响。
 
 ### 3.5 SEO
 
@@ -132,7 +132,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - `scripts/generate-sitemap.js`；
 - `scripts/validate-site.js`。
 
-语法通过不等于浏览器行为通过；抽屉、Lightbox、主题和统计降级仍需人工检查。
+语法通过不等于浏览器行为通过；抽屉、Lightbox、主题、真实第三方统计接入和浏览器呈现仍需人工检查。
 
 ### 3.8 共享交互结构合同
 
@@ -153,6 +153,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - robots 全站禁止与 user-agent 作用域；
 - 未登记的嵌套 HTML；
 - 非统计页误加统计服务 preconnect；
+- `stats.js` 的非负 ASCII 整数格式、`0`、前导零、全角数字等异常主来源回退、超长数字原样保留、全部异常降级，以及本地日期文本不受计数校验影响；
 - 移动菜单的 834px 桌面断点清理合同，以及错误查询、遗漏 `event.matches`、缺少可见焦点回退、关闭逻辑落在无关函数或关键实现被注释掉的变异用例；
 - JavaScript 字符串和正则字面量中的注释形文本不会干扰交互合同识别；
 - 验证器只读保证；
@@ -251,6 +252,11 @@ http://127.0.0.1:8000/en/
 
 - 第三方完整返回；
 - 只返回部分计数；
+- `0`、前导零和普通非负整数；
+- 负数、小数、科学计数法、逗号分组、全角数字和普通文本；
+- 主来源无效但备用来源有效；
+- 所有来源无效时显示 `--` 和警告状态；
+- 本地首次与最近访问日期仍正常显示；
 - 第三方超时或被拦截；
 - localStorage 可用、为空或被限制；
 - 刷新与中英文页面切换。
@@ -276,7 +282,7 @@ http://127.0.0.1:8000/en/
 | 图片或下载材料 | 三条最小验证 | 文件内容、尺寸、alt、公开权限、按钮 |
 | CSS | 三条最小验证 | 双主题、419/640/833/834/1068/1069/1440 |
 | `site.js` | 三条最小验证 | 主题、抽屉、Lightbox、键盘与降级 |
-| `stats.js` | 三条最小验证 | 成功、部分、失败、localStorage 与四页范围 |
+| `stats.js` | 三条最小验证 | 成功、部分、失败、异常值、备用源回退、localStorage 与四页范围 |
 | 页面路由/SEO | 重新生成 sitemap 后全量验证 | canonical、hreflang、404、线上 URL |
 | manifest/图标 | 三条最小验证、两份 manifest 静态合同 | 各尺寸视觉质量、浏览器安装 UI 与实际启动入口 |
 
@@ -290,6 +296,7 @@ http://127.0.0.1:8000/en/
 - 非统计页加载 `stats.js` 或统计专用依赖；
 - 英文页面重新指向中文 manifest，或任一页面出现重复/正文内 manifest 链接；
 - 把本地四页累计描述为 14 页全站累计；
+- 异常 provider 文本被展示为计数、无效主来源遮蔽有效备用来源，或计数校验误伤本地日期文本；
 - 把相同 `lastmod` 日期直接判为错误；
 - 文档继续引用已删除路径或重复维护同一合同；
 - 未授权个人材料或未发表研究材料进入公开仓库。
@@ -299,7 +306,7 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：41 passed / 0 failed
+自动测试：45 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
 人工检查：页面、主题、视口、键盘路径

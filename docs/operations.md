@@ -151,7 +151,7 @@ Pages 部署成功但浏览器仍显示旧内容时，按以下顺序判断：
 
 ### 9.5 统计为空或部分为空
 
-区分第三方服务、网络拦截、provider DOM、展示 DOM 与 localStorage。统计失败不是全站故障；主体内容必须保持可用。只有四个 stats-enabled 页面应加载统计脚本。
+区分第三方服务、网络拦截、provider DOM、展示 DOM 与 localStorage。排查时同时读取隐藏 provider 节点的原始文本与最终展示值；无效来源应被跳过并尝试备用来源，全部无效时应显示 `--` 且状态节点应为 `data-state="warn"`，而不是透传异常文本。值格式合同见[架构文档](architecture.md#6-访问统计)。统计失败不是全站故障；主体内容必须保持可用。只有四个 stats-enabled 页面应加载统计脚本。
 
 ### 9.6 Sitemap 不一致
 

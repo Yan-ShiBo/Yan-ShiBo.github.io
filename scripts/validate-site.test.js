@@ -24,6 +24,14 @@ const COPIED_FIXTURE_EXTENSIONS = new Set([
 
 const MENU_CLEANUP_ISSUE =
   'assets/js/site.js: missing 834px desktop breakpoint menu cleanup';
+const STATS_INTEGER_CONTRACT_ISSUE =
+  'assets/js/stats.js: public counters must accept only non-negative ASCII decimal integer text and fall back from invalid provider values';
+const STATS_ZERO_CONTRACT_ISSUE =
+  'assets/js/stats.js: zero must remain a valid public counter';
+const STATS_UNAVAILABLE_CONTRACT_ISSUE =
+  'assets/js/stats.js: invalid public counters must render -- and end in warn state';
+const STATS_LOCAL_DATE_CONTRACT_ISSUE =
+  'assets/js/stats.js: local visit dates must remain formatted text';
 
 function createRepositoryFixture(t) {
   const sourceRoot = path.resolve(__dirname, '..');
@@ -55,6 +63,13 @@ function replaceOnce(rootDir, relativePath, searchValue, replacement) {
   const original = fs.readFileSync(absolutePath, 'utf8');
   assert.ok(original.includes(searchValue), `${relativePath} must contain the fixture text`);
   fs.writeFileSync(absolutePath, original.replace(searchValue, replacement));
+}
+
+function replaceMatching(rootDir, relativePath, pattern, replacement) {
+  const absolutePath = path.join(rootDir, relativePath);
+  const original = fs.readFileSync(absolutePath, 'utf8');
+  assert.match(original, pattern, `${relativePath} must contain the fixture pattern`);
+  fs.writeFileSync(absolutePath, original.replace(pattern, replacement));
 }
 
 function validateSiteScriptFixture(t, sourceLines) {
@@ -316,6 +331,80 @@ test('validateRepository rejects stats-service preconnects on non-stats pages', 
       'projects.html: stats-service preconnect https://events.vercount.one is limited to the four stats-enabled pages'
     ]
   );
+});
+
+test('validateRepository rejects non-ASCII public counter digits', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /  function validCounter\(value\) \{[\s\S]*?\r?\n  \}/,
+    [
+      '  function validCounter(value) {',
+      '    return /^\\p{Nd}+$/u.test(value);',
+      '  }'
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_INTEGER_CONTRACT_ISSUE));
+});
+
+test('validateRepository treats zero as a valid public counter', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /  function validCounter\(value\) \{[\s\S]*?\r?\n  \}/,
+    [
+      '  function validCounter(value) {',
+      '    return /^[0-9]+$/.test(value) && /[1-9]/.test(value);',
+      '  }'
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_ZERO_CONTRACT_ISSUE));
+});
+
+test('validateRepository requires invalid counters to degrade to warn', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /  function validCounter\(value\) \{[\s\S]*?\r?\n  \}/,
+    [
+      '  function validCounter(value) {',
+      '    return !!value;',
+      '  }'
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_UNAVAILABLE_CONTRACT_ISSUE));
+});
+
+test('validateRepository keeps local date text outside counter validation', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /    write[A-Za-z]+\('local-first', formatDate\(firstVisit\)\);/,
+    "    writeCounter('local-first', formatDate(firstVisit));"
+  );
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /    write[A-Za-z]+\('local-last', formatDate\(lastVisit\)\);/,
+    "    writeCounter('local-last', formatDate(lastVisit));"
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_LOCAL_DATE_CONTRACT_ISSUE));
 });
 
 test('validateRepository checks local URLs in the Font Awesome stylesheet', (t) => {

@@ -1,6 +1,7 @@
 const childProcess = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const SITE_ORIGIN = 'https://yan-shibo.github.io';
 
@@ -92,6 +93,13 @@ const LOCAL_STATS_IDS = [
   'local-first',
   'local-last'
 ];
+const STATS_INTEGER_CONTRACT_ISSUE =
+  'public counters must accept only non-negative ASCII decimal integer text and fall back from invalid provider values';
+const STATS_ZERO_CONTRACT_ISSUE = 'zero must remain a valid public counter';
+const STATS_UNAVAILABLE_CONTRACT_ISSUE =
+  'invalid public counters must render -- and end in warn state';
+const STATS_LOCAL_DATE_CONTRACT_ISSUE =
+  'local visit dates must remain formatted text';
 
 function toPosix(value) {
   return value.split(path.sep).join('/');
@@ -868,6 +876,202 @@ function validateJavaScriptSyntax(rootDir, issues) {
   }
 }
 
+function runStatsScenario(source, options = {}) {
+  const providerValues = options.providerValues || {};
+  const storageSeed = options.storageSeed || {};
+  const elementIds = [
+    ...PUBLIC_STATS_IDS,
+    ...PROVIDER_STATS_IDS,
+    ...LOCAL_STATS_IDS
+  ];
+  const elements = new Map();
+  for (const id of elementIds) {
+    const element = {
+      attributes: {},
+      textContent: Object.hasOwn(providerValues, id) ? providerValues[id] : ''
+    };
+    element.setAttribute = function (name, value) {
+      element.attributes[name] = String(value);
+    };
+    elements.set(id, element);
+  }
+
+  const storage = new Map(
+    Object.entries(storageSeed).map(([key, value]) => [key, String(value)])
+  );
+  const documentEvents = {};
+  const windowEvents = {};
+  const intervalCallbacks = [];
+  const localStorage = {
+    getItem(key) {
+      return storage.has(key) ? storage.get(key) : null;
+    },
+    setItem(key, value) {
+      storage.set(key, String(value));
+    }
+  };
+  const document = {
+    documentElement: { lang: 'en' },
+    head: { appendChild() {} },
+    addEventListener(type, callback) {
+      documentEvents[type] = callback;
+    },
+    createElement() {
+      return {};
+    },
+    getElementById(id) {
+      return elements.get(id) || null;
+    }
+  };
+  const window = {
+    document,
+    localStorage,
+    location: { pathname: '/analytics.html' },
+    addEventListener(type, callback) {
+      windowEvents[type] = callback;
+    },
+    clearInterval() {},
+    setInterval(callback) {
+      intervalCallbacks.push(callback);
+      return intervalCallbacks.length;
+    }
+  };
+  const context = vm.createContext({
+    __documentEvents: documentEvents,
+    __intervalCallbacks: intervalCallbacks,
+    __windowEvents: windowEvents,
+    document,
+    window
+  });
+  const script = new vm.Script(source, { filename: 'assets/js/stats.js' });
+  script.runInContext(context, { timeout: 1000 });
+
+  if (options.triggerDomContentLoaded) {
+    vm.runInContext('__documentEvents.DOMContentLoaded()', context, { timeout: 1000 });
+  }
+  if (options.triggerLoad) {
+    vm.runInContext('__windowEvents.load()', context, { timeout: 1000 });
+  }
+  for (let tick = 0; tick < (options.intervalTicks || 0); tick += 1) {
+    vm.runInContext('__intervalCallbacks[0]()', context, { timeout: 1000 });
+  }
+
+  function readElement(id) {
+    const element = elements.get(id);
+    return {
+      state: element.attributes['data-state'] || null,
+      text: String(element.textContent == null ? '' : element.textContent).trim()
+    };
+  }
+
+  return { readElement };
+}
+
+function validateStatsJavaScriptContracts(rootDir, issues) {
+  const file = 'assets/js/stats.js';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return;
+
+  let source;
+  let fallbackScenario;
+  let zeroScenario;
+  let unavailableScenario;
+  let localScenario;
+  try {
+    source = readUtf8(rootDir, file);
+    fallbackScenario = runStatsScenario(source, {
+      providerValues: {
+        busuanzi_value_site_pv: '-1',
+        vercount_value_site_pv: '900719925474099312345',
+        busuanzi_value_site_uv: '1.5',
+        vercount_value_site_uv: '43',
+        busuanzi_value_page_pv: '１２',
+        vercount_value_page_pv: '44'
+      },
+      triggerLoad: true,
+      intervalTicks: 1
+    });
+    zeroScenario = runStatsScenario(source, {
+      providerValues: {
+        busuanzi_value_site_pv: ' 0 ',
+        vercount_value_site_pv: '42',
+        busuanzi_value_site_uv: '0007',
+        vercount_value_site_uv: '43',
+        busuanzi_value_page_pv: '00123',
+        vercount_value_page_pv: '44'
+      },
+      triggerLoad: true,
+      intervalTicks: 1
+    });
+    unavailableScenario = runStatsScenario(source, {
+      providerValues: {
+        busuanzi_value_site_pv: '-1',
+        vercount_value_site_pv: '+1',
+        busuanzi_value_site_uv: '1.5',
+        vercount_value_site_uv: '1e3',
+        busuanzi_value_page_pv: '1,000',
+        vercount_value_page_pv: 'broken'
+      },
+      triggerLoad: true,
+      intervalTicks: 24
+    });
+    localScenario = runStatsScenario(source, {
+      storageSeed: {
+        'ysb-visit-total': '3',
+        'ysb-visit-first': '2026-01-02T03:04:05.000Z',
+        'ysb-visit-days': '["2026-01-02"]',
+        'ysb-page:/analytics.html': '2'
+      },
+      triggerDomContentLoaded: true
+    });
+  } catch (error) {
+    addIssue(
+      issues,
+      file,
+      `runtime counter contracts could not execute: ${error.message}`
+    );
+    return;
+  }
+
+  const fallbackValues = ['site-pv', 'site-uv', 'page-pv'].map(
+    (id) => fallbackScenario.readElement(id).text
+  );
+  if (
+    fallbackValues.join(' ') !== '900719925474099312345 43 44' ||
+    fallbackScenario.readElement('stats-status').state !== 'ok'
+  ) {
+    addIssue(issues, file, STATS_INTEGER_CONTRACT_ISSUE);
+  }
+
+  const zeroValues = ['site-pv', 'site-uv', 'page-pv'].map(
+    (id) => zeroScenario.readElement(id).text
+  );
+  if (
+    zeroValues.join(' ') !== '0 0007 00123' ||
+    zeroScenario.readElement('stats-status').state !== 'ok'
+  ) {
+    addIssue(issues, file, STATS_ZERO_CONTRACT_ISSUE);
+  }
+
+  const unavailableValues = ['site-pv', 'site-uv', 'page-pv'].map(
+    (id) => unavailableScenario.readElement(id).text
+  );
+  if (
+    unavailableValues.some((value) => value !== '--') ||
+    unavailableScenario.readElement('stats-status').state !== 'warn'
+  ) {
+    addIssue(issues, file, STATS_UNAVAILABLE_CONTRACT_ISSUE);
+  }
+
+  const datePattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+  if (
+    !datePattern.test(localScenario.readElement('local-first').text) ||
+    !datePattern.test(localScenario.readElement('local-last').text)
+  ) {
+    addIssue(issues, file, STATS_LOCAL_DATE_CONTRACT_ISSUE);
+  }
+}
+
 const JAVASCRIPT_NON_CODE_PATTERN =
   /"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|`(?:\\[\s\S]|[^`\\])*`|\/(?![/*])(?:\\[\s\S]|\[(?:\\[\s\S]|[^\]\\])*\]|[^/\\\r\n])+\/[dgimsuvy]*|\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g;
 
@@ -1034,6 +1238,7 @@ function validateRepository(rootDir) {
   const sitemapUrls = validateSitemap(absoluteRoot, issues);
   validateRobots(absoluteRoot, issues);
   validateJavaScriptSyntax(absoluteRoot, issues);
+  validateStatsJavaScriptContracts(absoluteRoot, issues);
   validateSiteJavaScriptContracts(absoluteRoot, issues);
 
   return {
