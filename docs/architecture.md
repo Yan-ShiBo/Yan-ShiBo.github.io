@@ -9,7 +9,7 @@
 1. 14 个实际 HTML 页面；
 2. `assets/css/site.css`；
 3. `assets/js/site.js` 与 `assets/js/stats.js`；
-4. `manifest.webmanifest`、`robots.txt`、`sitemap.xml`；
+4. `manifest.webmanifest`、`manifest.en.webmanifest`、`robots.txt`、`sitemap.xml`；
 5. `scripts/generate-sitemap.js`、`scripts/validate-site.js` 及其测试；
 6. 本文及其他项目文档。
 
@@ -115,7 +115,7 @@ CSS 中的媒体查询按实际级联需要分布在多个位置，并非严格�
 
 ### 4.4 品牌与图标
 
-导航品牌标识是空的 `.brand-mark` 元素，通过 CSS 背景图加载 `assets/icons/brand-mark.png`。它不是 Font Awesome terminal 字形。favicon 使用 `assets/icons/site.ico`，内含 16×16、32×32、48×48、256×256 四个图层；manifest 的 `sizes` 必须与该集合一致。Font Awesome 仅承担普通功能图标。
+导航品牌标识是空的 `.brand-mark` 元素，通过 CSS 背景图加载 `assets/icons/brand-mark.png`。它不是 Font Awesome terminal 字形。favicon 使用 `assets/icons/site.ico`，内含 16×16、32×32、48×48、256×256 四个图层；两份 manifest 的 `sizes` 都必须与该集合一致。Font Awesome 仅承担普通功能图标。
 
 ## 5. 状态模型
 
@@ -206,7 +206,7 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 
 ## 9. Manifest、爬虫与 sitemap
 
-`manifest.webmanifest` 被全部页面引用，当前 `start_url` 为 `/`、`lang` 为 `zh-CN`。因此从英文页安装到主屏仍以中文根页作为默认入口；这是一项已知产品偏差。
+7 个中文页面引用 `manifest.webmanifest`，其 `start_url` 为 `/`、`scope` 为 `/`、`lang` 为 `zh-CN`；7 个英文页面引用 `manifest.en.webmanifest`，其 `start_url` 为 `/en/`、`scope` 为 `/`、`lang` 为 `en`。共享根 scope 保留双语站内导航，安装后的默认启动入口则随页面语言变化。验证器要求每页 `<head>` 内恰有一个语言匹配的 manifest 链接，并分别校验两份文件的入口、语言和图标合同。
 
 `robots.txt` 允许正常抓取并声明 sitemap。`scripts/generate-sitemap.js` 维护六组可索引页面，不包含 404。每条 `<lastmod>` 来自对应 HTML 文件的本地文件系统 mtime；多个页面同日修改时日期可以完全相同。
 

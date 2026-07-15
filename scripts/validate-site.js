@@ -55,6 +55,25 @@ const STATS_PRECONNECT_ORIGINS = new Set([
   'https://events.vercount.one'
 ]);
 
+const MANIFEST_CONTRACTS = [
+  {
+    file: 'manifest.webmanifest',
+    lang: 'zh-CN',
+    startUrl: '/',
+    scope: '/'
+  },
+  {
+    file: 'manifest.en.webmanifest',
+    lang: 'en',
+    startUrl: '/en/',
+    scope: '/'
+  }
+];
+
+const MANIFEST_BY_LANGUAGE = new Map(
+  MANIFEST_CONTRACTS.map((contract) => [contract.lang, contract])
+);
+
 const ANALYTICS_PAGES = new Set(['analytics.html', 'en/analytics.html']);
 
 const PUBLIC_STATS_IDS = ['site-pv', 'site-uv', 'page-pv', 'stats-status'];
@@ -335,7 +354,6 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
   const scripts = extractTags(html, 'script');
   const expectedResources = [
     'assets/icons/site.ico',
-    'manifest.webmanifest',
     'assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css',
     'assets/css/site.css'
   ];
@@ -347,6 +365,25 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
     if (!linkedResources.includes(resource)) {
       addIssue(issues, file, `missing required resource link ${resource}`);
     }
+  }
+
+  const expectedManifest = MANIFEST_BY_LANGUAGE.get(expectedLang).file;
+  const activeHtml = html.replace(/<!--[\s\S]*?-->/g, '');
+  const headMatch = activeHtml.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
+  const headHtml = headMatch ? headMatch[1] : '';
+  const headLinks = extractTags(headHtml, 'link');
+  const manifestLinks = headLinks.filter((tag) => (
+    String(tag.attributes.rel || '').toLowerCase().split(/\s+/).includes('manifest')
+  ));
+  const allManifestLinks = extractTags(activeHtml, 'link').filter((tag) => (
+    String(tag.attributes.rel || '').toLowerCase().split(/\s+/).includes('manifest')
+  ));
+  const hasExpectedManifest = allManifestLinks.length === 1 && manifestLinks.length === 1 && (() => {
+    const resolved = resolveLocalReference(rootDir, file, manifestLinks[0].attributes.href);
+    return resolved.kind === 'local' && resolved.relativePath === expectedManifest;
+  })();
+  if (!hasExpectedManifest) {
+    addIssue(issues, file, `expected exactly one manifest link to ${expectedManifest}`);
   }
 
   const scriptResources = scripts
@@ -563,8 +600,8 @@ function normalizeDeclaredSizes(value) {
   return sortImageSizes(new Set(sizes));
 }
 
-function validateManifest(rootDir, issues, anchorCache) {
-  const file = 'manifest.webmanifest';
+function validateManifest(rootDir, contract, issues, anchorCache) {
+  const { file, lang, startUrl, scope } = contract;
   if (!ensureFile(rootDir, file, issues)) return;
   let manifest;
   try {
@@ -576,6 +613,15 @@ function validateManifest(rootDir, issues, anchorCache) {
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
     addIssue(issues, file, 'manifest root must be an object');
     return;
+  }
+  if (manifest.start_url !== startUrl) {
+    addIssue(issues, file, `expected start_url "${startUrl}" for ${lang}`);
+  }
+  if (manifest.scope !== scope) {
+    addIssue(issues, file, `expected scope "${scope}" for ${lang}`);
+  }
+  if (manifest.lang !== lang) {
+    addIssue(issues, file, `expected lang "${lang}"`);
   }
   if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
     addIssue(issues, file, 'expected at least one icon');
@@ -982,7 +1028,9 @@ function validateRepository(rootDir) {
   }
 
   validateCssReferences(absoluteRoot, issues, anchorCache);
-  validateManifest(absoluteRoot, issues, anchorCache);
+  for (const contract of MANIFEST_CONTRACTS) {
+    validateManifest(absoluteRoot, contract, issues, anchorCache);
+  }
   const sitemapUrls = validateSitemap(absoluteRoot, issues);
   validateRobots(absoluteRoot, issues);
   validateJavaScriptSyntax(absoluteRoot, issues);

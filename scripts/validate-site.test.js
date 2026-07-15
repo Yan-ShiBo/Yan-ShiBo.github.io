@@ -391,6 +391,137 @@ test('validateRepository rejects extra hreflang links with the wrong rel', (t) =
   ));
 });
 
+test('validateRepository accepts split language manifests', (t) => {
+  const rootDir = createRepositoryFixture(t);
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('validateRepository requires exactly one language-specific manifest link', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/profile.html',
+    '  <link rel="manifest" href="../manifest.en.webmanifest"/>',
+    '  <link rel="manifest" href="../manifest.en.webmanifest"/>\n' +
+      '  <link rel="manifest" href="../manifest.webmanifest"/>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'en/profile.html: expected exactly one manifest link to manifest.en.webmanifest'
+  ));
+});
+
+test('validateRepository rejects a unique manifest link for the wrong language', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'index.html',
+    '  <link rel="manifest" href="./manifest.webmanifest"/>',
+    '  <link rel="manifest" href="./manifest.en.webmanifest"/>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'index.html: expected exactly one manifest link to manifest.webmanifest'
+  ));
+});
+
+test('validateRepository requires the language manifest link inside head', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/profile.html',
+    '  <link rel="manifest" href="../manifest.en.webmanifest"/>',
+    ''
+  );
+  replaceOnce(
+    rootDir,
+    'en/profile.html',
+    '</body>',
+    '  <link rel="manifest" href="../manifest.en.webmanifest"/>\n</body>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'en/profile.html: expected exactly one manifest link to manifest.en.webmanifest'
+  ));
+});
+
+test('validateRepository rejects an additional manifest link outside head', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/profile.html',
+    '</body>',
+    '  <link rel="manifest" href="../manifest.en.webmanifest"/>\n</body>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'en/profile.html: expected exactly one manifest link to manifest.en.webmanifest'
+  ));
+});
+
+test('validateRepository ignores manifest links inside HTML comments', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/profile.html',
+    '  <link rel="manifest" href="../manifest.en.webmanifest"/>',
+    '  <!-- <link rel="manifest" href="../manifest.en.webmanifest"/> -->'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'en/profile.html: expected exactly one manifest link to manifest.en.webmanifest'
+  ));
+});
+
+test('validateRepository enforces language-specific manifest metadata', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const manifestPath = path.join(rootDir, 'manifest.en.webmanifest');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.start_url = '/';
+  manifest.scope = '/en/';
+  manifest.lang = 'zh-CN';
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'manifest.en.webmanifest: expected start_url "/en/" for en'
+  ));
+  assert.ok(result.issues.includes(
+    'manifest.en.webmanifest: expected scope "/" for en'
+  ));
+  assert.ok(result.issues.includes(
+    'manifest.en.webmanifest: expected lang "en"'
+  ));
+});
+
+test('validateRepository checks icon metadata in every language manifest', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const manifestPath = path.join(rootDir, 'manifest.en.webmanifest');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.icons[0].sizes = '32x32';
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'manifest.en.webmanifest: icons[0].sizes declares "32x32" but ICO contains "16x16 32x32 48x48 256x256"'
+  ));
+});
+
 test('validateRepository reports a null manifest instead of throwing', (t) => {
   const rootDir = createRepositoryFixture(t);
   fs.writeFileSync(path.join(rootDir, 'manifest.webmanifest'), 'null\n');

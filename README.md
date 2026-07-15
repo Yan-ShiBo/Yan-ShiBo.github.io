@@ -90,7 +90,8 @@ http://127.0.0.1:8000/en/
 │   ├── generate-sitemap.js
 │   ├── validate-site.js
 │   └── validate-site.test.js
-├── manifest.webmanifest
+├── manifest.webmanifest          # 中文安装入口
+├── manifest.en.webmanifest       # 英文安装入口
 ├── robots.txt
 └── sitemap.xml
 ```
