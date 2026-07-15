@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 45 个零依赖 `node:test` 用例；
+- `scripts/validate-site.test.js` 包含 124 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -25,14 +25,22 @@ node scripts/validate-site.js
 git diff --check
 ```
 
+仅定位结构化数据回归时可以运行以下名称子集；它不能替代上面的全量入口：
+
+```powershell
+node --test --test-name-pattern="structured data" scripts/validate-site.test.js
+```
+
 当前成功输出应包含：
 
 ```text
-tests 45
-pass 45
+tests 124
+pass 124
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
+
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，不要把这行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数，显示 `124 tests`、`79 pass`、`45 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -87,29 +95,30 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 
 它不会访问第三方计数服务，因此不能证明线上值真实或递增；验证器会在隔离沙箱中执行实际 `stats.js`，核对非负 ASCII 十进制整数格式、`0` 与前导零、全角数字等异常主来源回退、超长数字不丢失、全部异常降级，以及本地日期文本不受计数校验影响。
 
-### 3.5 SEO
+### 3.5 SEO 与结构化数据
 
 对 12 个可索引页面，验证器检查：
 
 - canonical 和 hreflang 集合；
 - `og:url`；
-- JSON-LD 可以解析；
-- URL 与中英文映射一致。
+- URL 与中英文映射一致；
+- `<head>` 中恰有一个活动 JSON-LD 块，正文和 `<head>` 外为零；启用脚本的 HTML 语义下，`noscript` 作为 raw/inert 内容处理，其中的 `script` 不计为活动块；
+- JSON-LD 可解析，根对象的 `@context` 和 `@graph` 符合合同；
+- 节点 ID 绝对且唯一，内部引用只含 `@id`、全部可解析且没有未登记节点；
+- 页面节点类型、ID、URL、语言与关系正确，`name`/`description` 分别等于 HTML 标题和 meta description；
+- 每类页面使用[架构文档](architecture.md#82-稳定-id-与节点字段)规定的精确节点与字段集合；
+- 12 页的 `Person` 与 `WebSite` 稳定身份和事实一致，语言数组等集合不受顺序影响；
+- 项目和研究列表的数量、位置、引用及本地化字段正确；项目 `name`、`description`、`keywords` 与研究 `name`、`description` 能在经 HTML 结构/属性过滤后的 `<body>` 文本中找到，该文本排除 `template`、启用脚本语义下的 `noscript`、`hidden`、`inert` 与 `aria-hidden="true"` 内容；`codeRepository` 匹配验证器内批准的仓库 URL 映射；自动化不计算 CSS computed visibility 或真实浏览器渲染；
+- 统计页没有额外主实体、数据集、交互计数、计数值、本地访问数据或访客/浏览器标识。
 
 对 2 个 404，验证器检查：
 
 - 存在 `noindex`；
 - 不存在 canonical 或 hreflang；
+- 不存在活动 JSON-LD；
 - 不进入 sitemap。
 
-自动验证不覆盖：
-
-- Open Graph title、description、image 的内容质量；
-- Twitter 字段完整性；
-- JSON-LD 必需字段的业务完整性；
-- 404 是否完全不含 JSON-LD；
-- 404 的 5 秒倒计时和最终跳转；
-- 搜索引擎实际收录结果。
+验证器只使用 Node.js 内置模块，保持仓库只读，不访问网络，也不执行 JSON-LD。畸形 JSON 或超深嵌套输入会形成可定位问题，不使 `validateRepository()` 抛出；其他页面与后续独立检查继续运行。它仍不验证 Open Graph/Twitter 文案质量、404 的倒计时和最终跳转，也不证明搜索引擎的实际收录、展示或排名。
 
 ### 3.6 Sitemap 与 robots
 
@@ -147,6 +156,13 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 缺失文件和缺失统计 DOM；
 - Font Awesome CSS 中的本地 URL；
 - 重复或错误 hreflang；
+- JSON-LD 活动块的位置与数量，以及正文、注释、模板、启用脚本语义下的 `noscript`、raw-text 和 RCDATA 边界；
+- 畸形 JSON、超深嵌套输入、错误 `@context` / `@graph`，以及错误页面类型、语言、URL、标题和描述；
+- 节点 ID 的绝对性、缺失、重复与漂移，悬空引用、非 ID-only 关系、额外字段和错误图库存；
+- `Person` / `WebSite` 跨页身份与事实漂移，以及图节点和语言集合按集合而非数组顺序比较；
+- 项目和研究列表、顺序、可见文本、仓库、贡献者与禁止声明；
+- 统计页的数据类型、计数、本地访问和访客字段，以及两个 404 的活动 JSON-LD 排除；
+- 正文证据排除 `template`、启用脚本语义下的 `noscript`、`hidden`、`inert`、`aria-hidden="true"`，并正确处理属性引号内的 `>`；
 - sitemap alternate、XML 外壳和额外根元素；
 - 分语言 manifest 基线、唯一 `<head>` 链接、正文/HTML 注释误满足、入口/范围/语言字段，以及 `null`、畸形 icon、无效 `sizes`、ICO 尺寸声明不一致、截断目录与图像数据重叠；
 - 大小写错误路径；
@@ -171,7 +187,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 视觉布局、文字遮挡、横向滚动和主题对比度；
 - 内联 `style`、其他未知域名的无用途 preconnect 等未纳入合同的代码质量偏差；
 - 浏览器实际展示的安装 UI，以及安装后是否按语言入口启动；
-- JSON-LD 字段是否满足产品和搜索引擎目标；
+- 搜索引擎是否收录、如何展示或是否改变排名；
 - 第三方统计、外链和线上缓存；
 - 个人内容是否准确、获授权且适合公开。
 
@@ -208,17 +224,28 @@ http://127.0.0.1:8000/en/
 
 同时检查横屏、小高度窗口和 200% 浏览器缩放。页面不得出现意外横向滚动、遮挡或无法点击的控件。
 
-### 7.2 页面抽样
+### 7.2 页面范围与结构化数据矩阵
 
-每次全站发布至少抽样：
+结构化数据或其他 SEO 元数据变更不能只做页面抽样，必须检查全部 12 个可索引路由：
 
-- 中英文首页；
-- 中英文档案页；
-- 中英文研究或项目页；
-- 中英文统计页；
-- 两个 404。
+| 页面组 | 中文路由 | 英文路由 |
+| --- | --- | --- |
+| 首页 | `/` | `/en/` |
+| 档案 | `/profile.html` | `/en/profile.html` |
+| 研究 | `/research.html` | `/en/research.html` |
+| 项目 | `/projects.html` | `/en/projects.html` |
+| 简历 | `/resume.html` | `/en/resume.html` |
+| 统计 | `/analytics.html` | `/en/analytics.html` |
 
-修改某个页面时，该页面的双语对应页必须加入抽样；修改共享 CSS/JS 时按 14 页全量检查。
+每个路由检查：
+
+- `<head>` 恰有一个活动 JSON-LD 块，`body` 中为零；
+- 浏览器内 `JSON.parse` 成功，`@context` 正确；
+- 页面类型、页面 ID、URL 和语言符合[架构合同](architecture.md#83-页面类型与关系)，全部节点 ID 绝对且唯一；
+- 页面可见内容、布局和交互未因 `<head>` 变更而改变；
+- 控制台没有由本次变更引入的错误。
+
+仅做 JSON-LD/元数据 QA 时不要求打开或下载 PDF、证明图等材料；这些资源本身发生变化时仍按对应资产合同检查。其他全站发布至少抽样中英文首页、档案、研究或项目、统计和两个 404；修改某个页面时加入其双语对应页，修改共享 CSS/JS 时按 14 页全量检查。
 
 ### 7.3 主题
 
@@ -270,7 +297,7 @@ http://127.0.0.1:8000/en/
 - 页面可读且没有普通导航当前项；
 - 倒计时可见；
 - 中文最终进入 `/`，英文最终进入 `/en/`；
-- `<head>` 保持 `noindex` 且没有 canonical/hreflang；
+- `<head>` 保持 `noindex` 且没有 canonical/hreflang/活动 JSON-LD；
 - 不出现在 sitemap。
 
 ## 8. 变更类型与最低验收
@@ -283,7 +310,7 @@ http://127.0.0.1:8000/en/
 | CSS | 三条最小验证 | 双主题、419/640/833/834/1068/1069/1440 |
 | `site.js` | 三条最小验证 | 主题、抽屉、Lightbox、键盘与降级 |
 | `stats.js` | 三条最小验证 | 成功、部分、失败、异常值、备用源回退、localStorage 与四页范围 |
-| 页面路由/SEO | 重新生成 sitemap 后全量验证 | canonical、hreflang、404、线上 URL |
+| 页面/SEO（含 JSON-LD） | 重新生成 sitemap、运行全量测试与站点验证器 | canonical、hreflang、404、线上 URL 与 12 路由结构化数据矩阵 |
 | manifest/图标 | 三条最小验证、两份 manifest 静态合同 | 各尺寸视觉质量、浏览器安装 UI 与实际启动入口 |
 
 ## 9. 回归清单
@@ -291,7 +318,11 @@ http://127.0.0.1:8000/en/
 以下历史问题不得复发：
 
 - 品牌标识被误写或改回字体 terminal；
-- 404 被加入 canonical、hreflang 或 sitemap；
+- 404 被加入 canonical、hreflang、活动 JSON-LD 或 sitemap；
+- 可索引页退回直接 `Person` 根对象或缺少页面 `inLanguage`；
+- 页面、人物或网站稳定 ID 漂移，内部关系带额外字段或形成悬空引用；
+- 项目/研究节点借用隐藏、非活动或 `aria-hidden` 内容充当可见证据；
+- 统计页结构化数据暴露计数、本地访问、访客或浏览器信息；
 - 834px 仍启用移动导航；
 - 非统计页加载 `stats.js` 或统计专用依赖；
 - 英文页面重新指向中文 manifest，或任一页面出现重复/正文内 manifest 链接；
@@ -306,10 +337,11 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：45 passed / 0 failed
+自动测试：124 passed / 0 failed
+结构化数据子集：79 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
-人工检查：页面、主题、视口、键盘路径
+人工检查：页面、主题、视口、键盘路径；涉及结构化数据时记录 12 路由矩阵
 未运行项：名称与原因
 已知偏差：maintenance.md 条目编号
 ```

@@ -181,19 +181,95 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 
 ## 8. SEO 与可索引边界
 
-### 8.1 十二个普通页面
+### 8.1 可索引页面与活动图边界
 
-每个可索引页面都应具备：
+12 个可索引页面都具备自指 canonical，中文、英文和 `x-default` 三组 hreflang，与当前 URL 一致的 `og:url`，以及 Open Graph 和 Twitter 摘要。每页还必须在 `<head>` 中恰有一个活动的 `script[type="application/ld+json"]`，正文和 `<head>` 外不得有其他活动 JSON-LD 块。验证器采用启用脚本时的 HTML 语义，将 `<noscript>` 内容视为 raw/inert；其中的 `script` 不计为活动 JSON-LD。活动脚本的根对象只由以下入口组成：
 
-- 自指 canonical；
-- 中文、英文和 `x-default` 三组 hreflang；
-- 与当前 URL 一致的 `og:url`；
-- Open Graph 和 Twitter 摘要；
-- 可解析且与页面身份一致的 JSON-LD。
+```json
+{
+  "@context": "https://schema.org",
+  "@graph": []
+}
+```
 
-当前只有两张档案页的 JSON-LD 显式包含 `inLanguage`。其他页面没有该字段；验证器也不会把缺少该字段判为失败。
+图中每个节点都有唯一的绝对 `@id`；所有内部关系只使用 `{ "@id": "…" }` 引用，并且必须解析到当前图中的节点。只有顶层 `@graph` 节点顺序不承载语义，验证器按 `@id` 查找这些节点；`itemListElement` 的顺序与 `position` 必须严格符合页面合同。只有明确列出的数组（例如 `WebSite.inLanguage`）按集合比较，其他数组不自动忽略顺序。
 
-### 8.2 两个 404 页面
+### 8.2 稳定 ID 与节点字段
+
+所有页面复用稳定的网站与人物身份，同时为当前页面建立独立页面身份：
+
+| 节点 | ID 合同 |
+| --- | --- |
+| 当前页面 | 当前 canonical URL 加 `#webpage` |
+| 网站 | `https://yan-shibo.github.io/#website` |
+| 人物 | `https://yan-shibo.github.io/#person` |
+| 项目列表 | 当前项目页 canonical URL 加 `#project-list` |
+| 研究方向列表 | 当前研究页 canonical URL 加 `#research-directions` |
+
+节点字段使用精确白名单，不允许用额外字段扩展未经批准的公开事实：
+
+| 节点 | 精确字段 |
+| --- | --- |
+| 页面 | `@type`、`@id`、`url`、`name`、`description`、`inLanguage`、`isPartOf`，以及该页面合同允许的 `mainEntity` / `about` |
+| `WebSite` | `@type`、`@id`、`url`、`name`、`inLanguage`、`creator` |
+| `Person` | `@type`、`@id`、`name`、`alternateName`、`url`、`image`、`email`、`alumniOf`、`homeLocation` |
+| `ItemList` | `@type`、`@id`、`numberOfItems`、`itemListElement` |
+| `ListItem` | `@type`、`position`、`item` |
+| `SoftwareSourceCode` | `@type`、`@id`、`name`、`description`、`codeRepository`、`keywords`、`contributor` |
+| 研究方向 `Thing` | `@type`、`@id`、`name`、`description` |
+
+页面节点的 `url` 与 canonical 完全相同；`name` 与 HTML 实体解码、空白规范化后的 `<title>` 完全相同；`description` 同样来自当前页面的 meta description。中文页面节点声明 `inLanguage: zh-CN`，英文页面节点声明 `inLanguage: en`，并通过 `isPartOf` 引用网站。`WebSite` 在每页声明 `inLanguage: ["zh-CN", "en"]` 并以 `creator` 引用人物；语言数组按集合比较。`Person` 保留当前已公开的双语姓名、URL、图片、邮箱、教育与所在地事实，但不声明 `inLanguage`，也不增加新的个人事实。
+
+### 8.3 页面类型与关系
+
+每张图都包含当前页面、`WebSite` 和 `Person` 三个公共节点；页面专属节点按下表增加：
+
+| 页面组 | 页面 `@type` | 页面关系 |
+| --- | --- | --- |
+| `/`、`/en/` | `ProfilePage` | `mainEntity` 引用 `/#person` |
+| 中英文档案 | `ProfilePage` | `mainEntity` 引用 `/#person` |
+| 中英文简历 | `ProfilePage` | `mainEntity` 引用 `/#person` |
+| 中英文研究 | `WebPage` | `mainEntity` 引用本页 `#research-directions`，`about` 引用 `/#person` |
+| 中英文项目 | `CollectionPage` | `mainEntity` 引用本页 `#project-list`，`about` 引用 `/#person` |
+| 中英文统计 | `WebPage` | 仅以 `about` 引用 `/#website` |
+
+统计页不把人物或数据实体声明为主实体。研究和统计页不使用 `AboutPage`；它们分别描述研究方向与站点统计功能，而不是介绍网站本身。
+
+### 8.4 项目图
+
+每个项目页在三个公共节点之外包含一个 `ItemList` 和两个 `SoftwareSourceCode` 节点。列表 `numberOfItems` 为 `2`，两个 `ListItem` 按页面可见顺序使用位置 `1`、`2`，并分别引用：
+
+| 项目 | 稳定 ID | `codeRepository` |
+| --- | --- | --- |
+| PersevereStudy | `https://yan-shibo.github.io/#project-persevere-study` | `https://github.com/Yan-ShiBo/PersevereStudy` |
+| MicFamily | `https://yan-shibo.github.io/#project-mic-family` | `https://github.com/Yan-ShiBo/MicFamily` |
+
+项目节点的本地化名称和描述必须与当前页面可见文本一致，`keywords` 来自可见技术标签，`contributor` 只引用 `/#person`。项目图不使用 `creator`，也不写入奖项或等级、日期、证明图片、测试账号等未批准字段。
+
+### 8.5 研究图
+
+每个研究页在三个公共节点之外包含一个 `ItemList` 和四个 `Thing`。列表 `numberOfItems` 为 `4`，按页面“接下来推进的方向”的可见顺序引用以下跨语言稳定 ID：
+
+| 方向 | 稳定 ID |
+| --- | --- |
+| 控制器更新 | `https://yan-shibo.github.io/#research-controller-updates` |
+| PAC 近似 | `https://yan-shibo.github.io/#research-pac-approximation` |
+| 证书模板 | `https://yan-shibo.github.io/#research-certificate-templates` |
+| 更复杂系统 | `https://yan-shibo.github.io/#research-complex-systems` |
+
+每个方向只使用稳定 ID、当前语言的可见名称和简短说明。它们是保守的研究方向描述，不是论文或 `ResearchProject`，不得加入实验结果、概率下界或未发表材料。
+
+### 8.6 统计图的隐私边界
+
+统计页图只包含页面、网站和人物公共节点；人物节点仅用于解析网站的 `creator` 引用，页面本身只以 `about` 引用网站。图中不得出现 `Dataset`、`InteractionCounter`、实时或历史计数、localStorage 数据、首次/最近访问时间，以及可识别访问者或浏览器的信息。
+
+### 8.7 验证合同
+
+零依赖只读验证器从当前 HTML 提取标题、meta description 和经 HTML 结构/属性过滤后的 `<body>` 文本，检查活动 JSON-LD 的位置与数量、根对象、页面类型/ID/URL/语言/关系、绝对且唯一的节点 ID、仅含 ID 的内部引用、无悬空引用、精确的图节点与字段库存，以及项目和研究列表的数量与引用。正文取证排除 `template`、启用脚本语义下的 `noscript`，以及带 `hidden`、`inert` 或 `aria-hidden="true"` 的内容；项目 `name`、`description`、`keywords` 与研究 `name`、`description` 必须出现在过滤后的正文文本中，`codeRepository` 只与验证器内批准的仓库 URL 映射比较。自动化不计算 CSS computed visibility 或真实浏览器渲染，这部分仍由浏览器人工矩阵覆盖。
+
+验证器还以稳定 ID 比较 12 页的 `Person` 与 `WebSite`：允许网站名称和人物姓名顺序随语言本地化，但网站 URL、语言集合、关系及其余人物事实不得跨页漂移。统计页的禁止类型和字段、两个 404 的活动 JSON-LD 排除同样自动验证。测试覆盖与故障报告边界由[测试规范](testing.md)维护。
+
+### 8.8 两个 404 页面
 
 404 是明确例外：
 
@@ -202,7 +278,7 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 - 不进入 sitemap；
 - 中文页 5 秒后跳转 `/`，英文页 5 秒后跳转 `/en/`。
 
-两页当前使用页面内联脚本完成倒计时和跳转，这是已记录的实现例外，不应被文档误写成共享脚本已经覆盖。
+验证器会自动拒绝两页中的任何活动 JSON-LD。两页当前使用页面内联脚本完成倒计时和跳转，这是已记录的实现例外，不应被文档误写成共享脚本已经覆盖。
 
 ## 9. Manifest、爬虫与 sitemap
 

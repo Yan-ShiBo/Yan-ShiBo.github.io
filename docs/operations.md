@@ -42,9 +42,10 @@ http://127.0.0.1:8000/en/
 
 - 新增、删除或改名可索引 HTML；
 - 修改 canonical 或中英文页面映射；
+- 修改获批的可索引 HTML 元数据或 JSON-LD，并需要用最终 HTML mtime 发布本次变更；
 - 需要用当前 HTML mtime 更新 `lastmod`。
 
-仅重写 Markdown 项目文档、CSS、JavaScript 或不影响 URL 的资源时，不需要生成 sitemap。
+仅重写 Markdown 项目文档、CSS、JavaScript 或不影响 HTML mtime/URL 映射的资源时，不需要生成 sitemap。
 
 ### 3.2 生成
 
@@ -54,6 +55,8 @@ node scripts/generate-sitemap.js
 
 生成器固定处理六组中英文内容页，共 12 个 URL；404 不进入 sitemap。`lastmod` 来自本地 HTML mtime，因此多个页面日期相同是合法结果。
 
+仅发布已批准的 HTML 元数据或 JSON-LD、且路由与语言映射未变时，生成后的 sitemap diff 只能更新有效的 `YYYY-MM-DD` `lastmod`；12 个 `loc` 及其 `zh-CN`、`en`、`x-default` alternate 集合必须保持不变。
+
 生成后必须按[测试规范](testing.md)运行完整自动验证，并审查 `sitemap.xml` diff。不要在无页面变更时提交纯 mtime 噪声。
 
 ## 4. 发布前检查
@@ -62,7 +65,7 @@ node scripts/generate-sitemap.js
 2. 阅读 `git status --short`，区分本次改动与已有用户改动。
 3. 用明确路径审查 `git diff`，不得覆盖无关文件。
 4. 进行人工隐私检查：所有新增文本、图片和下载材料都已获授权公开。
-5. 页面路由发生变化时生成 sitemap。
+5. 页面路由、canonical/语言映射或需发布的 HTML 元数据/JSON-LD 发生变化时生成 sitemap。
 6. 执行[测试规范](testing.md)中的自动和适用人工检查。
 7. 只暂存本次确认的文件，再审查 staged diff。
 
@@ -88,12 +91,16 @@ node scripts/generate-sitemap.js
 - 本次修改页面及其语言对应页；
 - CSS、JavaScript、品牌图、favicon 和本次修改资源返回成功；
 - canonical、hreflang、`og:url` 指向生产域名；
+- 涉及结构化数据时按[测试规范的 12 路由矩阵](testing.md#72-页面范围与结构化数据矩阵)检查：每页 `<head>` 一个活动图、正文零个，JSON 可解析，页面 type/ID/lang 正确；
+- 结构化数据变更没有改变页面可见内容、布局或交互；
 - 两个 404 保持 `noindex`、语言对应跳转且不进 sitemap；
 - `robots.txt` 与 `sitemap.xml` 可访问；
 - 浏览器控制台没有由本次变更引入的错误；
 - 强制刷新后仍显示新版本。
 
 涉及删除公开材料时，使用 HEAD 请求核对当前分支原始地址和 Pages 地址均返回 404，避免下载不应继续传播的内容。
+
+仅做结构化数据或其他 `<head>` 元数据核验时，不要求打开或下载 PDF、证明图等材料；资源本身发生变化时仍必须执行对应的内容与授权检查。
 
 ## 7. 缓存
 
@@ -160,6 +167,15 @@ Pages 部署成功但浏览器仍显示旧内容时，按以下顺序判断：
 ### 9.7 Manifest 或图标异常
 
 区分“路径存在”“静态元数据正确”和“浏览器实际安装行为”。验证器会核对 14 页与两份语言 manifest 的映射、`start_url`、`scope`、`lang`、icon 路径及 ICO 图层；浏览器安装 UI 和安装后实际启动入口仍需人工验证。
+
+### 9.8 结构化数据异常
+
+先运行站点验证器，使用报告中的具体页面与节点定位问题，再在 Chrome 打开同一路由检查实际活动块和控制台。不要先用搜索结果反推本地合同。
+
+- **JSON 语法**：确认活动块位置和数量，直接检查报告页面的解析错误；修复语法后重新运行验证器，确认其他检查仍完成。
+- **本地图合同**：根据[架构文档的 SEO 合同](architecture.md#8-seo-与可索引边界)核对页面身份、ID/引用、字段库存和可见证据；不要添加未批准字段来消除单个提示。
+- **内容授权**：验证器通过只表示结构与当前公开 HTML 一致，不能授权新增个人事实、项目主张或研究材料；不确定时停止发布并请求内容确认。
+- **搜索引擎呈现**：本地与 Chrome 检查通过不保证搜索引擎收录、特定展示形式或排名；将外部呈现问题与本地语法/合同错误分开记录。
 
 ## 10. 公开材料误提交
 
