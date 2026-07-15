@@ -1,0 +1,258 @@
+# 系统架构
+
+本文是网站当前架构的唯一事实说明，回答“系统由什么组成、各部分如何协作、哪些约束不能破坏”。维护入口见[文档导航](README.md)，视觉规则见[设计规范](design.md)，验证方法见[测试规范](testing.md)，发布操作见[运维指南](operations.md)，已知偏差见[维护记录](maintenance.md)。
+
+## 1. 事实源与边界
+
+发生冲突时，按以下顺序判断当前事实：
+
+1. 14 个实际 HTML 页面；
+2. `assets/css/site.css`；
+3. `assets/js/site.js` 与 `assets/js/stats.js`；
+4. `manifest.webmanifest`、`robots.txt`、`sitemap.xml`；
+5. `scripts/generate-sitemap.js`、`scripts/validate-site.js` 及其测试；
+6. 本文及其他项目文档。
+
+这是一个无构建步骤的双语静态站点。浏览器直接加载 HTML、CSS、JavaScript、图片、字体和公开下载材料；仓库的 `main` 分支由 GitHub Pages 发布。项目没有后端、数据库、服务端模板或包管理构建链。
+
+系统边界包含：
+
+- 中文与英文页面；
+- 全站共享样式与交互；
+- 仅部分页面加载的访问统计；
+- favicon、品牌图、图片、字体和公开下载材料；
+- SEO 元数据、站点清单、爬虫规则和 sitemap；
+- 站点验证器与 sitemap 生成器。
+
+系统边界不包含个人研究源文件、未发表研究材料、私有证明材料和服务端数据。凡进入 Git 仓库并由 Pages 发布的内容都应按公开信息处理。
+
+## 2. 系统目标
+
+网站需要同时满足四类目标：
+
+- **内容可达**：中英文入口、研究、项目、档案、简历和统计页面可直接访问；
+- **交互可用**：主题、移动导航、Lightbox 和统计降级在键盘与触屏环境下可用；
+- **语义明确**：可索引页面提供稳定的 canonical、hreflang、社交元数据和结构化数据；
+- **维护可控**：页面库存、资源路径、sitemap 与验证器保持同步，公开边界可以审计。
+
+```mermaid
+flowchart LR
+    Visitor["访问者 / 搜索引擎"] --> Pages["GitHub Pages 静态站点"]
+    Maintainer["维护者"] --> Repo["GitHub 仓库 main"]
+    Repo --> Pages
+    Pages --> Assets["本地 CSS / JS / 图片 / 字体 / 下载材料"]
+    Pages --> Counter["第三方访问统计服务"]
+    Maintainer --> Tools["生成器与只读验证器"]
+    Tools --> Repo
+```
+
+## 3. 页面库存与路由
+
+站点固定包含 7 个中文 HTML 和 7 个英文 HTML。下表列出物理文件；中文、英文首页的 canonical 分别是 `/` 与 `/en/`，而不是 `/index.html` 与 `/en/index.html`。除 404 外，六组页面共 12 个可索引 URL。
+
+| 页面组 | 中文文件 | 英文文件 | 主要职责 | 可索引 |
+| --- | --- | --- | --- | --- |
+| 首页 | `index.html` | `en/index.html` | 站点概览、研究入口、统计摘要 | 是 |
+| 档案 | `profile.html` | `en/profile.html` | 时间线、经历、证明材料 | 是 |
+| 研究 | `research.html` | `en/research.html` | 一般研究方向与方法说明 | 是 |
+| 项目 | `projects.html` | `en/projects.html` | 项目与仓库入口 | 是 |
+| 简历 | `resume.html` | `en/resume.html` | 网页简历与公开下载入口 | 是 |
+| 统计 | `analytics.html` | `en/analytics.html` | 公开计数和本地计数 | 是 |
+| 404 | `404.html` | `en/404.html` | 未命中提示与语言对应跳转 | 否 |
+
+双语页面共享视觉和交互合同，但当前档案页并非逐节点镜像：中文档案有独立的 `#gap-year` 阶段，英文将相同经历并入研究生阶段；两种语言的项目卡片数量也不同。维护文档应记录这一现状，不能声称 DOM 结构完全对称。内容是否需要重组属于单独的页面任务。
+
+## 4. 容器与组件
+
+```mermaid
+flowchart TB
+    subgraph Browser["浏览器"]
+        HTML["14 个独立 HTML"]
+        CSS["assets/css/site.css"]
+        SiteJS["assets/js/site.js"]
+        StatsJS["assets/js/stats.js（仅 4 页）"]
+        Storage["localStorage"]
+    end
+
+    HTML --> CSS
+    HTML --> SiteJS
+    HTML -. "中英文首页与统计页" .-> StatsJS
+    SiteJS <--> Storage
+    StatsJS <--> Storage
+    StatsJS --> Providers["Busuanzi / Vercount"]
+    HTML --> LocalAssets["图片 / 图标 / 字体 / PDF"]
+```
+
+### 4.1 HTML
+
+每个页面独立维护 `<head>`、导航、主体和页脚。页面不依赖模板引擎，因此新增或改名页面时必须同步：
+
+- 中英文页面库存；
+- 导航与语言切换；
+- canonical、hreflang、Open Graph、Twitter 与 JSON-LD；
+- `sitemap.xml` 和两个维护脚本中的页面清单；
+- 验证器测试与项目文档。
+
+### 4.2 共享样式
+
+`assets/css/site.css` 是唯一全站样式入口，负责设计令牌、布局、组件、响应式规则、主题状态和可访问性样式。当前移动导航边界是：
+
+- `<= 833px`：隐藏桌面导航，启用移动抽屉；
+- `>= 834px`：显示桌面导航，关闭移动抽屉入口。
+
+CSS 中的媒体查询按实际级联需要分布在多个位置，并非严格按尺寸集中排序；不能把“从大到小且不重复”写成已经成立的事实。
+
+### 4.3 共享交互
+
+`assets/js/site.js` 负责：
+
+- 主题初始化、切换和持久化；
+- 移动抽屉开启、关闭、`inert`、焦点陷阱、Escape 关闭和焦点归还；
+- 图片 Lightbox 的打开、键盘导航、关闭和焦点管理；
+- 页面渐入等增强效果。
+
+主题写入根元素 `data-theme`，持久化键为 `ysb-theme`。脚本失效时，正文和导航仍应保持基本可读；交互增强不能成为内容访问的唯一入口。
+
+### 4.4 品牌与图标
+
+导航品牌标识是空的 `.brand-mark` 元素，通过 CSS 背景图加载 `assets/icons/brand-mark.png`。它不是 Font Awesome terminal 字形。favicon 使用 `assets/icons/site.ico`；Font Awesome 仅承担普通功能图标。
+
+## 5. 状态模型
+
+### 5.1 主题状态
+
+```mermaid
+stateDiagram-v2
+    [*] --> Resolve
+    Resolve --> Light: 存储值或系统偏好为浅色
+    Resolve --> Dark: 存储值或系统偏好为深色
+    Light --> Dark: 用户切换并写入 dark
+    Dark --> Light: 用户切换并写入 light
+```
+
+### 5.2 移动抽屉状态
+
+抽屉关闭时不应进入键盘焦点顺序；开启时焦点移入抽屉并被限制在可交互项内。点击遮罩、点击导航项或按 Escape 都会关闭抽屉，随后焦点返回菜单按钮。设计上，切回桌面断点时应清理移动状态；当前 `site.js` 尚未监听视口跨越，打开抽屉后直接拉宽可能残留 `menu-open`、`inert`、遮罩或滚动锁，见 [M-009](maintenance.md#m-009-移动抽屉缺少跨断点状态清理)。
+
+### 5.3 Lightbox 状态
+
+带 `data-lightbox` 的证明图可以打开覆盖层。打开后保存触发元素、锁定背景交互并支持 Escape；关闭时恢复页面状态和原焦点。图片本身仍保留普通链接语义，脚本不可用时可以直接打开原图。
+
+## 6. 访问统计
+
+`assets/js/stats.js` 只在四个页面加载：
+
+- 中文首页；
+- 英文首页；
+- 中文统计页；
+- 英文统计页。
+
+因此本地累计访问只表示当前浏览器在这四个页面上的累计，不是 14 个页面的全站总访问量。其他页面既不加载统计脚本，也不应保留统计服务的专用依赖提示。
+
+```mermaid
+sequenceDiagram
+    participant Page as 统计页面
+    participant Stats as stats.js
+    participant Local as localStorage
+    participant Remote as 第三方计数服务
+    Page->>Stats: DOMContentLoaded
+    Stats->>Local: 读取并更新本地计数
+    Stats->>Remote: 等待公开计数节点
+    Remote-->>Stats: 返回、部分返回或超时
+    Stats-->>Page: 填充有效值或降级占位
+```
+
+公开计数通过隐藏 provider 节点接入，展示节点与 provider 节点不能混用。当前 `validCounter()` 只排除空值和若干加载占位字符串，并不保证结果一定是正整数；更严格的值校验属于维护队列，见[维护记录](maintenance.md)。第三方服务失败时，本地计数和页面主体仍应工作。
+
+## 7. 资源模型
+
+资源按职责分为：
+
+- `assets/css/`：共享样式；
+- `assets/js/`：共享交互与统计；
+- `assets/fonts/`：本地 Inter 字体；
+- `assets/icons/`：品牌标识与 favicon；
+- `assets/images/`：项目、档案与证明图；
+- `assets/profile/`：头像；
+- `assets/vendor/`：本地 Font Awesome 样式与字体；
+- `docs/`：项目文档以及明确允许公开的简历、成绩单材料。
+
+HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原图必须保持有效路径。外链新窗口必须带安全 `rel`。资源文件名区分大小写，因为 Pages 运行于大小写敏感环境。
+
+## 8. SEO 与可索引边界
+
+### 8.1 十二个普通页面
+
+每个可索引页面都应具备：
+
+- 自指 canonical；
+- 中文、英文和 `x-default` 三组 hreflang；
+- 与当前 URL 一致的 `og:url`；
+- Open Graph 和 Twitter 摘要；
+- 可解析且与页面身份一致的 JSON-LD。
+
+当前只有两张档案页的 JSON-LD 显式包含 `inLanguage`。其他页面没有该字段；验证器也不会把缺少该字段判为失败。
+
+### 8.2 两个 404 页面
+
+404 是明确例外：
+
+- 必须 `noindex`；
+- 不提供 canonical、hreflang 或 JSON-LD；
+- 不进入 sitemap；
+- 中文页 5 秒后跳转 `/`，英文页 5 秒后跳转 `/en/`。
+
+两页当前使用页面内联脚本完成倒计时和跳转，这是已记录的实现例外，不应被文档误写成共享脚本已经覆盖。
+
+## 9. Manifest、爬虫与 sitemap
+
+`manifest.webmanifest` 被全部页面引用，当前 `start_url` 为 `/`、`lang` 为 `zh-CN`。因此从英文页安装到主屏仍以中文根页作为默认入口；这是一项已知产品偏差。
+
+`robots.txt` 允许正常抓取并声明 sitemap。`scripts/generate-sitemap.js` 维护六组可索引页面，不包含 404。每条 `<lastmod>` 来自对应 HTML 文件的本地文件系统 mtime；多个页面同日修改时日期可以完全相同。
+
+页面库存同时存在于生成器和验证器中。新增、删除或改名页面时，两处必须一起更新，随后重新生成并验证 sitemap。
+
+## 10. 部署模型
+
+```mermaid
+flowchart LR
+    Edit["本地编辑"] --> Validate["只读验证与人工检查"]
+    Validate --> Commit["提交到 main"]
+    Commit --> Pages["GitHub Pages 发布"]
+    Pages --> CDN["GitHub Pages / CDN 缓存"]
+    CDN --> Browser["浏览器与搜索引擎"]
+```
+
+站点没有独立构建产物；提交的文件就是发布输入。文档改名不要求重建 sitemap，只有可索引 HTML 路由或 mtime 需要发布时才运行生成器。发布、缓存和回滚步骤由[运维指南](operations.md)维护。
+
+## 11. 隐私与公开合同
+
+- 仓库、Pages、Markdown、图片和下载文件都按公开内容处理；“未在导航中出现”不等于私有。
+- 未发表研究材料、源数据、审稿材料和其他未授权文件不得进入仓库。
+- 个人页面和证明材料的内容修改必须获得所有者明确确认。
+- 删除公开敏感文件时，需要同时检查当前树、Git 历史、公开 URL、文档引用和缓存边界。
+- 自动验证只证明结构合同，不证明内容适合公开；发布前仍需人工隐私审查。
+
+## 12. 架构决策
+
+| 决策 | 选择 | 原因 |
+| --- | --- | --- |
+| 渲染模型 | 原生静态 HTML | 无构建依赖，Pages 可直接发布 |
+| 双语模型 | 两套独立 HTML | 文案与 SEO 可独立控制 |
+| 样式与交互 | 全站共享 CSS/JS | 降低重复并保持体验一致 |
+| 统计加载 | 仅四个需要统计的页面 | 控制第三方依赖范围 |
+| 字体与图标 | 本地资源优先 | 避免核心视觉依赖外部 CDN |
+| 证明图 | 缩略图链接原图 | 兼顾加载性能与可核查性 |
+| 页面验证 | 零依赖 Node.js 脚本 | 与无构建站点保持一致 |
+| 文档组织 | 单一事实源 | 避免同一合同在多篇文档漂移 |
+
+## 13. 必须保持的不变量
+
+1. 页面库存始终是 14 个 HTML；可索引库存始终是其中 12 个。
+2. 404 保持 `noindex`、无 canonical/hreflang/JSON-LD 且不进 sitemap。
+3. `site.css` 和 `site.js` 为全站共享入口，`stats.js` 只加载于指定四页。
+4. 品牌标识始终指向 PNG 资源，不回退为字体字形。
+5. 设计合同要求 833/834px 两侧的导航状态、键盘焦点和 Escape 行为保持可用；当前跨断点偏差见 [M-009](maintenance.md#m-009-移动抽屉缺少跨断点状态清理)。
+6. 中英文 URL、导航、SEO 和资源引用修改时成对核对，但不虚构现有 DOM 完全对称。
+7. sitemap 页面清单、验证器页面清单和实际文件树保持一致。
+8. 未经明确确认，不修改个人页面内容或扩大公开材料范围。
