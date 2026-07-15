@@ -294,6 +294,30 @@ test('validateRepository reports missing analytics local-counter nodes', (t) => 
   assert.ok(result.issues.includes('analytics.html: stats.js requires #local-total'));
 });
 
+test('validateRepository rejects stats-service preconnects on non-stats pages', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'projects.html',
+    '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>',
+    '  <link href="//cdn.jsdelivr.net/npm/example" rel="dns-prefetch PRECONNECT"/>\n' +
+      '  <link href="https://busuanzi.icodeq.com/api/site_pv?site=example" rel="preconnect"/>\n' +
+      '  <link href="https://events.vercount.one/path" rel="PRECONNECT"/>\n' +
+      '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(
+    result.issues.filter((issue) => issue.includes('stats-service preconnect')),
+    [
+      'projects.html: stats-service preconnect https://cdn.jsdelivr.net is limited to the four stats-enabled pages',
+      'projects.html: stats-service preconnect https://busuanzi.icodeq.com is limited to the four stats-enabled pages',
+      'projects.html: stats-service preconnect https://events.vercount.one is limited to the four stats-enabled pages'
+    ]
+  );
+});
+
 test('validateRepository checks local URLs in the Font Awesome stylesheet', (t) => {
   const rootDir = createRepositoryFixture(t);
   fs.rmSync(path.join(

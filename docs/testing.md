@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 32 个零依赖 `node:test` 用例；
+- `scripts/validate-site.test.js` 包含 33 个零依赖 `node:test` 用例；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -28,8 +28,8 @@ git diff --check
 当前成功输出应包含：
 
 ```text
-tests 32
-pass 32
+tests 33
+pass 33
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
@@ -80,7 +80,8 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 
 - `stats.js` 只加载在中英文首页与中英文统计页；
 - 四页包含需要的公开计数、provider 和本地计数 DOM；
-- 其他页面不误加载统计脚本。
+- 其他页面不误加载统计脚本；
+- Busuanzi、jsDelivr 与 Vercount 的统计专用 preconnect 只出现在这四页。
 
 它不会访问第三方计数服务，也不会判断返回数字是否真实、递增或为正整数。
 
@@ -149,6 +150,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 大小写错误路径；
 - robots 全站禁止与 user-agent 作用域；
 - 未登记的嵌套 HTML；
+- 非统计页误加统计服务 preconnect；
 - 移动菜单的 834px 桌面断点清理合同，以及错误查询、遗漏 `event.matches`、缺少可见焦点回退、关闭逻辑落在无关函数或关键实现被注释掉的变异用例；
 - JavaScript 字符串和正则字面量中的注释形文本不会干扰交互合同识别；
 - 验证器只读保证；
@@ -164,7 +166,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 移动抽屉的 `inert`、焦点陷阱、Escape 和焦点归还；
 - Lightbox 的打开、键盘操作、关闭与焦点恢复；
 - 视觉布局、文字遮挡、横向滚动和主题对比度；
-- 内联 `style`、无用途 preconnect 等代码质量偏差；
+- 内联 `style`、其他未知域名的无用途 preconnect 等未纳入合同的代码质量偏差；
 - manifest 的 `start_url` 和语言安装语义；
 - JSON-LD 字段是否满足产品和搜索引擎目标；
 - 第三方统计、外链和线上缓存；
@@ -294,7 +296,7 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：32 passed / 0 failed
+自动测试：33 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
 人工检查：页面、主题、视口、键盘路径

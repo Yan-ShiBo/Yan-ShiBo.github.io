@@ -49,6 +49,12 @@ const STATS_PAGES = new Set([
   'en/analytics.html'
 ]);
 
+const STATS_PRECONNECT_ORIGINS = new Set([
+  'https://busuanzi.icodeq.com',
+  'https://cdn.jsdelivr.net',
+  'https://events.vercount.one'
+]);
+
 const ANALYTICS_PAGES = new Set(['analytics.html', 'en/analytics.html']);
 
 const PUBLIC_STATS_IDS = ['site-pv', 'site-uv', 'page-pv', 'stats-status'];
@@ -354,6 +360,23 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
   const loadsStats = scriptResources.includes('assets/js/stats.js');
   if (loadsStats !== STATS_PAGES.has(file)) {
     addIssue(issues, file, 'stats.js load scope does not match the four stats-enabled pages');
+  }
+  for (const link of links) {
+    const relValues = String(link.attributes.rel || '').toLowerCase().split(/\s+/);
+    if (!relValues.includes('preconnect')) continue;
+    let origin;
+    try {
+      origin = new URL(link.attributes.href, SITE_ORIGIN).origin;
+    } catch (_error) {
+      continue;
+    }
+    if (STATS_PRECONNECT_ORIGINS.has(origin) && !STATS_PAGES.has(file)) {
+      addIssue(
+        issues,
+        file,
+        `stats-service preconnect ${origin} is limited to the four stats-enabled pages`
+      );
+    }
   }
   if (loadsStats) {
     const ids = collectIds(html);
