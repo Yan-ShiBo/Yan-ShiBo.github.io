@@ -21,6 +21,9 @@ const TEXT_EXTENSIONS = new Set([
   '.xml'
 ]);
 
+const MENU_CLEANUP_ISSUE =
+  'assets/js/site.js: missing 834px desktop breakpoint menu cleanup';
+
 function createRepositoryFixture(t) {
   const sourceRoot = path.resolve(__dirname, '..');
   const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ysb-site-fixture-'));
@@ -51,6 +54,15 @@ function replaceOnce(rootDir, relativePath, searchValue, replacement) {
   const original = fs.readFileSync(absolutePath, 'utf8');
   assert.ok(original.includes(searchValue), `${relativePath} must contain the fixture text`);
   fs.writeFileSync(absolutePath, original.replace(searchValue, replacement));
+}
+
+function validateSiteScriptFixture(t, sourceLines) {
+  const rootDir = createRepositoryFixture(t);
+  fs.writeFileSync(
+    path.join(rootDir, 'assets/js/site.js'),
+    [...sourceLines, ''].join('\n')
+  );
+  return validateRepository(rootDir);
 }
 
 function snapshotFiles(rootDir) {
@@ -131,6 +143,120 @@ test('validateRepository accepts the checked-in site baseline', () => {
   assert.equal(result.summary.htmlFiles, 14);
   assert.equal(result.summary.indexablePages, 12);
   assert.equal(result.summary.sitemapUrls, 12);
+});
+
+test('validateRepository requires desktop breakpoint menu cleanup', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    '(function () {',
+    '  var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
+    '  void desktopMenuQuery;',
+    '}());'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository requires the breakpoint handler to inspect event.matches', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    'var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  if (!document.body.classList.contains("menu-open")) return;',
+    '  closeMenu(false);',
+    '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
+    '    document.querySelector(\'.site-nav a\');',
+    '  focusNode(desktopTarget);',
+    '}',
+    'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository requires closeMenu inside the breakpoint handler', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    'var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
+    '    document.querySelector(\'.site-nav a\');',
+    '  focusNode(desktopTarget);',
+    '}',
+    'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);',
+    'function unrelated() {',
+    '  closeMenu(false);',
+    '}'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository binds cleanup to the 834px media query', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    'var desktopMenuQuery = window.matchMedia("(min-width: 900px)");',
+    'var unrelated = window.matchMedia("(min-width: 834px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  closeMenu(false);',
+    '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
+    '    document.querySelector(\'.site-nav a\');',
+    '  focusNode(desktopTarget);',
+    '}',
+    'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);',
+    'void unrelated;'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository requires a visible desktop focus fallback', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    'var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  closeMenu(false);',
+    '}',
+    'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository ignores commented-out breakpoint cleanup', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    '// var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  /*',
+    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  closeMenu(false);',
+    '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
+    '    document.querySelector(\'.site-nav a\');',
+    '  focusNode(desktopTarget);',
+    '  */',
+    '}',
+    '// desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository preserves comment-like text inside JavaScript literals', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    'var commentLikePattern = /[/*]/;',
+    'var commentLikeUrl = "https://example.com/*not-comment*/";',
+    'var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  closeMenu(false);',
+    '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
+    '    document.querySelector(\'.site-nav a\');',
+    '  focusNode(desktopTarget);',
+    '}',
+    'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);',
+    'void commentLikePattern;',
+    'void commentLikeUrl;'
+  ]);
+
+  assert.ok(!result.issues.includes(MENU_CLEANUP_ISSUE));
 });
 
 test('validateRepository does not depend on the current working directory', () => {

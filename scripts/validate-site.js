@@ -708,6 +708,130 @@ function validateJavaScriptSyntax(rootDir, issues) {
   }
 }
 
+const JAVASCRIPT_NON_CODE_PATTERN =
+  /"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|`(?:\\[\s\S]|[^`\\])*`|\/(?![/*])(?:\\[\s\S]|\[(?:\\[\s\S]|[^\]\\])*\]|[^/\\\r\n])+\/[dgimsuvy]*|\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g;
+
+function buildJavaScriptCodeMask(source) {
+  const mask = new Uint8Array(source.length);
+  mask.fill(1);
+
+  const matcher = new RegExp(
+    JAVASCRIPT_NON_CODE_PATTERN.source,
+    JAVASCRIPT_NON_CODE_PATTERN.flags
+  );
+  let match = matcher.exec(source);
+  while (match) {
+    mask.fill(0, match.index, match.index + match[0].length);
+    match = matcher.exec(source);
+  }
+
+  return mask;
+}
+
+function hasExecutableMatch(source, codeMask, pattern) {
+  const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
+  const matcher = new RegExp(pattern.source, flags);
+  let match = matcher.exec(source);
+
+  while (match) {
+    if (codeMask[match.index] === 1) return true;
+    if (match[0] === '') matcher.lastIndex += 1;
+    match = matcher.exec(source);
+  }
+
+  return false;
+}
+
+function extractNamedFunctionBody(source, codeMask, functionName) {
+  const signature = new RegExp(
+    `^[\\t ]*function\\s+${functionName}\\s*\\([^)]*\\)\\s*\\{`,
+    'gm'
+  );
+  let match = signature.exec(source);
+
+  while (match) {
+    if (codeMask[match.index] === 1) {
+      const openingBrace = match.index + match[0].lastIndexOf('{');
+      let depth = 1;
+
+      for (let index = openingBrace + 1; index < source.length; index += 1) {
+        if (codeMask[index] !== 1) continue;
+        if (source[index] === '{') {
+          depth += 1;
+        } else if (source[index] === '}') {
+          depth -= 1;
+          if (depth === 0) {
+            return {
+              codeMask: codeMask.slice(openingBrace + 1, index),
+              source: source.slice(openingBrace + 1, index)
+            };
+          }
+        }
+      }
+    }
+    match = signature.exec(source);
+  }
+
+  return null;
+}
+
+function validateSiteJavaScriptContracts(rootDir, issues) {
+  const file = 'assets/js/site.js';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return;
+
+  const source = readUtf8(rootDir, file);
+  const codeMask = buildJavaScriptCodeMask(source);
+  const handler = extractNamedFunctionBody(
+    source,
+    codeMask,
+    'handleMenuBreakpointChange'
+  );
+  const hasDesktopMenuQuery = hasExecutableMatch(
+    source,
+    codeMask,
+    /^[\t ]*var\s+desktopMenuQuery\s*=\s*window\.matchMedia\(\s*(['"])\(min-width:\s*834px\)\1\s*\)\s*;/m
+  );
+  const hasDesktopMenuHandler = handler !== null;
+  const hasDesktopMenuListener = hasExecutableMatch(
+    source,
+    codeMask,
+    /^[\t ]*desktopMenuQuery\.(?:addEventListener\(\s*['"]change['"]\s*,\s*handleMenuBreakpointChange\s*\)|addListener\(\s*handleMenuBreakpointChange\s*\))\s*;/m
+  );
+  const hasDesktopGate = handler !== null && hasExecutableMatch(
+    handler.source,
+    handler.codeMask,
+    /^[\t ]*if\s*\(\s*!event\.matches\s*\|\|\s*!document\.body\.classList\.contains\(\s*(['"])menu-open\1\s*\)\s*\)\s*return\s*;/m
+  );
+  const closesWithoutHiddenToggleFocus = handler !== null && hasExecutableMatch(
+    handler.source,
+    handler.codeMask,
+    /^[\t ]*closeMenu\(\s*false\s*\)\s*;/m
+  );
+  const hasVisibleDesktopFocusFallback = handler !== null &&
+    hasExecutableMatch(
+      handler.source,
+      handler.codeMask,
+      /^[\t ]*var\s+desktopTarget\s*=\s*document\.querySelector\(\s*(['"])\.site-nav \[aria-current=["']page["']\]\1\s*\)\s*\|\|\s*\r?\n[\t ]*document\.querySelector\(\s*(['"])\.site-nav a\2\s*\)\s*;/m
+    ) &&
+    hasExecutableMatch(
+      handler.source,
+      handler.codeMask,
+      /^[\t ]*focusNode\(\s*desktopTarget\s*\)\s*;/m
+    );
+
+  if (
+    !hasDesktopMenuQuery ||
+    !hasDesktopMenuHandler ||
+    !hasDesktopMenuListener ||
+    !hasDesktopGate ||
+    !closesWithoutHiddenToggleFocus ||
+    !hasVisibleDesktopFocusFallback
+  ) {
+    addIssue(issues, file, 'missing 834px desktop breakpoint menu cleanup');
+  }
+}
+
 function validateRepository(rootDir) {
   const absoluteRoot = path.resolve(rootDir);
   const issues = [];
@@ -748,6 +872,7 @@ function validateRepository(rootDir) {
   const sitemapUrls = validateSitemap(absoluteRoot, issues);
   validateRobots(absoluteRoot, issues);
   validateJavaScriptSyntax(absoluteRoot, issues);
+  validateSiteJavaScriptContracts(absoluteRoot, issues);
 
   return {
     issues,

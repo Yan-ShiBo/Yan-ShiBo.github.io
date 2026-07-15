@@ -196,14 +196,20 @@
       setDrawerHidden(true);
     }
 
-    function closeMenu() {
+    function closeMenu(restoreFocus) {
       var wasOpen = document.body.classList.contains('menu-open');
       document.body.classList.remove('menu-open');
       if (toggle) toggle.setAttribute('aria-expanded', 'false');
       setDrawerHidden(true);
       setBackgroundInert(false);
       notifyMenuStateChange();
-      if (wasOpen && returnFocus && returnFocus.focus && document.contains(returnFocus)) {
+      if (
+        restoreFocus !== false &&
+        wasOpen &&
+        returnFocus &&
+        returnFocus.focus &&
+        document.contains(returnFocus)
+      ) {
         focusNode(returnFocus);
       }
       returnFocus = null;
@@ -218,6 +224,7 @@
       if (drawer) setBackgroundInert(true, [drawer, backdrop]);
       notifyMenuStateChange();
       window.requestAnimationFrame(function () {
+        if (!document.body.classList.contains('menu-open')) return;
         focusFirst(drawer, closeBtn || drawer);
       });
     }
@@ -238,6 +245,32 @@
       drawer.querySelectorAll('a').forEach(function (link) {
         link.addEventListener('click', closeMenu);
       });
+    }
+
+    function handleMenuBreakpointChange(event) {
+      if (!event.matches || !document.body.classList.contains('menu-open')) return;
+      var active = document.activeElement;
+      var shouldMoveFocus = Boolean(
+        active === toggle ||
+        (drawer && active && drawer.contains(active))
+      );
+
+      closeMenu(false);
+
+      if (shouldMoveFocus) {
+        var desktopTarget = document.querySelector('.site-nav [aria-current="page"]') ||
+          document.querySelector('.site-nav a');
+        focusNode(desktopTarget);
+      }
+    }
+
+    if (window.matchMedia) {
+      var desktopMenuQuery = window.matchMedia('(min-width: 834px)');
+      if (desktopMenuQuery.addEventListener) {
+        desktopMenuQuery.addEventListener('change', handleMenuBreakpointChange);
+      } else if (desktopMenuQuery.addListener) {
+        desktopMenuQuery.addListener(handleMenuBreakpointChange);
+      }
     }
 
     window.addEventListener('keydown', function (event) {

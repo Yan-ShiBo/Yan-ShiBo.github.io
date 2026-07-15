@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 21 个零依赖 `node:test` 用例；
+- `scripts/validate-site.test.js` 包含 28 个零依赖 `node:test` 用例；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -28,8 +28,8 @@ git diff --check
 当前成功输出应包含：
 
 ```text
-tests 21
-pass 21
+tests 28
+pass 28
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
@@ -130,6 +130,10 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 
 语法通过不等于浏览器行为通过；抽屉、Lightbox、主题和统计降级仍需人工检查。
 
+### 3.8 共享交互结构合同
+
+验证器静态检查 `site.js` 是否将 `(min-width: 834px)` 查询绑定到移动菜单断点处理器、是否使用 `event.matches` 限定进入桌面断点的路径，以及该处理器是否调用不返回隐藏菜单按钮焦点的关闭逻辑并保留可见桌面导航焦点回退。该检查用于防止关键监听被删除或被无关代码误满足，但不模拟 DOM、媒体查询事件或真实焦点行为；833/834px 的状态与焦点仍须使用浏览器验证。
+
 ## 4. 验证器单元测试
 
 `scripts/validate-site.test.js` 使用临时目录构造有效或损坏的仓库副本，当前覆盖：
@@ -144,6 +148,8 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 大小写错误路径；
 - robots 全站禁止与 user-agent 作用域；
 - 未登记的嵌套 HTML；
+- 移动菜单的 834px 桌面断点清理合同，以及错误查询、遗漏 `event.matches`、缺少可见焦点回退、关闭逻辑落在无关函数或关键实现被注释掉的变异用例；
+- JavaScript 字符串和正则字面量中的注释形文本不会干扰交互合同识别；
 - 验证器只读保证；
 - CLI 在无效仓库上返回非零状态。
 
@@ -224,7 +230,7 @@ http://127.0.0.1:8000/en/
 3. Tab/Shift+Tab 不逃离抽屉。
 4. Escape、遮罩和导航链接均可关闭。
 5. 关闭后焦点回到菜单按钮。
-6. 拉宽到 834px 后检查遮罩、滚动锁、`inert` 和 `body.menu-open`；当前实现存在 [M-009](maintenance.md#m-009-移动抽屉缺少跨断点状态清理)，修复前不得把此项报告为通过。
+6. 拉宽到 834px 后，`body.menu-open`、遮罩、滚动锁和背景 `inert` 均已清理，抽屉恢复 `aria-hidden="true"` 与 `inert`；原焦点若在抽屉内，应转移到可见的当前桌面导航项；404 等没有当前项的页面应转移到首个桌面导航链接。
 
 ### 7.5 Lightbox
 
@@ -287,7 +293,7 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：21 passed / 0 failed
+自动测试：28 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
 人工检查：页面、主题、视口、键盘路径
