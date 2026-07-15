@@ -381,7 +381,6 @@ HTTP 200 只表示文件可访问，不代表页面质量通过。
 ```text
 docs/Shibo-Yan-Resume.pdf
 docs/Shibo-Yan-Undergraduate-Transcript.pdf
-docs/Shibo-Yan-Research-Paper.pdf
 ```
 
 页面检查：

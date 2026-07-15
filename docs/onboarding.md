@@ -497,7 +497,6 @@ src="../assets/images/proofs/example-award-2026-thumb.webp"
 ```text
 docs/Shibo-Yan-Resume.pdf
 docs/Shibo-Yan-Undergraduate-Transcript.pdf
-docs/Shibo-Yan-Research-Paper.pdf
 ```
 
 如果必须改文件名，全站搜索旧文件名，并检查：

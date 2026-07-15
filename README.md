@@ -127,7 +127,6 @@
 │       └── font-awesome-4.7.0/      # 本地图标字体
 ├── docs/
 │   ├── Shibo-Yan-Resume.pdf
-│   ├── Shibo-Yan-Research-Paper.pdf
 │   ├── Shibo-Yan-Undergraduate-Transcript.pdf
 │   ├── onboarding.md                # 维护者和 AI 助手上手指南
 │   └── design/
@@ -318,7 +317,6 @@ xxx-full.webp
 ```text
 docs/Shibo-Yan-Resume.pdf
 docs/Shibo-Yan-Undergraduate-Transcript.pdf
-docs/Shibo-Yan-Research-Paper.pdf
 ```
 
 替换 PDF 时优先保持文件名不变。如果必须改名，需要全站搜索旧路径并同步修改中英文页面、按钮、iframe、文档和相关元数据。

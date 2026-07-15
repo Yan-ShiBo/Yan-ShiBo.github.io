@@ -654,7 +654,6 @@ CSS 状态由 `:root[data-theme="dark"]` 控制。
 | --- | --- |
 | `docs/Shibo-Yan-Resume.pdf` | 简历下载和 iframe 预览 |
 | `docs/Shibo-Yan-Undergraduate-Transcript.pdf` | 本科成绩单下载 |
-| `docs/Shibo-Yan-Research-Paper.pdf` | 研究论文或报告材料 |
 
 替换 PDF 时优先保持文件名不变。如果必须改名，全站搜索旧文件名并同步中英文页面、按钮、iframe、OG 描述和文档。
 

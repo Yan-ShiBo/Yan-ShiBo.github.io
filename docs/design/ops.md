@@ -323,7 +323,6 @@ PDF 路径：
 ```text
 docs/Shibo-Yan-Resume.pdf
 docs/Shibo-Yan-Undergraduate-Transcript.pdf
-docs/Shibo-Yan-Research-Paper.pdf
 ```
 
 替换 PDF 时优先保持文件名不变。  
@@ -832,7 +831,6 @@ git status --short
 ```text
 docs/Shibo-Yan-Resume.pdf
 docs/Shibo-Yan-Undergraduate-Transcript.pdf
-docs/Shibo-Yan-Research-Paper.pdf
 ```
 
 处理：
