@@ -4,14 +4,30 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const SITE_ORIGIN = 'https://yan-shibo.github.io';
+const PERSON_ID = `${SITE_ORIGIN}/#person`;
+const WEBSITE_ID = `${SITE_ORIGIN}/#website`;
+const PROJECT_IDS = [
+  `${SITE_ORIGIN}/#project-persevere-study`,
+  `${SITE_ORIGIN}/#project-mic-family`
+];
+const RESEARCH_IDS = [
+  `${SITE_ORIGIN}/#research-controller-updates`,
+  `${SITE_ORIGIN}/#research-pac-approximation`,
+  `${SITE_ORIGIN}/#research-certificate-templates`,
+  `${SITE_ORIGIN}/#research-complex-systems`
+];
+const EXPECTED_PROJECT_REPOSITORIES = new Map([
+  [PROJECT_IDS[0], 'https://github.com/Yan-ShiBo/PersevereStudy'],
+  [PROJECT_IDS[1], 'https://github.com/Yan-ShiBo/MicFamily']
+]);
 
 const PAGE_PAIRS = [
-  { zhFile: 'index.html', enFile: 'en/index.html', zhRoute: '/', enRoute: '/en/' },
-  { zhFile: 'profile.html', enFile: 'en/profile.html', zhRoute: '/profile.html', enRoute: '/en/profile.html' },
-  { zhFile: 'research.html', enFile: 'en/research.html', zhRoute: '/research.html', enRoute: '/en/research.html' },
-  { zhFile: 'projects.html', enFile: 'en/projects.html', zhRoute: '/projects.html', enRoute: '/en/projects.html' },
-  { zhFile: 'resume.html', enFile: 'en/resume.html', zhRoute: '/resume.html', enRoute: '/en/resume.html' },
-  { zhFile: 'analytics.html', enFile: 'en/analytics.html', zhRoute: '/analytics.html', enRoute: '/en/analytics.html' }
+  { zhFile: 'index.html', enFile: 'en/index.html', zhRoute: '/', enRoute: '/en/', kind: 'profile', schemaType: 'ProfilePage' },
+  { zhFile: 'profile.html', enFile: 'en/profile.html', zhRoute: '/profile.html', enRoute: '/en/profile.html', kind: 'profile', schemaType: 'ProfilePage' },
+  { zhFile: 'research.html', enFile: 'en/research.html', zhRoute: '/research.html', enRoute: '/en/research.html', kind: 'research', schemaType: 'WebPage' },
+  { zhFile: 'projects.html', enFile: 'en/projects.html', zhRoute: '/projects.html', enRoute: '/en/projects.html', kind: 'projects', schemaType: 'CollectionPage' },
+  { zhFile: 'resume.html', enFile: 'en/resume.html', zhRoute: '/resume.html', enRoute: '/en/resume.html', kind: 'profile', schemaType: 'ProfilePage' },
+  { zhFile: 'analytics.html', enFile: 'en/analytics.html', zhRoute: '/analytics.html', enRoute: '/en/analytics.html', kind: 'analytics', schemaType: 'WebPage' }
 ];
 
 const NOT_FOUND_PAGES = [
@@ -26,7 +42,9 @@ const INDEXABLE_PAGES = PAGE_PAIRS.flatMap((pair) => [
     route: pair.zhRoute,
     canonical: SITE_ORIGIN + pair.zhRoute,
     zhUrl: SITE_ORIGIN + pair.zhRoute,
-    enUrl: SITE_ORIGIN + pair.enRoute
+    enUrl: SITE_ORIGIN + pair.enRoute,
+    kind: pair.kind,
+    schemaType: pair.schemaType
   },
   {
     file: pair.enFile,
@@ -34,7 +52,9 @@ const INDEXABLE_PAGES = PAGE_PAIRS.flatMap((pair) => [
     route: pair.enRoute,
     canonical: SITE_ORIGIN + pair.enRoute,
     zhUrl: SITE_ORIGIN + pair.zhRoute,
-    enUrl: SITE_ORIGIN + pair.enRoute
+    enUrl: SITE_ORIGIN + pair.enRoute,
+    kind: pair.kind,
+    schemaType: pair.schemaType
   }
 ]);
 
@@ -454,23 +474,1020 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
   }
 }
 
-function validateJsonLd(file, html, expectedLang, shouldExist, issues) {
-  const blocks = Array.from(
-    html.matchAll(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi),
-    (match) => match[1]
-  );
-  if (shouldExist && blocks.length === 0) {
-    addIssue(issues, file, 'missing JSON-LD');
-    return;
+const PERSON_ALLOWED_KEYS = [
+  '@type',
+  '@id',
+  'name',
+  'alternateName',
+  'url',
+  'image',
+  'email',
+  'alumniOf',
+  'homeLocation'
+];
+const WEBSITE_ALLOWED_KEYS = [
+  '@type',
+  '@id',
+  'url',
+  'name',
+  'inLanguage',
+  'creator'
+];
+const PAGE_BASE_ALLOWED_KEYS = [
+  '@type',
+  '@id',
+  'url',
+  'name',
+  'description',
+  'inLanguage',
+  'isPartOf'
+];
+const LIST_ALLOWED_KEYS = ['@type', '@id', 'numberOfItems', 'itemListElement'];
+const LIST_ITEM_ALLOWED_KEYS = ['@type', 'position', 'item'];
+const PROJECT_ALLOWED_KEYS = [
+  '@type',
+  '@id',
+  'name',
+  'description',
+  'codeRepository',
+  'keywords',
+  'contributor'
+];
+const RESEARCH_ALLOWED_KEYS = ['@type', '@id', 'name', 'description'];
+
+const EXPECTED_PROJECT_FACTS = {
+  'zh-CN': [
+    {
+      name: '基于人脸识别技术的多端考勤系统',
+      description: '通过摄像头拍照或上传照片识别到课学生，并生成出勤简表和阶段性报告。',
+      keywords: ['uni-app', 'Spring Boot', 'MySQL', 'Python', 'Android / 小程序 / Web']
+    },
+    {
+      name: '前后端分离的 KTV 管理系统',
+      description: '前端使用 Vue、jQuery、Bootstrap、ACE、ElementUI 和 font-awesome；后端使用 Spring Boot，数据库使用 MySQL。',
+      keywords: [
+        'Vue',
+        'jQuery',
+        'Bootstrap',
+        'Spring Boot 2.7.1',
+        'MySQL 8.0.26',
+        'Java 1.8'
+      ]
+    }
+  ],
+  en: [
+    {
+      name: 'Multi-terminal Attendance System Based on Face Recognition',
+      description: 'The system recognizes students from camera capture or uploaded photos and generates attendance summaries and staged reports.',
+      keywords: ['uni-app', 'Spring Boot', 'MySQL', 'Python', 'Android / Mini Program / Web']
+    },
+    {
+      name: 'Front-end / Back-end Separated KTV Management System',
+      description: 'The front end uses Vue, jQuery, Bootstrap, ACE, ElementUI, and font-awesome; the back end uses Spring Boot with MySQL.',
+      keywords: [
+        'Vue',
+        'jQuery',
+        'Bootstrap',
+        'Spring Boot 2.7.1',
+        'MySQL 8.0.26',
+        'Java 1.8'
+      ]
+    }
+  ]
+};
+
+const EXPECTED_RESEARCH_FACTS = {
+  'zh-CN': [
+    {
+      name: '控制器更新',
+      description: '在概率下界偏保守的区域继续改进策略，而不是停在第一次求解。'
+    },
+    {
+      name: 'PAC 近似',
+      description: '平衡多项式次数、样本规模与近似误差，降低后续求解压力。'
+    },
+    {
+      name: '证书模板',
+      description: '面对更复杂几何结构时，提高 stochastic barrier-like certificates 的表达能力。'
+    },
+    {
+      name: '更复杂系统',
+      description: '逐步考虑非多项式动力学、更高维系统和更自动化的学习—验证闭环。'
+    }
+  ],
+  en: [
+    {
+      name: 'Controller updates',
+      description: 'Improve policies in regions where the certified lower bound remains conservative.'
+    },
+    {
+      name: 'PAC approximation',
+      description: 'Balance polynomial degree, sample size, and approximation error to reduce solver pressure.'
+    },
+    {
+      name: 'Certificate templates',
+      description: 'Increase the expressiveness of stochastic barrier-like certificates for more complex geometries.'
+    },
+    {
+      name: 'More complex systems',
+      description: 'Move toward non-polynomial dynamics, higher-dimensional systems, and a more automated learning-verification loop.'
+    }
+  ]
+};
+
+const ANALYTICS_FORBIDDEN_TYPES = new Set(['Dataset', 'InteractionCounter']);
+const ANALYTICS_FORBIDDEN_FIELDS = new Set([
+  'interactionStatistic',
+  'userInteractionCount',
+  'localStorage',
+  'localTotal',
+  'localPage',
+  'localDays',
+  'firstVisit',
+  'lastVisit',
+  'visitTime',
+  'visitorId',
+  'browserId'
+]);
+
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function removeHtmlComments(html) {
+  return String(html).replace(/<!--[\s\S]*?-->/g, '');
+}
+
+function findTagEnd(source, startIndex) {
+  let quote = '';
+  for (let index = startIndex; index < source.length; index += 1) {
+    const character = source[index];
+    if (quote) {
+      if (character === quote) quote = '';
+    } else if (character === '"' || character === "'") {
+      quote = character;
+    } else if (character === '>') {
+      return index + 1;
+    }
   }
-  for (const block of blocks) {
-    try {
-      const value = JSON.parse(block);
-      if (value.inLanguage && value.inLanguage !== expectedLang) {
-        addIssue(issues, file, `JSON-LD inLanguage should be ${expectedLang}`);
+  return -1;
+}
+
+function isHtmlWhitespace(character) {
+  return character === '\t' ||
+    character === '\n' ||
+    character === '\f' ||
+    character === '\r' ||
+    character === ' ';
+}
+
+const RAW_TEXT_ELEMENT_NAMES = new Set(['script', 'style']);
+const RCDATA_ELEMENT_NAMES = new Set(['textarea', 'title']);
+
+function isScriptingEnabledRawTextElement(tagName) {
+  return RAW_TEXT_ELEMENT_NAMES.has(tagName) || tagName === 'noscript';
+}
+
+function readHtmlTag(source, startIndex) {
+  const match = source.slice(startIndex).match(/^<(\/?)([a-z][^\t\n\f\r />]*)/i);
+  if (!match) return null;
+  const end = findTagEnd(source, startIndex + match[0].length);
+  if (end < 0) return null;
+  return {
+    end,
+    isClosing: match[1] === '/',
+    name: match[2].toLowerCase(),
+    raw: source.slice(startIndex, end)
+  };
+}
+
+function findHtmlClosingTag(source, tagName, startIndex) {
+  const pattern = new RegExp(`<\\/${tagName}`, 'gi');
+  pattern.lastIndex = startIndex;
+  let match;
+
+  while ((match = pattern.exec(source)) !== null) {
+    const delimiterIndex = match.index + match[0].length;
+    const delimiter = source[delimiterIndex];
+    if (delimiter !== '>' && delimiter !== '/' && !isHtmlWhitespace(delimiter)) {
+      continue;
+    }
+    const end = findTagEnd(source, delimiterIndex);
+    if (end < 0) return null;
+    return { index: match.index, end };
+  }
+  return null;
+}
+
+function extractJsonLdBlocks(html) {
+  const source = String(html);
+  const blocks = [];
+  let cursor = 0;
+  let headSeen = false;
+  let inHead = false;
+  let templateDepth = 0;
+
+  while (cursor < source.length) {
+    const tagStart = source.indexOf('<', cursor);
+    if (tagStart < 0) break;
+    if (source.startsWith('<!--', tagStart)) {
+      const commentEnd = source.indexOf('-->', tagStart + 4);
+      cursor = commentEnd < 0 ? source.length : commentEnd + 3;
+      continue;
+    }
+
+    const tag = readHtmlTag(source, tagStart);
+    if (!tag) {
+      cursor = tagStart + 1;
+      continue;
+    }
+    const tagEnd = tag.end;
+    const isClosing = tag.isClosing;
+    const tagName = tag.name;
+
+    if (isClosing) {
+      if (tagName === 'template' && templateDepth > 0) {
+        templateDepth -= 1;
+      } else if (tagName === 'head' && templateDepth === 0) {
+        inHead = false;
       }
-    } catch (error) {
-      addIssue(issues, file, `invalid JSON-LD: ${error.message}`);
+      cursor = tagEnd;
+      continue;
+    }
+
+    if (isScriptingEnabledRawTextElement(tagName) || RCDATA_ELEMENT_NAMES.has(tagName)) {
+      const closingTag = findHtmlClosingTag(source, tagName, tagEnd);
+      if (!closingTag) break;
+
+      if (tagName === 'script' && templateDepth === 0) {
+        const attributes = parseAttributes(tag.raw);
+        if (String(attributes.type || '').toLowerCase() === 'application/ld+json') {
+          blocks.push({
+            raw: source.slice(tagStart, closingTag.end),
+            content: source.slice(tagEnd, closingTag.index),
+            inHead
+          });
+        }
+      }
+      cursor = closingTag.end;
+      continue;
+    }
+
+    if (tagName === 'head' && templateDepth === 0 && !headSeen) {
+      headSeen = true;
+      inHead = true;
+    } else if (tagName === 'body' && templateDepth === 0) {
+      inHead = false;
+    } else if (tagName === 'template') {
+      templateDepth += 1;
+    }
+    cursor = tagEnd;
+  }
+  return blocks;
+}
+
+function decodeHtmlEntities(value) {
+  const named = {
+    amp: '&',
+    apos: "'",
+    gt: '>',
+    lt: '<',
+    middot: '·',
+    nbsp: ' ',
+    quot: '"'
+  };
+  return String(value == null ? '' : value)
+    .replace(/&(?:#x([0-9a-f]+)|#([0-9]+)|([a-z]+));/gi, (match, hex, decimal, name) => {
+      if (hex || decimal) {
+        const codePoint = Number.parseInt(hex || decimal, hex ? 16 : 10);
+        try {
+          return String.fromCodePoint(codePoint);
+        } catch (_error) {
+          return match;
+        }
+      }
+      return Object.hasOwn(named, name.toLowerCase()) ? named[name.toLowerCase()] : match;
+    });
+}
+
+function normalizeStructuredText(value) {
+  return String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+}
+
+function normalizeHtmlText(value) {
+  return normalizeStructuredText(decodeHtmlEntities(value));
+}
+
+function getDocumentTitle(html) {
+  const match = removeHtmlComments(html).match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  if (!match) return '';
+  return normalizeHtmlText(match[1].replace(/<[^>]*>/g, ' '));
+}
+
+function getMetaDescription(html) {
+  const meta = extractTags(removeHtmlComments(html), 'meta')
+    .find((tag) => tag.attributes.name === 'description');
+  return meta ? normalizeHtmlText(meta.attributes.content) : '';
+}
+
+function getVisibleBodyText(html) {
+  const activeHtml = removeHtmlComments(html);
+  const bodyStart = activeHtml.search(/<body(?=[\t\n\f\r />])/i);
+  if (bodyStart < 0) return '';
+  const bodyTag = readHtmlTag(activeHtml, bodyStart);
+  if (!bodyTag || bodyTag.isClosing || bodyTag.name !== 'body') return '';
+  const bodyClosingTag = findHtmlClosingTag(activeHtml, 'body', bodyTag.end);
+  if (!bodyClosingTag) return '';
+
+  const bodyHtml = activeHtml.slice(bodyTag.end, bodyClosingTag.index);
+  const bodyAttributes = parseAttributes(bodyTag.raw);
+  const visibleParts = [];
+  const stack = [];
+  const voidElements = new Set([
+    'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+    'link', 'meta', 'param', 'source', 'track', 'wbr'
+  ]);
+  let hiddenDepth =
+    Object.hasOwn(bodyAttributes, 'hidden') ||
+    Object.hasOwn(bodyAttributes, 'inert') ||
+    String(bodyAttributes['aria-hidden'] || '').toLowerCase() === 'true'
+      ? 1
+      : 0;
+  let cursor = 0;
+
+  while (cursor < bodyHtml.length) {
+    const tagStart = bodyHtml.indexOf('<', cursor);
+    if (tagStart < 0) break;
+    if (hiddenDepth === 0) visibleParts.push(bodyHtml.slice(cursor, tagStart));
+
+    const tag = readHtmlTag(bodyHtml, tagStart);
+    if (!tag) {
+      if (hiddenDepth === 0) visibleParts.push('<');
+      cursor = tagStart + 1;
+      continue;
+    }
+    const tagName = tag.name;
+
+    if (!tag.isClosing && isScriptingEnabledRawTextElement(tagName)) {
+      const closingTag = findHtmlClosingTag(bodyHtml, tagName, tag.end);
+      cursor = closingTag ? closingTag.end : bodyHtml.length;
+      continue;
+    }
+
+    if (tag.isClosing) {
+      let matchingIndex = -1;
+      for (let index = stack.length - 1; index >= 0; index -= 1) {
+        if (stack[index].tagName === tagName) {
+          matchingIndex = index;
+          break;
+        }
+      }
+      if (matchingIndex >= 0) {
+        while (stack.length > matchingIndex) {
+          if (stack.pop().suppressesText) hiddenDepth -= 1;
+        }
+      }
+    } else if (!voidElements.has(tagName) && !/\/\s*>$/.test(tag.raw)) {
+      const attributes = parseAttributes(tag.raw);
+      const suppressesText =
+        tagName === 'template' ||
+        Object.hasOwn(attributes, 'hidden') ||
+        Object.hasOwn(attributes, 'inert') ||
+        String(attributes['aria-hidden'] || '').toLowerCase() === 'true';
+      stack.push({ tagName, suppressesText });
+      if (suppressesText) hiddenDepth += 1;
+    }
+    cursor = tag.end;
+  }
+  if (hiddenDepth === 0) visibleParts.push(bodyHtml.slice(cursor));
+  return normalizeHtmlText(visibleParts.join(' '));
+}
+
+function isAbsoluteUrl(value) {
+  if (typeof value !== 'string' || !/^[a-z][a-z0-9+.-]*:/i.test(value)) return false;
+  try {
+    new URL(value);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
+function isExactIdReference(value, expectedId) {
+  return isPlainObject(value) &&
+    Object.keys(value).length === 1 &&
+    value['@id'] === expectedId;
+}
+
+function validateAllowedKeys(value, allowedKeys, label, file, issues) {
+  if (!isPlainObject(value)) return;
+  const allowed = new Set(allowedKeys);
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key)) addIssue(issues, file, `${label} has unexpected key ${key}`);
+  }
+}
+
+function collectInternalIdReferences(value, records = [], pathName = '$') {
+  const stack = [{ path: pathName, value }];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (Array.isArray(current.value)) {
+      for (let index = current.value.length - 1; index >= 0; index -= 1) {
+        const childPath = current.path.length < 500
+          ? `${current.path}[${index}]`
+          : `${current.path.slice(0, 497)}...`;
+        stack.push({ path: childPath, value: current.value[index] });
+      }
+      continue;
+    }
+    if (!isPlainObject(current.value)) continue;
+    if (Object.hasOwn(current.value, '@id')) {
+      records.push({
+        owner: current.value,
+        path: `${current.path}.@id`,
+        value: current.value['@id']
+      });
+    }
+    const entries = Object.entries(current.value);
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const [key, child] = entries[index];
+      if (key === '@id') continue;
+      const childPath = current.path.length < 500
+        ? `${current.path}.${key}`
+        : `${current.path.slice(0, 497)}...`;
+      stack.push({ path: childPath, value: child });
+    }
+  }
+  return records;
+}
+
+function stableCanonicalJson(value) {
+  const output = [];
+  const stack = [{ kind: 'value', value }];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (current.kind === 'text') {
+      output.push(current.value);
+    } else if (Array.isArray(current.value)) {
+      output.push('[');
+      stack.push({ kind: 'text', value: ']' });
+      for (let index = current.value.length - 1; index >= 0; index -= 1) {
+        stack.push({ kind: 'value', value: current.value[index] });
+        if (index > 0) stack.push({ kind: 'text', value: ',' });
+      }
+    } else if (isPlainObject(current.value)) {
+      output.push('{');
+      stack.push({ kind: 'text', value: '}' });
+      const keys = Object.keys(current.value).sort();
+      for (let index = keys.length - 1; index >= 0; index -= 1) {
+        const key = keys[index];
+        stack.push({ kind: 'value', value: current.value[key] });
+        stack.push({ kind: 'text', value: ':' });
+        stack.push({ kind: 'text', value: JSON.stringify(key) });
+        if (index > 0) stack.push({ kind: 'text', value: ',' });
+      }
+    } else {
+      output.push(JSON.stringify(current.value) ?? 'undefined');
+    }
+  }
+  return output.join('');
+}
+
+function hasSameStringSet(actual, expected) {
+  return Array.isArray(actual) &&
+    actual.length === expected.length &&
+    actual.every((entry) => typeof entry === 'string') &&
+    stableCanonicalJson([...actual].sort()) === stableCanonicalJson([...expected].sort());
+}
+
+function parseStructuredDataGraph(file, html, issues) {
+  const blocks = extractJsonLdBlocks(html);
+  const headBlocks = blocks.filter((block) => block.inHead);
+  const outsideBlocks = blocks.filter((block) => !block.inHead);
+
+  if (headBlocks.length !== 1) {
+    addIssue(issues, file, 'expected exactly one active JSON-LD block in head');
+  }
+  if (outsideBlocks.length > 0) {
+    addIssue(issues, file, 'JSON-LD blocks are not allowed outside head');
+  }
+  if (headBlocks.length === 0) return null;
+
+  let root;
+  try {
+    root = JSON.parse(headBlocks[0].content);
+  } catch (_error) {
+    addIssue(issues, file, 'invalid structured data JSON');
+    return null;
+  }
+
+  if (!isPlainObject(root)) {
+    addIssue(issues, file, 'structured data root must be an object');
+    return null;
+  }
+  validateAllowedKeys(root, ['@context', '@graph'], 'structured data root', file, issues);
+  if (root['@context'] !== 'https://schema.org') {
+    addIssue(issues, file, '@context must be exactly https://schema.org');
+  }
+  if (!Array.isArray(root['@graph'])) {
+    addIssue(issues, file, '@graph must be an array');
+    return { root, graph: [], nodesById: new Map() };
+  }
+
+  const graph = root['@graph'];
+  const nodesById = new Map();
+  const topLevelNodes = new Set();
+  graph.forEach((node, index) => {
+    if (!isPlainObject(node)) {
+      addIssue(issues, file, `top-level graph node ${index + 1} must be an object`);
+      return;
+    }
+    topLevelNodes.add(node);
+    if (!Object.hasOwn(node, '@id')) {
+      addIssue(issues, file, 'top-level graph node is missing @id');
+      return;
+    }
+    if (!isAbsoluteUrl(node['@id'])) {
+      addIssue(issues, file, `top-level @id must be an absolute URL: ${String(node['@id'])}`);
+      return;
+    }
+    if (nodesById.has(node['@id'])) {
+      addIssue(issues, file, `duplicate top-level @id ${node['@id']}`);
+      return;
+    }
+    nodesById.set(node['@id'], node);
+  });
+
+  for (const reference of collectInternalIdReferences(root)) {
+    if (topLevelNodes.has(reference.owner)) continue;
+    if (!isAbsoluteUrl(reference.value)) {
+      addIssue(
+        issues,
+        file,
+        `nested @id must be an absolute URL at ${reference.path}`
+      );
+      continue;
+    }
+    let url;
+    try {
+      url = new URL(reference.value);
+    } catch (_error) {
+      continue;
+    }
+    if (url.origin === SITE_ORIGIN && !nodesById.has(reference.value)) {
+      addIssue(
+        issues,
+        file,
+        `unresolved same-origin @id reference ${reference.value}`
+      );
+    }
+  }
+
+  return { root, graph, nodesById };
+}
+
+function expectedGraphIds(page) {
+  const ids = [`${page.canonical}#webpage`, WEBSITE_ID, PERSON_ID];
+  if (page.kind === 'projects') {
+    ids.push(`${page.canonical}#project-list`, ...PROJECT_IDS);
+  } else if (page.kind === 'research') {
+    ids.push(`${page.canonical}#research-directions`, ...RESEARCH_IDS);
+  }
+  return ids;
+}
+
+function validateExactValue(actual, expected, file, message, issues) {
+  if (stableCanonicalJson(actual) !== stableCanonicalJson(expected)) {
+    addIssue(issues, file, message);
+  }
+}
+
+function validateCommonStructuredData(page, html, parsed, issues) {
+  const expectedIds = expectedGraphIds(page);
+  for (const id of expectedIds) {
+    if (!parsed.nodesById.has(id)) addIssue(issues, page.file, `missing graph node ${id}`);
+  }
+  for (const id of parsed.nodesById.keys()) {
+    if (!expectedIds.includes(id)) addIssue(issues, page.file, `unexpected graph node ${id}`);
+  }
+  const pageId = `${page.canonical}#webpage`;
+  const pageNode = parsed.nodesById.get(pageId);
+  const website = parsed.nodesById.get(WEBSITE_ID) ||
+    parsed.graph.find((node) => isPlainObject(node) && node['@type'] === 'WebSite');
+  const person = parsed.nodesById.get(PERSON_ID) ||
+    parsed.graph.find((node) => isPlainObject(node) && node['@type'] === 'Person');
+
+  if (pageNode) {
+    const relationKeys = page.kind === 'profile'
+      ? ['mainEntity']
+      : page.kind === 'analytics'
+        ? ['about']
+        : ['mainEntity', 'about'];
+    validateAllowedKeys(
+      pageNode,
+      [...PAGE_BASE_ALLOWED_KEYS, ...relationKeys],
+      'page',
+      page.file,
+      issues
+    );
+    if (pageNode['@type'] !== page.schemaType) {
+      addIssue(issues, page.file, `page @type must be ${page.schemaType}`);
+    }
+    if (pageNode.url !== page.canonical) {
+      addIssue(issues, page.file, 'page url must match canonical');
+    }
+    if (normalizeStructuredText(pageNode.name) !== getDocumentTitle(html)) {
+      addIssue(issues, page.file, 'page name must match the document title');
+    }
+    if (normalizeStructuredText(pageNode.description) !== getMetaDescription(html)) {
+      addIssue(issues, page.file, 'page description must match the meta description');
+    }
+    if (pageNode.inLanguage !== page.lang) {
+      addIssue(issues, page.file, `page inLanguage must be ${page.lang}`);
+    }
+    if (!isExactIdReference(pageNode.isPartOf, WEBSITE_ID)) {
+      addIssue(issues, page.file, 'isPartOf must be an @id-only object referencing WebSite');
+    }
+
+    if (page.kind === 'profile') {
+      if (!isExactIdReference(pageNode.mainEntity, PERSON_ID)) {
+        addIssue(issues, page.file, 'mainEntity must be an @id-only object referencing Person');
+      }
+    } else if (page.kind === 'analytics') {
+      if (!isExactIdReference(pageNode.about, WEBSITE_ID)) {
+        addIssue(issues, page.file, 'analytics about must reference WebSite');
+      }
+    } else {
+      const suffix = page.kind === 'projects' ? '#project-list' : '#research-directions';
+      if (!isExactIdReference(pageNode.mainEntity, `${page.canonical}${suffix}`)) {
+        addIssue(issues, page.file, 'mainEntity must reference the page ItemList');
+      }
+      if (!isExactIdReference(pageNode.about, PERSON_ID)) {
+        addIssue(issues, page.file, 'about must be an @id-only object referencing Person');
+      }
+    }
+  }
+
+  if (website) {
+    validateAllowedKeys(website, WEBSITE_ALLOWED_KEYS, 'WebSite', page.file, issues);
+    if (website['@type'] !== 'WebSite') addIssue(issues, page.file, 'WebSite @type must be WebSite');
+    if (website['@id'] !== WEBSITE_ID) addIssue(issues, page.file, `WebSite @id must be ${WEBSITE_ID}`);
+    if (website.url !== `${SITE_ORIGIN}/`) addIssue(issues, page.file, 'WebSite url must be the site root');
+    const expectedName = page.lang === 'zh-CN' ? '闫士博' : 'ShiBo Yan';
+    if (website.name !== expectedName) {
+      addIssue(issues, page.file, `WebSite name must be ${expectedName}`);
+    }
+    if (!hasSameStringSet(website.inLanguage, ['zh-CN', 'en'])) {
+      addIssue(issues, page.file, 'WebSite inLanguage must contain zh-CN and en');
+    }
+    if (!isExactIdReference(website.creator, PERSON_ID)) {
+      addIssue(issues, page.file, 'WebSite creator must reference Person');
+    }
+  }
+
+  if (person) {
+    if (Object.hasOwn(person, 'inLanguage')) {
+      addIssue(issues, page.file, 'Person must not contain inLanguage');
+    }
+    validateAllowedKeys(person, PERSON_ALLOWED_KEYS, 'Person', page.file, issues);
+    if (person['@type'] !== 'Person') addIssue(issues, page.file, 'Person @type must be Person');
+    if (person['@id'] !== PERSON_ID) addIssue(issues, page.file, `Person @id must be ${PERSON_ID}`);
+    const expectedPerson = {
+      name: page.lang === 'zh-CN' ? '闫士博' : 'ShiBo Yan',
+      alternateName: page.lang === 'zh-CN' ? 'ShiBo Yan' : '闫士博',
+      url: `${SITE_ORIGIN}/`,
+      image: `${SITE_ORIGIN}/assets/profile/photo.jpg`,
+      email: 'mailto:y423314860@163.com',
+      alumniOf: { '@type': 'CollegeOrUniversity', name: 'Southwest University' },
+      homeLocation: { '@type': 'Place', name: 'Chongqing, China' }
+    };
+    for (const [key, expected] of Object.entries(expectedPerson)) {
+      validateExactValue(
+        person[key],
+        expected,
+        page.file,
+        `Person ${key} must match the approved fact`,
+        issues
+      );
+    }
+  }
+
+  return { pageNode, website, person };
+}
+
+function validateListContract(page, list, ids, kind, issues) {
+  if (!list) return;
+  validateAllowedKeys(list, LIST_ALLOWED_KEYS, `${kind} ItemList`, page.file, issues);
+  if (list['@type'] !== 'ItemList') {
+    addIssue(issues, page.file, `${kind} list @type must be ItemList`);
+  }
+  if (list.numberOfItems !== ids.length) {
+    addIssue(issues, page.file, `${kind} list numberOfItems must be ${ids.length}`);
+  }
+  if (!Array.isArray(list.itemListElement) || list.itemListElement.length !== ids.length) {
+    addIssue(
+      issues,
+      page.file,
+      `${kind} list must contain exactly ${ids.length} elements`
+    );
+  }
+  if (!Array.isArray(list.itemListElement)) return;
+
+  list.itemListElement.forEach((entry, index) => {
+    if (!isPlainObject(entry)) {
+      addIssue(issues, page.file, `${kind} ListItem ${index + 1} must be an object`);
+      return;
+    }
+    validateAllowedKeys(entry, LIST_ITEM_ALLOWED_KEYS, 'ListItem', page.file, issues);
+    if (entry['@type'] !== 'ListItem') {
+      addIssue(issues, page.file, `${kind} list entries must use @type ListItem`);
+    }
+    if (!isExactIdReference(entry.item, ids[index])) {
+      addIssue(
+        issues,
+        page.file,
+        `${kind} list item order must match the approved inventory`
+      );
+    }
+  });
+
+  const positions = list.itemListElement.map((entry) => (
+    isPlainObject(entry) ? entry.position : undefined
+  ));
+  const expectedPositions = ids.map((_id, index) => index + 1);
+  if (stableCanonicalJson(positions) !== stableCanonicalJson(expectedPositions)) {
+    addIssue(
+      issues,
+      page.file,
+      kind === 'project'
+        ? 'project list positions must be 1 and 2'
+        : 'research list positions must be 1 through 4'
+    );
+  }
+}
+
+function valueAppearsInVisibleText(visibleText, value) {
+  const normalizedValue = normalizeStructuredText(value);
+  return normalizedValue.length > 0 && visibleText.includes(normalizedValue);
+}
+
+function validateProjectStructuredData(page, html, parsed, issues) {
+  const list = parsed.nodesById.get(`${page.canonical}#project-list`);
+  validateListContract(page, list, PROJECT_IDS, 'project', issues);
+  const visibleText = getVisibleBodyText(html);
+  const expectedFacts = EXPECTED_PROJECT_FACTS[page.lang];
+
+  PROJECT_IDS.forEach((id, index) => {
+    const project = parsed.nodesById.get(id);
+    if (!project) return;
+    validateAllowedKeys(project, PROJECT_ALLOWED_KEYS, 'SoftwareSourceCode', page.file, issues);
+    if (project['@type'] !== 'SoftwareSourceCode') {
+      addIssue(issues, page.file, 'project @type must be SoftwareSourceCode');
+    }
+    const expected = expectedFacts[index];
+    validateExactValue(
+      project.name,
+      expected.name,
+      page.file,
+      'project name must match the approved localized value',
+      issues
+    );
+    validateExactValue(
+      project.description,
+      expected.description,
+      page.file,
+      'project description must match the approved localized value',
+      issues
+    );
+    validateExactValue(
+      project.keywords,
+      expected.keywords,
+      page.file,
+      'project keywords must match the approved inventory',
+      issues
+    );
+    if (project.codeRepository !== EXPECTED_PROJECT_REPOSITORIES.get(id)) {
+      addIssue(
+        issues,
+        page.file,
+        'project codeRepository must match the approved repository'
+      );
+    }
+    if (!isExactIdReference(project.contributor, PERSON_ID)) {
+      addIssue(issues, page.file, 'project contributor must reference Person');
+    }
+    if (!valueAppearsInVisibleText(visibleText, project.name)) {
+      addIssue(issues, page.file, 'project name must appear in visible page text');
+    }
+    if (!valueAppearsInVisibleText(visibleText, project.description)) {
+      addIssue(issues, page.file, 'project description must appear in visible page text');
+    }
+    if (Array.isArray(project.keywords)) {
+      for (const keyword of project.keywords) {
+        if (!valueAppearsInVisibleText(visibleText, keyword)) {
+          addIssue(issues, page.file, 'project keyword must appear in visible page text');
+        }
+      }
+    }
+  });
+}
+
+function validateResearchStructuredData(page, html, parsed, issues) {
+  const list = parsed.nodesById.get(`${page.canonical}#research-directions`);
+  validateListContract(page, list, RESEARCH_IDS, 'research', issues);
+  const visibleText = getVisibleBodyText(html);
+  const expectedFacts = EXPECTED_RESEARCH_FACTS[page.lang];
+
+  RESEARCH_IDS.forEach((id, index) => {
+    const item = parsed.nodesById.get(id);
+    if (!item) return;
+    validateAllowedKeys(item, RESEARCH_ALLOWED_KEYS, 'research Thing', page.file, issues);
+    if (item['@type'] !== 'Thing') {
+      addIssue(issues, page.file, 'research item @type must be Thing');
+    }
+    const expected = expectedFacts[index];
+    validateExactValue(
+      item.name,
+      expected.name,
+      page.file,
+      'research name must match the approved localized value',
+      issues
+    );
+    validateExactValue(
+      item.description,
+      expected.description,
+      page.file,
+      'research description must match the approved localized value',
+      issues
+    );
+    if (!valueAppearsInVisibleText(visibleText, item.name)) {
+      addIssue(issues, page.file, 'research name must appear in visible page text');
+    }
+    if (!valueAppearsInVisibleText(visibleText, item.description)) {
+      addIssue(issues, page.file, 'research description must appear in visible page text');
+    }
+  });
+}
+
+function validateAnalyticsStructuredData(page, parsed, common, issues) {
+  if (common.pageNode && Object.hasOwn(common.pageNode, 'mainEntity')) {
+    addIssue(issues, page.file, 'analytics page must not contain mainEntity');
+  }
+
+  const seenTypes = new Set();
+  const seenFields = new Set();
+  const stack = [parsed.root];
+  while (stack.length > 0) {
+    const value = stack.pop();
+    if (Array.isArray(value)) {
+      stack.push(...value);
+      continue;
+    }
+    if (!isPlainObject(value)) continue;
+    const types = Array.isArray(value['@type']) ? value['@type'] : [value['@type']];
+    for (const type of types) {
+      if (ANALYTICS_FORBIDDEN_TYPES.has(type) && !seenTypes.has(type)) {
+        seenTypes.add(type);
+        addIssue(
+          issues,
+          page.file,
+          `analytics structured data must not contain @type ${type}`
+        );
+      }
+    }
+    for (const [key, child] of Object.entries(value)) {
+      if (ANALYTICS_FORBIDDEN_FIELDS.has(key) && !seenFields.has(key)) {
+        seenFields.add(key);
+        addIssue(
+          issues,
+          page.file,
+          `analytics structured data must not contain field ${key}`
+        );
+      }
+      stack.push(child);
+    }
+  }
+}
+
+function validateStructuredDataPage(page, html, issues) {
+  let parsed;
+  try {
+    parsed = parseStructuredDataGraph(page.file, html, issues);
+    if (!parsed) return null;
+    const common = validateCommonStructuredData(page, html, parsed, issues);
+    if (page.kind === 'projects') {
+      validateProjectStructuredData(page, html, parsed, issues);
+    } else if (page.kind === 'research') {
+      validateResearchStructuredData(page, html, parsed, issues);
+    } else if (page.kind === 'analytics') {
+      validateAnalyticsStructuredData(page, parsed, common, issues);
+    }
+    return { page, parsed, ...common };
+  } catch (error) {
+    addIssue(
+      issues,
+      page.file,
+      `structured data validation could not continue: ${error.message}`
+    );
+    return { page, parsed };
+  }
+}
+
+function validateNotFoundStructuredData(page, html, issues) {
+  if (extractJsonLdBlocks(html).length > 0) {
+    addIssue(issues, page.file, '404 pages must not contain active JSON-LD');
+  }
+}
+
+function validateStructuredDataConsistency(records, issues) {
+  const personRecords = records
+    .map((record) => ({
+      page: record.page,
+      node: record.parsed.graph.find((node) => (
+        isPlainObject(node) && node['@type'] === 'Person'
+      ))
+    }))
+    .filter((record) => record.node);
+  const websiteRecords = records
+    .map((record) => ({
+      page: record.page,
+      node: record.parsed.graph.find((node) => (
+        isPlainObject(node) && node['@type'] === 'WebSite'
+      ))
+    }))
+    .filter((record) => record.node);
+
+  if (personRecords.length > 0) {
+    const baseline = personRecords[0].node;
+    const baselineNames = [baseline.name, baseline.alternateName].sort();
+    const baselineFacts = {
+      '@type': baseline['@type'],
+      url: baseline.url,
+      image: baseline.image,
+      email: baseline.email,
+      alumniOf: baseline.alumniOf,
+      homeLocation: baseline.homeLocation
+    };
+    for (const record of personRecords.slice(1)) {
+      if (record.node['@id'] !== baseline['@id']) {
+        addIssue(issues, record.page.file, 'Person @id must be consistent across pages');
+      }
+      if (stableCanonicalJson([record.node.name, record.node.alternateName].sort()) !==
+          stableCanonicalJson(baselineNames)) {
+        addIssue(issues, record.page.file, 'Person name set must be consistent across pages');
+      }
+      const facts = {
+        '@type': record.node['@type'],
+        url: record.node.url,
+        image: record.node.image,
+        email: record.node.email,
+        alumniOf: record.node.alumniOf,
+        homeLocation: record.node.homeLocation
+      };
+      if (stableCanonicalJson(facts) !== stableCanonicalJson(baselineFacts)) {
+        addIssue(issues, record.page.file, 'Person stable facts must be consistent across pages');
+      }
+    }
+  }
+
+  if (websiteRecords.length > 0) {
+    const baseline = websiteRecords[0].node;
+    const baselineFacts = {
+      '@type': baseline['@type'],
+      url: baseline.url,
+      creator: baseline.creator
+    };
+    const baselineLanguages = Array.isArray(baseline.inLanguage)
+      ? [...baseline.inLanguage].sort()
+      : baseline.inLanguage;
+    const namesByLanguage = new Map();
+    for (const record of websiteRecords) {
+      if (record.node['@id'] !== baseline['@id']) {
+        addIssue(issues, record.page.file, 'WebSite @id must be consistent across pages');
+      }
+      const facts = {
+        '@type': record.node['@type'],
+        url: record.node.url,
+        creator: record.node.creator
+      };
+      if (stableCanonicalJson(facts) !== stableCanonicalJson(baselineFacts)) {
+        addIssue(issues, record.page.file, 'WebSite stable facts must be consistent across pages');
+      }
+      const languages = Array.isArray(record.node.inLanguage)
+        ? [...record.node.inLanguage].sort()
+        : record.node.inLanguage;
+      if (stableCanonicalJson(languages) !== stableCanonicalJson(baselineLanguages)) {
+        addIssue(issues, record.page.file, 'WebSite language set must be consistent across pages');
+      }
+      if (!namesByLanguage.has(record.page.lang)) {
+        namesByLanguage.set(record.page.lang, record.node.name);
+      } else if (namesByLanguage.get(record.page.lang) !== record.node.name) {
+        addIssue(
+          issues,
+          record.page.file,
+          `WebSite name must be consistent across ${record.page.lang} pages`
+        );
+      }
     }
   }
 }
@@ -1200,6 +2217,7 @@ function validateRepository(rootDir) {
   const absoluteRoot = path.resolve(rootDir);
   const issues = [];
   const anchorCache = new Map();
+  const structuredDataRecords = [];
   const actualHtmlFiles = listHtmlFiles(absoluteRoot);
   const existingHtml = new Set(actualHtmlFiles);
   const expectedHtml = new Set(HTML_FILES);
@@ -1218,16 +2236,19 @@ function validateRepository(rootDir) {
     const html = readUtf8(absoluteRoot, page.file);
     validateDocumentStructure(absoluteRoot, page.file, html, page.lang, issues);
     validateLocalReferences(absoluteRoot, page.file, html, issues, anchorCache);
-    validateJsonLd(page.file, html, page.lang, true, issues);
+    const structuredData = validateStructuredDataPage(page, html, issues);
+    if (structuredData) structuredDataRecords.push(structuredData);
     validateIndexableMetadata(page, html, issues);
   }
+
+  validateStructuredDataConsistency(structuredDataRecords, issues);
 
   for (const page of NOT_FOUND_PAGES) {
     if (!existingHtml.has(page.file)) continue;
     const html = readUtf8(absoluteRoot, page.file);
     validateDocumentStructure(absoluteRoot, page.file, html, page.lang, issues);
     validateLocalReferences(absoluteRoot, page.file, html, issues, anchorCache);
-    validateJsonLd(page.file, html, page.lang, false, issues);
+    validateNotFoundStructuredData(page, html, issues);
     validateNotFoundMetadata(page, html, issues);
   }
 

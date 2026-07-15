@@ -107,6 +107,71 @@ function toPosix(value) {
   return value.split(path.sep).join('/');
 }
 
+const STRUCTURED_PERSON_ID = 'https://yan-shibo.github.io/#person';
+const STRUCTURED_WEBSITE_ID = 'https://yan-shibo.github.io/#website';
+const STRUCTURED_PROJECT_IDS = [
+  'https://yan-shibo.github.io/#project-persevere-study',
+  'https://yan-shibo.github.io/#project-mic-family'
+];
+const STRUCTURED_RESEARCH_IDS = [
+  'https://yan-shibo.github.io/#research-controller-updates',
+  'https://yan-shibo.github.io/#research-pac-approximation',
+  'https://yan-shibo.github.io/#research-certificate-templates',
+  'https://yan-shibo.github.io/#research-complex-systems'
+];
+const STRUCTURED_SCRIPT_PATTERN =
+  /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+
+function readStructuredData(rootDir, relativePath) {
+  const html = fs.readFileSync(path.join(rootDir, relativePath), 'utf8');
+  const matches = Array.from(html.matchAll(STRUCTURED_SCRIPT_PATTERN));
+  assert.equal(matches.length, 1, `${relativePath} must contain one JSON-LD fixture block`);
+  return JSON.parse(matches[0][1]);
+}
+
+function writeStructuredData(rootDir, relativePath, value) {
+  replaceMatching(
+    rootDir,
+    relativePath,
+    STRUCTURED_SCRIPT_PATTERN,
+    (fullMatch) => fullMatch.replace(/>[\s\S]*<\/script>$/i, `>${JSON.stringify(value)}</script>`)
+  );
+}
+
+function mutateStructuredData(rootDir, relativePath, mutate) {
+  const value = readStructuredData(rootDir, relativePath);
+  mutate(value);
+  writeStructuredData(rootDir, relativePath, value);
+}
+
+function findStructuredNode(value, id) {
+  const node = value['@graph'].find((candidate) => candidate['@id'] === id);
+  assert.ok(node, `fixture graph must contain ${id}`);
+  return node;
+}
+
+function replaceStructuredMarkup(rootDir, relativePath, transform) {
+  const absolutePath = path.join(rootDir, relativePath);
+  const html = fs.readFileSync(absolutePath, 'utf8');
+  const matches = Array.from(html.matchAll(STRUCTURED_SCRIPT_PATTERN));
+  assert.equal(matches.length, 1, `${relativePath} must contain one JSON-LD fixture block`);
+  fs.writeFileSync(
+    absolutePath,
+    html.slice(0, matches[0].index) +
+      transform(matches[0][0], matches[0][1]) +
+      html.slice(matches[0].index + matches[0][0].length)
+  );
+}
+
+function assertStructuredIssue(result, relativePath, fragment) {
+  assert.ok(
+    result.issues.some((issue) => (
+      issue.startsWith(`${relativePath}: `) && issue.includes(fragment)
+    )),
+    `expected ${relativePath} structured data issue containing ${JSON.stringify(fragment)}; received:\n${result.issues.join('\n')}`
+  );
+}
+
 test('stripUrlDecorations removes query strings and fragments', () => {
   assert.equal(
     stripUrlDecorations('./docs/Shibo-Yan-Resume.pdf#view=FitH'),
@@ -462,12 +527,12 @@ test('validateRepository rejects extra hreflang links with the wrong rel', (t) =
     '</head>',
     '  <link rel="wrong" hreflang="en" href="https://yan-shibo.github.io/en/"/>\n</head>'
   );
-  replaceOnce(
+  replaceMatching(
     rootDir,
     'sitemap.xml',
-    '    <lastmod>2026-06-24</lastmod>',
-    '    <lastmod>2026-06-24</lastmod>\n' +
-      '    <xhtml:link rel="wrong" hreflang="en" href="https://yan-shibo.github.io/en/" />'
+    /^([ \t]*)<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>$/m,
+    (match, indentation) => `${match}\n${indentation}` +
+      '<xhtml:link rel="wrong" hreflang="en" href="https://yan-shibo.github.io/en/" />'
   );
 
   const result = validateRepository(rootDir);
@@ -817,3 +882,927 @@ test('the validator CLI exits with status 1 for an invalid repository', (t) => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /manifest root must be an object/);
 });
+
+const structuredExtractionCases = [
+  {
+    name: 'rejects a missing head block',
+    file: 'index.html',
+    issue: 'expected exactly one active JSON-LD block in head',
+    mutate(rootDir, file) {
+      replaceStructuredMarkup(rootDir, file, () => '');
+    }
+  },
+  {
+    name: 'rejects duplicate head blocks',
+    file: 'index.html',
+    issue: 'expected exactly one active JSON-LD block in head',
+    mutate(rootDir, file) {
+      replaceStructuredMarkup(rootDir, file, (block) => `${block}\n${block}`);
+    }
+  },
+  {
+    name: 'rejects an extra body block',
+    file: 'index.html',
+    issue: 'JSON-LD blocks are not allowed outside head',
+    mutate(rootDir, file) {
+      const absolutePath = path.join(rootDir, file);
+      const html = fs.readFileSync(absolutePath, 'utf8');
+      const block = html.match(STRUCTURED_SCRIPT_PATTERN)[0];
+      fs.writeFileSync(absolutePath, html.replace('</body>', `${block}\n</body>`));
+    }
+  },
+  {
+    name: 'ignores a comment-only block',
+    file: 'index.html',
+    issue: 'expected exactly one active JSON-LD block in head',
+    mutate(rootDir, file) {
+      replaceStructuredMarkup(rootDir, file, (block) => `<!--${block}-->`);
+    }
+  },
+  {
+    name: 'reports malformed JSON without binding to engine wording',
+    file: 'index.html',
+    issue: 'invalid structured data JSON',
+    mutate(rootDir, file) {
+      replaceStructuredMarkup(
+        rootDir,
+        file,
+        (block) => block.replace(/>[\s\S]*<\/script>$/i, '>{"@context":</script>')
+      );
+    }
+  },
+  {
+    name: 'rejects the wrong root context',
+    file: 'index.html',
+    issue: '@context must be exactly https://schema.org',
+    mutate(rootDir, file) {
+      mutateStructuredData(rootDir, file, (value) => {
+        value['@context'] = 'http://schema.org';
+      });
+    }
+  },
+  {
+    name: 'rejects a non-array graph',
+    file: 'index.html',
+    issue: '@graph must be an array',
+    mutate(rootDir, file) {
+      mutateStructuredData(rootDir, file, (value) => {
+        value['@graph'] = {};
+      });
+    }
+  }
+];
+
+for (const mutation of structuredExtractionCases) {
+  test(`structured data ${mutation.name}`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    mutation.mutate(rootDir, mutation.file);
+
+    const result = validateRepository(rootDir);
+
+    assertStructuredIssue(result, mutation.file, mutation.issue);
+  });
+}
+
+const structuredCommonCases = [
+  {
+    name: 'rejects the wrong page type',
+    issue: 'page @type must be ProfilePage',
+    mutate(value) { value['@graph'][0]['@type'] = 'WebPage'; }
+  },
+  {
+    name: 'rejects the wrong page language',
+    issue: 'page inLanguage must be zh-CN',
+    mutate(value) { value['@graph'][0].inLanguage = 'en'; }
+  },
+  {
+    name: 'rejects the wrong page URL',
+    issue: 'page url must match canonical',
+    mutate(value) { value['@graph'][0].url = 'https://yan-shibo.github.io/wrong.html'; }
+  },
+  {
+    name: 'rejects a page name that differs from the title',
+    issue: 'page name must match the document title',
+    mutate(value) { value['@graph'][0].name = 'Invisible page title'; }
+  },
+  {
+    name: 'rejects a page description that differs from metadata',
+    issue: 'page description must match the meta description',
+    mutate(value) { value['@graph'][0].description = 'Invisible page description'; }
+  },
+  {
+    name: 'rejects a relative top-level ID',
+    issue: 'top-level @id must be an absolute URL',
+    mutate(value) { value['@graph'][0]['@id'] = '/#webpage'; }
+  },
+  {
+    name: 'rejects a missing top-level ID',
+    issue: 'top-level graph node is missing @id',
+    mutate(value) { delete value['@graph'][0]['@id']; }
+  },
+  {
+    name: 'rejects a duplicate top-level ID',
+    issue: 'duplicate top-level @id',
+    mutate(value) { value['@graph'][1]['@id'] = value['@graph'][0]['@id']; }
+  },
+  {
+    name: 'rejects a dangling internal reference',
+    issue: 'unresolved same-origin @id reference',
+    mutate(value) {
+      value['@graph'][0].isPartOf['@id'] = 'https://yan-shibo.github.io/#missing';
+    }
+  },
+  {
+    name: 'rejects an unexpected graph node',
+    issue: 'unexpected graph node',
+    mutate(value) {
+      value['@graph'].push({
+        '@type': 'Thing',
+        '@id': 'https://yan-shibo.github.io/#unexpected'
+      });
+    }
+  },
+  {
+    name: 'rejects Person inLanguage',
+    issue: 'Person must not contain inLanguage',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PERSON_ID).inLanguage = 'zh-CN';
+    }
+  },
+  {
+    name: 'rejects relation objects with extra fields',
+    issue: 'isPartOf must be an @id-only object',
+    mutate(value) {
+      value['@graph'][0].isPartOf.name = 'Website';
+    }
+  }
+];
+
+for (const mutation of structuredCommonCases) {
+  test(`structured data ${mutation.name}`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    mutateStructuredData(rootDir, 'index.html', mutation.mutate);
+
+    const result = validateRepository(rootDir);
+
+    assertStructuredIssue(result, 'index.html', mutation.issue);
+  });
+}
+
+const structuredConsistencyCases = [
+  {
+    name: 'rejects Person stable-ID drift across pages',
+    file: 'en/profile.html',
+    issue: 'Person @id must be consistent across pages',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PERSON_ID)['@id'] =
+        'https://yan-shibo.github.io/#different-person';
+    }
+  },
+  {
+    name: 'rejects Person stable-fact drift across pages',
+    file: 'en/profile.html',
+    issue: 'Person stable facts must be consistent across pages',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PERSON_ID).email = 'mailto:different@example.com';
+    }
+  },
+  {
+    name: 'rejects Person name-set drift across pages',
+    file: 'en/profile.html',
+    issue: 'Person name set must be consistent across pages',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PERSON_ID).alternateName = 'Different Name';
+    }
+  },
+  {
+    name: 'rejects WebSite stable-ID drift across pages',
+    file: 'en/profile.html',
+    issue: 'WebSite @id must be consistent across pages',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_WEBSITE_ID)['@id'] =
+        'https://yan-shibo.github.io/#different-website';
+    }
+  },
+  {
+    name: 'rejects WebSite stable-fact drift across pages',
+    file: 'en/profile.html',
+    issue: 'WebSite stable facts must be consistent across pages',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_WEBSITE_ID).url =
+        'https://yan-shibo.github.io/different/';
+    }
+  },
+  {
+    name: 'rejects WebSite language-set drift across pages',
+    file: 'en/profile.html',
+    issue: 'WebSite language set must be consistent across pages',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_WEBSITE_ID).inLanguage.push('fr');
+    }
+  },
+  {
+    name: 'rejects same-language WebSite name drift',
+    file: 'profile.html',
+    issue: 'WebSite name must be consistent across zh-CN pages',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_WEBSITE_ID).name = '不同站点名';
+    }
+  }
+];
+
+for (const mutation of structuredConsistencyCases) {
+  test(`structured data ${mutation.name}`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    mutateStructuredData(rootDir, mutation.file, mutation.mutate);
+
+    const result = validateRepository(rootDir);
+
+    assertStructuredIssue(result, mutation.file, mutation.issue);
+  });
+}
+
+test('structured data accepts reversed WebSite language-array order', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateStructuredData(rootDir, 'en/profile.html', (value) => {
+    findStructuredNode(value, STRUCTURED_WEBSITE_ID).inLanguage.reverse();
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+const structuredProjectCases = [
+  {
+    name: 'rejects the wrong project numberOfItems',
+    issue: 'project list numberOfItems must be 2',
+    mutate(value) {
+      findStructuredNode(value, 'https://yan-shibo.github.io/projects.html#project-list')
+        .numberOfItems = 3;
+    }
+  },
+  {
+    name: 'rejects a missing project list element',
+    issue: 'project list must contain exactly 2 elements',
+    mutate(value) {
+      findStructuredNode(value, 'https://yan-shibo.github.io/projects.html#project-list')
+        .itemListElement.pop();
+    }
+  },
+  {
+    name: 'rejects the wrong project order',
+    issue: 'project list item order must match the approved inventory',
+    mutate(value) {
+      const elements = findStructuredNode(
+        value,
+        'https://yan-shibo.github.io/projects.html#project-list'
+      ).itemListElement;
+      [elements[0].item, elements[1].item] = [elements[1].item, elements[0].item];
+    }
+  },
+  {
+    name: 'rejects duplicate project positions',
+    issue: 'project list positions must be 1 and 2',
+    mutate(value) {
+      findStructuredNode(value, 'https://yan-shibo.github.io/projects.html#project-list')
+        .itemListElement[1].position = 1;
+    }
+  },
+  {
+    name: 'rejects the wrong project repository',
+    issue: 'project codeRepository must match the approved repository',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PROJECT_IDS[0]).codeRepository =
+        'https://github.com/Yan-ShiBo/Wrong';
+    }
+  },
+  {
+    name: 'rejects the wrong project contributor',
+    issue: 'project contributor must reference Person',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PROJECT_IDS[0]).contributor['@id'] =
+        STRUCTURED_WEBSITE_ID;
+    }
+  },
+  {
+    name: 'rejects an invisible project name',
+    issue: 'project name must appear in visible page text',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PROJECT_IDS[0]).name = 'Invisible project name';
+    }
+  },
+  {
+    name: 'rejects an invisible project description',
+    issue: 'project description must appear in visible page text',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PROJECT_IDS[0]).description =
+        'Invisible project description';
+    }
+  },
+  {
+    name: 'rejects an invisible project keyword',
+    issue: 'project keyword must appear in visible page text',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PROJECT_IDS[0]).keywords[0] =
+        'Invisible project keyword';
+    }
+  },
+  {
+    name: 'rejects forbidden project creator claims',
+    issue: 'SoftwareSourceCode has unexpected key creator',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PROJECT_IDS[0]).creator = {
+        '@id': STRUCTURED_PERSON_ID
+      };
+    }
+  }
+];
+
+for (const mutation of structuredProjectCases) {
+  test(`structured data ${mutation.name}`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    mutateStructuredData(rootDir, 'projects.html', mutation.mutate);
+
+    const result = validateRepository(rootDir);
+
+    assertStructuredIssue(result, 'projects.html', mutation.issue);
+  });
+}
+
+const structuredResearchCases = [
+  {
+    name: 'rejects the wrong research numberOfItems',
+    issue: 'research list numberOfItems must be 4',
+    mutate(value) {
+      findStructuredNode(value, 'https://yan-shibo.github.io/research.html#research-directions')
+        .numberOfItems = 3;
+    }
+  },
+  {
+    name: 'rejects a missing research list element',
+    issue: 'research list must contain exactly 4 elements',
+    mutate(value) {
+      findStructuredNode(value, 'https://yan-shibo.github.io/research.html#research-directions')
+        .itemListElement.pop();
+    }
+  },
+  {
+    name: 'rejects the wrong research order',
+    issue: 'research list item order must match the approved inventory',
+    mutate(value) {
+      const elements = findStructuredNode(
+        value,
+        'https://yan-shibo.github.io/research.html#research-directions'
+      ).itemListElement;
+      [elements[0].item, elements[1].item] = [elements[1].item, elements[0].item];
+    }
+  },
+  {
+    name: 'rejects duplicate research positions',
+    issue: 'research list positions must be 1 through 4',
+    mutate(value) {
+      findStructuredNode(value, 'https://yan-shibo.github.io/research.html#research-directions')
+        .itemListElement[1].position = 1;
+    }
+  },
+  {
+    name: 'rejects ResearchProject claims',
+    issue: 'research item @type must be Thing',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_RESEARCH_IDS[0])['@type'] = 'ResearchProject';
+    }
+  },
+  {
+    name: 'rejects an invisible research name',
+    issue: 'research name must appear in visible page text',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_RESEARCH_IDS[0]).name =
+        'Invisible research name';
+    }
+  },
+  {
+    name: 'rejects an invisible research description',
+    issue: 'research description must appear in visible page text',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_RESEARCH_IDS[0]).description =
+        'Invisible research description';
+    }
+  }
+];
+
+for (const mutation of structuredResearchCases) {
+  test(`structured data ${mutation.name}`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    mutateStructuredData(rootDir, 'research.html', mutation.mutate);
+
+    const result = validateRepository(rootDir);
+
+    assertStructuredIssue(result, 'research.html', mutation.issue);
+  });
+}
+
+const structuredAnalyticsCases = [
+  {
+    name: 'rejects Dataset anywhere on analytics pages',
+    issue: 'analytics structured data must not contain @type Dataset',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PERSON_ID).homeLocation['@type'] = 'Dataset';
+    }
+  },
+  {
+    name: 'rejects InteractionCounter anywhere on analytics pages',
+    issue: 'analytics structured data must not contain @type InteractionCounter',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PERSON_ID).homeLocation['@type'] =
+        'InteractionCounter';
+    }
+  },
+  {
+    name: 'rejects Person as analytics mainEntity',
+    issue: 'analytics page must not contain mainEntity',
+    mutate(value) {
+      value['@graph'][0].mainEntity = { '@id': STRUCTURED_PERSON_ID };
+    }
+  },
+  {
+    name: 'rejects userInteractionCount analytics fields',
+    issue: 'analytics structured data must not contain field userInteractionCount',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PERSON_ID).homeLocation.userInteractionCount = 1;
+    }
+  },
+  {
+    name: 'rejects localStorage analytics fields',
+    issue: 'analytics structured data must not contain field localStorage',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_WEBSITE_ID).localStorage = 'ysb-visits';
+    }
+  },
+  {
+    name: 'rejects visitorId analytics fields',
+    issue: 'analytics structured data must not contain field visitorId',
+    mutate(value) {
+      findStructuredNode(value, STRUCTURED_PERSON_ID).visitorId = 'local-id';
+    }
+  }
+];
+
+for (const mutation of structuredAnalyticsCases) {
+  test(`structured data ${mutation.name}`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    mutateStructuredData(rootDir, 'analytics.html', mutation.mutate);
+
+    const result = validateRepository(rootDir);
+
+    assertStructuredIssue(result, 'analytics.html', mutation.issue);
+  });
+}
+
+for (const file of ['404.html', 'en/404.html']) {
+  test(`structured data rejects JSON-LD on ${file}`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(
+      rootDir,
+      file,
+      '</head>',
+      `  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[]}</script>\n</head>`
+    );
+
+    const result = validateRepository(rootDir);
+
+    assertStructuredIssue(result, file, '404 pages must not contain active JSON-LD');
+  });
+}
+
+test('structured data deeply nested input does not stop repository validation', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(rootDir, 'index.html', (block) => {
+    const nested = '{"child":'.repeat(12000) + 'null' + '}'.repeat(12000);
+    return block.replace(/}<\/script>$/i, `,"deep":${nested}}</script>`);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(result, 'index.html', 'structured data root has unexpected key deep');
+  assert.ok(result.issues.some((issue) => issue.startsWith('en/index.html: ')) === false);
+});
+
+test('structured data excludes template content from visible project evidence', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateStructuredData(rootDir, 'projects.html', (value) => {
+    findStructuredNode(value, STRUCTURED_PROJECT_IDS[0]).name = 'Template-only project name';
+  });
+  replaceOnce(
+    rootDir,
+    'projects.html',
+    '</body>',
+    '<template>Template-only project name</template>\n</body>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(result, 'projects.html', 'project name must appear in visible page text');
+});
+
+test('structured data excludes noscript content from visible project evidence when scripting is enabled', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const structuredData = readStructuredData(rootDir, 'projects.html');
+  const projectName = findStructuredNode(
+    structuredData,
+    STRUCTURED_PROJECT_IDS[0]
+  ).name;
+  replaceOnce(
+    rootDir,
+    'projects.html',
+    `<h3>${projectName}</h3>`,
+    '<h3></h3>'
+  );
+  replaceOnce(
+    rootDir,
+    'projects.html',
+    '</body>',
+    `<noscript>${projectName}</noscript>\n</body>`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(result, 'projects.html', 'project name must appear in visible page text');
+});
+
+test('structured data excludes noscript content from visible research evidence when scripting is enabled', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const structuredData = readStructuredData(rootDir, 'research.html');
+  const researchName = findStructuredNode(
+    structuredData,
+    STRUCTURED_RESEARCH_IDS[0]
+  ).name;
+  replaceOnce(
+    rootDir,
+    'research.html',
+    `<h3>${researchName}</h3>`,
+    '<h3></h3>'
+  );
+  replaceOnce(
+    rootDir,
+    'research.html',
+    '</body>',
+    `<noscript>${researchName}</noscript>\n</body>`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(result, 'research.html', 'research name must appear in visible page text');
+});
+
+test('structured data ignores JSON-LD inside head noscript when scripting is enabled', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(
+    rootDir,
+    'index.html',
+    (block) => `<noscript>${block}</noscript>`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'index.html',
+    'expected exactly one active JSON-LD block in head'
+  );
+});
+
+test('structured data ignores JSON-LD text inside a head textarea', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(
+    rootDir,
+    'index.html',
+    (block) => `<textarea>${block}</textarea>`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'index.html',
+    'expected exactly one active JSON-LD block in head'
+  );
+});
+
+test('structured data ignores JSON-LD text inside a head title', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(
+    rootDir,
+    'index.html',
+    (block) => `<title>${block}</title>`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'index.html',
+    'expected exactly one active JSON-LD block in head'
+  );
+});
+
+test('structured data excludes evidence hidden behind a quoted greater-than attribute', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const structuredData = readStructuredData(rootDir, 'projects.html');
+  const projectName = findStructuredNode(
+    structuredData,
+    STRUCTURED_PROJECT_IDS[0]
+  ).name;
+  replaceOnce(
+    rootDir,
+    'projects.html',
+    `<h3>${projectName}</h3>`,
+    '<h3></h3>'
+  );
+  replaceOnce(
+    rootDir,
+    'projects.html',
+    '</body>',
+    `<div title=">" hidden>${projectName}</div>\n</body>`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(result, 'projects.html', 'project name must appear in visible page text');
+});
+
+test('structured data excludes evidence when a quoted body opener is hidden', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'projects.html',
+    '<body>',
+    '<body title=">" hidden>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(result, 'projects.html', 'project name must appear in visible page text');
+});
+
+test('structured data keeps the head open across a literal closer in script raw text', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(
+    rootDir,
+    'index.html',
+    (block) => `<script>const marker = "</head>";</script>${block}`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('structured data keeps the head open across a literal closer in style raw text', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(
+    rootDir,
+    'index.html',
+    (block) => `<style>.marker { --value: "</head>"; }</style>${block}`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('structured data keeps the head open across a closer in an HTML comment', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(
+    rootDir,
+    'index.html',
+    (block) => `<!-- </head> -->${block}`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('structured data ignores JSON-LD nested in a head template', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(
+    rootDir,
+    'index.html',
+    (block) => `<template>${block}</template>`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'index.html',
+    'expected exactly one active JSON-LD block in head'
+  );
+});
+
+test('structured data ignores a spaced template end tag that browsers treat as text', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(
+    rootDir,
+    'index.html',
+    (block) => `<template></ template>${block}</template>`
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'index.html',
+    'expected exactly one active JSON-LD block in head'
+  );
+});
+
+test('structured data ignores JSON-LD after a template closer inside raw script text', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(rootDir, 'index.html', (block) => [
+    '<template>',
+    '<script>const marker = "</template>";</script>',
+    block,
+    '</template>'
+  ].join(''));
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'index.html',
+    'expected exactly one active JSON-LD block in head'
+  );
+});
+
+test('structured data keeps template depth after a raw script false closer with NBSP', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(rootDir, 'index.html', (block) => [
+    '<template>',
+    '<script>const marker = "</script\u00a0></template>";</script>',
+    block,
+    '</template>'
+  ].join(''));
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'index.html',
+    'expected exactly one active JSON-LD block in head'
+  );
+});
+
+test('structured data keeps template depth when comment text splits a raw script closer', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(rootDir, 'index.html', (block) => [
+    '<template>',
+    '<script>const marker = "</scr<!--x-->ipt></template>";</script>',
+    block,
+    '</template>'
+  ].join(''));
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'index.html',
+    'expected exactly one active JSON-LD block in head'
+  );
+});
+
+test('structured data ignores JSON-LD after a template closer inside raw style text', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(rootDir, 'index.html', (block) => [
+    '<template>',
+    '<style>.marker { --value: "</template>"; }</style>',
+    block,
+    '</template>'
+  ].join(''));
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'index.html',
+    'expected exactly one active JSON-LD block in head'
+  );
+});
+
+test('structured data accepts a slash-delimited JSON-LD script end tag', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceStructuredMarkup(
+    rootDir,
+    'index.html',
+    (block) => block.replace(/<\/script>$/, '</script/>')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('structured data accepts reordered top-level graph nodes', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateStructuredData(rootDir, 'index.html', (value) => {
+    value['@graph'].reverse();
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('structured data rejects a literal JSON entity as a decoded HTML title match', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'index.html',
+    /<title>[^<]*<\/title>/,
+    '<title>A &amp; B</title>'
+  );
+  mutateStructuredData(rootDir, 'index.html', (value) => {
+    findStructuredNode(value, 'https://yan-shibo.github.io/#webpage').name = 'A &amp; B';
+  });
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(result, 'index.html', 'page name must match the document title');
+});
+
+test('structured data accepts middot HTML entity for a literal JSON middle dot', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'index.html',
+    '<title>闫士博 · 研究型个人主页</title>',
+    '<title>闫士博 &middot; 研究型个人主页</title>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('structured data preserves common and numeric HTML entity decoding', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'index.html',
+    /<title>[^<]*<\/title>/,
+    '<title>A &amp; B&nbsp;&#183; C</title>'
+  );
+  mutateStructuredData(rootDir, 'index.html', (value) => {
+    findStructuredNode(value, 'https://yan-shibo.github.io/#webpage').name = 'A & B · C';
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('structured data does not decode JSON entities for visible evidence', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateStructuredData(rootDir, 'projects.html', (value) => {
+    findStructuredNode(value, STRUCTURED_PROJECT_IDS[0]).keywords[0] =
+      'Ampersand &amp; marker';
+  });
+  replaceOnce(
+    rootDir,
+    'projects.html',
+    '</body>',
+    '<div>Ampersand &amp; marker</div>\n</body>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assertStructuredIssue(
+    result,
+    'projects.html',
+    'project keyword must appear in visible page text'
+  );
+});
+
+for (const hiddenMarkup of [
+  '<div hidden>Hidden-only project name</div>',
+  '<div inert>Hidden-only project name</div>',
+  '<div aria-hidden="true">Hidden-only project name</div>'
+]) {
+  test(`structured data excludes ${hiddenMarkup.split('>')[0]}> evidence`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    mutateStructuredData(rootDir, 'projects.html', (value) => {
+      findStructuredNode(value, STRUCTURED_PROJECT_IDS[0]).name =
+        'Hidden-only project name';
+    });
+    replaceOnce(rootDir, 'projects.html', '</body>', `${hiddenMarkup}\n</body>`);
+
+    const result = validateRepository(rootDir);
+
+    assertStructuredIssue(
+      result,
+      'projects.html',
+      'project name must appear in visible page text'
+    );
+  });
+}
