@@ -115,7 +115,7 @@ CSS 中的媒体查询按实际级联需要分布在多个位置，并非严格�
 
 ### 4.4 品牌与图标
 
-导航品牌标识是空的 `.brand-mark` 元素，通过 CSS 背景图加载 `assets/icons/brand-mark.png`。它不是 Font Awesome terminal 字形。favicon 使用 `assets/icons/site.ico`；Font Awesome 仅承担普通功能图标。
+导航品牌标识是空的 `.brand-mark` 元素，通过 CSS 背景图加载 `assets/icons/brand-mark.png`。它不是 Font Awesome terminal 字形。favicon 使用 `assets/icons/site.ico`，内含 16×16、32×32、48×48、256×256 四个图层；manifest 的 `sizes` 必须与该集合一致。Font Awesome 仅承担普通功能图标。
 
 ## 5. 状态模型
 

@@ -11,7 +11,7 @@
   "icons": [
     {
       "src": "/assets/icons/site.ico",
-      "sizes": "48x48 64x64 128x128",
+      "sizes": "16x16 32x32 48x48 256x256",
       "type": "image/x-icon"
     }
   ]

@@ -494,6 +494,52 @@ function validateCssReferences(rootDir, issues, anchorCache) {
   }
 }
 
+function sortImageSizes(sizes) {
+  return [...sizes].sort((left, right) => {
+    const [leftWidth, leftHeight] = left.split('x').map(Number);
+    const [rightWidth, rightHeight] = right.split('x').map(Number);
+    return leftWidth - rightWidth || leftHeight - rightHeight;
+  });
+}
+
+function readIcoSizes(absolutePath) {
+  const data = fs.readFileSync(absolutePath);
+  if (data.length < 6) throw new Error('truncated icon directory');
+  if (data.readUInt16LE(0) !== 0 || data.readUInt16LE(2) !== 1) {
+    throw new Error('invalid icon directory header');
+  }
+
+  const count = data.readUInt16LE(4);
+  if (count === 0) throw new Error('empty icon directory');
+  const directoryEnd = 6 + count * 16;
+  if (data.length < directoryEnd) throw new Error('truncated icon directory');
+
+  const sizes = new Set();
+  for (let index = 0; index < count; index += 1) {
+    const entryOffset = 6 + index * 16;
+    const width = data[entryOffset] || 256;
+    const height = data[entryOffset + 1] || 256;
+    const imageBytes = data.readUInt32LE(entryOffset + 8);
+    const imageOffset = data.readUInt32LE(entryOffset + 12);
+    if (imageOffset < directoryEnd) {
+      throw new Error(`icon entry ${index} image data overlaps the icon directory`);
+    }
+    if (imageBytes === 0 || imageBytes > data.length - imageOffset) {
+      throw new Error(`icon entry ${index} image data is outside the file`);
+    }
+    sizes.add(`${width}x${height}`);
+  }
+
+  return sortImageSizes(sizes);
+}
+
+function normalizeDeclaredSizes(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const sizes = value.trim().split(/\s+/);
+  if (sizes.some((size) => !/^[1-9]\d*x[1-9]\d*$/.test(size))) return null;
+  return sortImageSizes(new Set(sizes));
+}
+
 function validateManifest(rootDir, issues, anchorCache) {
   const file = 'manifest.webmanifest';
   if (!ensureFile(rootDir, file, issues)) return;
@@ -525,6 +571,51 @@ function validateManifest(rootDir, issues, anchorCache) {
       continue;
     }
     validateReference(rootDir, file, icon.src, issues, anchorCache);
+
+    const resolvedIcon = resolveLocalReference(rootDir, file, icon.src);
+    if (
+      resolvedIcon.kind !== 'local' ||
+      !resolvedIcon.exists ||
+      path.extname(resolvedIcon.absolutePath).toLowerCase() !== '.ico'
+    ) {
+      continue;
+    }
+
+    let icoSizes;
+    try {
+      icoSizes = readIcoSizes(resolvedIcon.absolutePath);
+    } catch (error) {
+      addIssue(
+        issues,
+        file,
+        `icons[${index}] references invalid ICO ${resolvedIcon.relativePath}: ${error.message}`
+      );
+      continue;
+    }
+
+    const declaredSizes = normalizeDeclaredSizes(icon.sizes);
+    if (!declaredSizes) {
+      const hasSizes = Object.hasOwn(icon, 'sizes');
+      const invalidValue = hasSizes ? ` (${JSON.stringify(icon.sizes)})` : '';
+      const state = hasSizes ? `is invalid${invalidValue}` : 'is missing';
+      addIssue(
+        issues,
+        file,
+        `icons[${index}].sizes ${state}; ICO contains "${icoSizes.join(' ')}"`
+      );
+      continue;
+    }
+    if (
+      declaredSizes.length !== icoSizes.length ||
+      declaredSizes.some((size, sizeIndex) => size !== icoSizes[sizeIndex])
+    ) {
+      const declaredText = icon.sizes.trim().replace(/\s+/g, ' ');
+      addIssue(
+        issues,
+        file,
+        `icons[${index}].sizes declares "${declaredText}" but ICO contains "${icoSizes.join(' ')}"`
+      );
+    }
   }
 }
 

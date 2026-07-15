@@ -12,9 +12,10 @@ const {
   validateRepository
 } = require('./validate-site');
 
-const TEXT_EXTENSIONS = new Set([
+const COPIED_FIXTURE_EXTENSIONS = new Set([
   '.css',
   '.html',
+  '.ico',
   '.js',
   '.txt',
   '.webmanifest',
@@ -37,7 +38,7 @@ function createRepositoryFixture(t) {
       const targetPath = path.join(targetDirectory, entry.name);
       if (entry.isDirectory()) {
         mirrorDirectory(sourcePath, targetPath);
-      } else if (TEXT_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+      } else if (COPIED_FIXTURE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
         fs.copyFileSync(sourcePath, targetPath);
       } else {
         fs.writeFileSync(targetPath, '');
@@ -391,6 +392,62 @@ test('validateRepository reports malformed manifest icon entries', (t) => {
   ));
   assert.ok(result.issues.includes(
     'manifest.webmanifest: icons[1] must be an object with a non-empty src'
+  ));
+});
+
+test('validateRepository rejects manifest sizes that differ from ICO layers', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const manifestPath = path.join(rootDir, 'manifest.webmanifest');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.icons[0].sizes = '32x32';
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'manifest.webmanifest: icons[0].sizes declares "32x32" but ICO contains "16x16 32x32 48x48 256x256"'
+  ));
+});
+
+test('validateRepository safely reports a truncated ICO directory', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.writeFileSync(
+    path.join(rootDir, 'assets/icons/site.ico'),
+    Buffer.from([0, 0, 1, 0, 2, 0])
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'manifest.webmanifest: icons[0] references invalid ICO assets/icons/site.ico: truncated icon directory'
+  ));
+});
+
+test('validateRepository rejects ICO image data that overlaps its directory', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const icoPath = path.join(rootDir, 'assets/icons/site.ico');
+  const ico = fs.readFileSync(icoPath);
+  ico.writeUInt32LE(0, 6 + 12);
+  fs.writeFileSync(icoPath, ico);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'manifest.webmanifest: icons[0] references invalid ICO assets/icons/site.ico: icon entry 0 image data overlaps the icon directory'
+  ));
+});
+
+test('validateRepository distinguishes invalid manifest sizes from missing sizes', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const manifestPath = path.join(rootDir, 'manifest.webmanifest');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.icons[0].sizes = 123;
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'manifest.webmanifest: icons[0].sizes is invalid (123); ICO contains "16x16 32x32 48x48 256x256"'
   ));
 });
 

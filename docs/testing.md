@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 28 个零依赖 `node:test` 用例；
+- `scripts/validate-site.test.js` 包含 32 个零依赖 `node:test` 用例；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -28,8 +28,8 @@ git diff --check
 当前成功输出应包含：
 
 ```text
-tests 28
-pass 28
+tests 32
+pass 32
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
@@ -57,7 +57,8 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 引用路径与磁盘大小写一致；
 - CSS `url(...)` 指向存在的本地资源；
 - 带查询参数或 fragment 的本地资源仍能解析；
-- manifest 中列出的 icon `src` 存在。
+- manifest 中列出的 icon `src` 存在；
+- ICO 的目录结构可解析，且 manifest `sizes` 与内含图层尺寸集合一致。
 
 它不会验证外部网站、第三方 CDN 或统计服务在线可用性。
 
@@ -144,7 +145,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - Font Awesome CSS 中的本地 URL；
 - 重复或错误 hreflang；
 - sitemap alternate、XML 外壳和额外根元素；
-- `null` manifest 与畸形 icon 条目；
+- `null` manifest、畸形 icon 条目、无效 `sizes`、ICO 尺寸声明不一致、截断目录与图像数据重叠；
 - 大小写错误路径；
 - robots 全站禁止与 user-agent 作用域；
 - 未登记的嵌套 HTML；
@@ -164,7 +165,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - Lightbox 的打开、键盘操作、关闭与焦点恢复；
 - 视觉布局、文字遮挡、横向滚动和主题对比度；
 - 内联 `style`、无用途 preconnect 等代码质量偏差；
-- manifest 的 `sizes`、`start_url` 和语言安装语义；
+- manifest 的 `start_url` 和语言安装语义；
 - JSON-LD 字段是否满足产品和搜索引擎目标；
 - 第三方统计、外链和线上缓存；
 - 个人内容是否准确、获授权且适合公开。
@@ -273,7 +274,7 @@ http://127.0.0.1:8000/en/
 | `site.js` | 三条最小验证 | 主题、抽屉、Lightbox、键盘与降级 |
 | `stats.js` | 三条最小验证 | 成功、部分、失败、localStorage 与四页范围 |
 | 页面路由/SEO | 重新生成 sitemap 后全量验证 | canonical、hreflang、404、线上 URL |
-| manifest/图标 | 三条最小验证 | 实物尺寸、安装入口、中文/英文语义 |
+| manifest/图标 | 三条最小验证 | 各尺寸视觉质量、安装入口、中文/英文语义 |
 
 ## 9. 回归清单
 
@@ -293,7 +294,7 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：28 passed / 0 failed
+自动测试：32 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
 人工检查：页面、主题、视口、键盘路径
