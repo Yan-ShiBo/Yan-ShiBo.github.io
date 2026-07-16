@@ -150,7 +150,7 @@ Pages 部署成功但浏览器仍显示旧内容时，按以下顺序判断：
 
 ### 9.3 移动抽屉异常
 
-分别在 833px 和 834px 检查 CSS 状态；再检查 `site.js` 的 `inert`、焦点、Escape、遮罩和断点清理。不要只增加 z-index 掩盖状态错误。
+分别在 833px 和 834px 检查 CSS 状态，并通过页面缩放或开发者工具制造 `833px < width < 834px` 的小数 CSS 视口；此时 `matchMedia('(max-width: 833px)').matches` 应为 false，抽屉状态应已清理。再检查 `site.js` 的 `inert`、焦点、Escape、遮罩和断点监听，不要用独立的 `min-width` 谓词或只增加 z-index 掩盖状态错误。
 
 ### 9.4 Lightbox 异常
 

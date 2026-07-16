@@ -254,7 +254,7 @@
     }
 
     function handleMenuBreakpointChange(event) {
-      if (!event.matches || !document.body.classList.contains('menu-open')) return;
+      if (event.matches || !document.body.classList.contains('menu-open')) return;
       var active = document.activeElement;
       var shouldMoveFocus = Boolean(
         active === toggle ||
@@ -271,11 +271,11 @@
     }
 
     if (window.matchMedia) {
-      var desktopMenuQuery = window.matchMedia('(min-width: 834px)');
-      if (desktopMenuQuery.addEventListener) {
-        desktopMenuQuery.addEventListener('change', handleMenuBreakpointChange);
-      } else if (desktopMenuQuery.addListener) {
-        desktopMenuQuery.addListener(handleMenuBreakpointChange);
+      var mobileMenuQuery = window.matchMedia('(max-width: 833px)');
+      if (mobileMenuQuery.addEventListener) {
+        mobileMenuQuery.addEventListener('change', handleMenuBreakpointChange);
+      } else if (mobileMenuQuery.addListener) {
+        mobileMenuQuery.addListener(handleMenuBreakpointChange);
       }
     }
 

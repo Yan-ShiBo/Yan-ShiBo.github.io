@@ -98,6 +98,11 @@ const MANIFEST_BY_LANGUAGE = new Map(
 const ANALYTICS_PAGES = new Set(['analytics.html', 'en/analytics.html']);
 
 const PUBLIC_STATS_IDS = ['site-pv', 'site-uv', 'page-pv', 'stats-status'];
+const MOBILE_BREAKPOINT_PX = 833;
+const MOBILE_MENU_CLEANUP_ISSUE =
+  `mobile menu cleanup must share the (max-width: ${MOBILE_BREAKPOINT_PX}px) breakpoint predicate`;
+const MOBILE_CSS_BREAKPOINT_ISSUE =
+  `mobile navigation rules must share one (max-width: ${MOBILE_BREAKPOINT_PX}px) media block`;
 const PROVIDER_STATS_IDS = [
   'busuanzi_value_site_pv',
   'busuanzi_value_site_uv',
@@ -2109,18 +2114,32 @@ function buildJavaScriptCodeMask(source) {
   return mask;
 }
 
-function hasExecutableMatch(source, codeMask, pattern) {
+function findExecutableMatch(source, codeMask, pattern) {
   const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
   const matcher = new RegExp(pattern.source, flags);
   let match = matcher.exec(source);
 
   while (match) {
-    if (codeMask[match.index] === 1) return true;
+    if (codeMask[match.index] === 1) return match;
     if (match[0] === '') matcher.lastIndex += 1;
     match = matcher.exec(source);
   }
 
-  return false;
+  return null;
+}
+
+function hasExecutableMatch(source, codeMask, pattern) {
+  return findExecutableMatch(source, codeMask, pattern) !== null;
+}
+
+function executableBraceDepthAt(source, codeMask, endIndex) {
+  let depth = 0;
+  for (let index = 0; index < endIndex; index += 1) {
+    if (codeMask[index] !== 1) continue;
+    if (source[index] === '{') depth += 1;
+    if (source[index] === '}') depth -= 1;
+  }
+  return depth;
 }
 
 function hasExecutableBindingAssignment(source, codeMask, bindingName) {
@@ -2182,6 +2201,180 @@ function extractNamedFunctionBody(source, codeMask, functionName, requireUnique 
   }
 
   return extracted;
+}
+
+const CSS_NON_CODE_PATTERN =
+  /"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|\/\*[\s\S]*?\*\//g;
+
+function buildCssCodeMask(source) {
+  const mask = new Uint8Array(source.length);
+  mask.fill(1);
+
+  const matcher = new RegExp(CSS_NON_CODE_PATTERN.source, CSS_NON_CODE_PATTERN.flags);
+  let match = matcher.exec(source);
+  while (match) {
+    mask.fill(0, match.index, match.index + match[0].length);
+    match = matcher.exec(source);
+  }
+
+  return mask;
+}
+
+function maskedSource(source, codeMask) {
+  const characters = source.split('');
+  for (let index = 0; index < characters.length; index += 1) {
+    if (codeMask[index] !== 1 && characters[index] !== '\r' && characters[index] !== '\n') {
+      characters[index] = ' ';
+    }
+  }
+  return characters.join('');
+}
+
+const CSS_SIMPLE_BLOCK_PAIRS = { '{': '}', '(': ')', '[': ']' };
+
+function findCssBlockEnd(source, openingIndex) {
+  const stack = [CSS_SIMPLE_BLOCK_PAIRS[source[openingIndex]]];
+  if (!stack[0]) return -1;
+
+  for (let index = openingIndex + 1; index < source.length; index += 1) {
+    if (CSS_SIMPLE_BLOCK_PAIRS[source[index]]) {
+      stack.push(CSS_SIMPLE_BLOCK_PAIRS[source[index]]);
+    } else if (source[index] === stack[stack.length - 1]) {
+      stack.pop();
+      if (stack.length === 0) return index;
+    }
+  }
+  return -1;
+}
+
+function cssSimpleBlockDepthAt(source, endIndex) {
+  const stack = [];
+  for (let index = 0; index < endIndex; index += 1) {
+    if (CSS_SIMPLE_BLOCK_PAIRS[source[index]]) {
+      stack.push(CSS_SIMPLE_BLOCK_PAIRS[source[index]]);
+    } else if (source[index] === stack[stack.length - 1]) {
+      stack.pop();
+    }
+  }
+  return stack.length;
+}
+
+function extractCssMediaBlocks(source, codeMask, mediaPattern) {
+  const matcher = new RegExp(mediaPattern.source, 'g');
+  const executableSource = maskedSource(source, codeMask);
+  const blocks = [];
+  let match = matcher.exec(source);
+
+  while (match) {
+    if (
+      codeMask[match.index] === 1 &&
+      cssSimpleBlockDepthAt(executableSource, match.index) === 0
+    ) {
+      const openingBrace = match.index + match[0].lastIndexOf('{');
+      const closingBrace = findCssBlockEnd(executableSource, openingBrace);
+      if (closingBrace >= 0) {
+        blocks.push({
+          codeMask: codeMask.slice(openingBrace + 1, closingBrace),
+          source: source.slice(openingBrace + 1, closingBrace)
+        });
+        matcher.lastIndex = closingBrace + 1;
+      }
+    }
+    match = matcher.exec(source);
+  }
+
+  return blocks;
+}
+
+function directCssRuleBodies(source, selector) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const matcher = new RegExp(`${escapedSelector}\\s*\\{`, 'g');
+  const bodies = [];
+  let match = matcher.exec(source);
+
+  while (match) {
+    let previousIndex = match.index - 1;
+    while (previousIndex >= 0 && /\s/.test(source[previousIndex])) previousIndex -= 1;
+    if (
+      cssSimpleBlockDepthAt(source, match.index) === 0 &&
+      (previousIndex < 0 || source[previousIndex] === '}')
+    ) {
+      const openingBrace = match.index + match[0].lastIndexOf('{');
+      const closingBrace = findCssBlockEnd(source, openingBrace);
+      if (closingBrace >= 0) {
+        bodies.push(source.slice(openingBrace + 1, closingBrace));
+        matcher.lastIndex = closingBrace + 1;
+      }
+    }
+    match = matcher.exec(source);
+  }
+
+  return bodies;
+}
+
+function splitTopLevelCssDeclarations(source) {
+  const stack = [];
+  const declarations = [];
+  let start = 0;
+
+  for (let index = 0; index < source.length; index += 1) {
+    if (CSS_SIMPLE_BLOCK_PAIRS[source[index]]) {
+      stack.push(CSS_SIMPLE_BLOCK_PAIRS[source[index]]);
+    } else if (source[index] === stack[stack.length - 1]) {
+      stack.pop();
+    } else if (source[index] === ';' && stack.length === 0) {
+      declarations.push(source.slice(start, index));
+      start = index + 1;
+    }
+  }
+  declarations.push(source.slice(start));
+  return declarations;
+}
+
+function effectiveDirectCssDisplay(source, selector) {
+  let value = null;
+  let important = false;
+
+  for (const body of directCssRuleBodies(source, selector)) {
+    for (const declaration of splitTopLevelCssDeclarations(body)) {
+      const displayMatch = /^\s*display\s*:\s*(.+?)\s*$/i.exec(declaration);
+      if (!displayMatch) continue;
+      const hasImportant = /!\s*important\s*$/i.test(displayMatch[1]);
+      const nextValue = displayMatch[1]
+        .replace(/!\s*important\s*$/i, '')
+        .trim()
+        .toLowerCase();
+      if (nextValue && (hasImportant || !important)) {
+        value = nextValue;
+        important = hasImportant;
+      }
+    }
+  }
+
+  return value;
+}
+
+function hasSharedMobileNavigationCss(rootDir) {
+  const file = 'assets/css/site.css';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return false;
+
+  const source = readUtf8(rootDir, file);
+  const codeMask = buildCssCodeMask(source);
+  const mediaPattern = new RegExp(
+    `@media\\s*\\(\\s*max-width\\s*:\\s*${MOBILE_BREAKPOINT_PX}px\\s*\\)\\s*\\{`
+  );
+
+  const executableMobileBlocks = extractCssMediaBlocks(source, codeMask, mediaPattern)
+    .map((block) => maskedSource(block.source, block.codeMask));
+  const hasCompleteMobileBlock = executableMobileBlocks.some((block) => (
+    effectiveDirectCssDisplay(block, '.site-nav') === 'none' &&
+    effectiveDirectCssDisplay(block, '.menu-toggle') === 'inline-flex'
+  ));
+  const executableMobileCss = executableMobileBlocks.join('\n');
+  if (!hasCompleteMobileBlock) return false;
+  return effectiveDirectCssDisplay(executableMobileCss, '.site-nav') === 'none' &&
+    effectiveDirectCssDisplay(executableMobileCss, '.menu-toggle') === 'inline-flex';
 }
 
 const MODAL_INERT_VM_TIMEOUT_MS = 100;
@@ -2356,6 +2549,12 @@ ${inertHandler.source}
   }
 }
 
+function validateMobileNavigationCssContract(rootDir, issues) {
+  if (!hasSharedMobileNavigationCss(rootDir)) {
+    addIssue(issues, 'assets/css/site.css', MOBILE_CSS_BREAKPOINT_ISSUE);
+  }
+}
+
 function validateSiteJavaScriptContracts(rootDir, issues) {
   const file = 'assets/js/site.js';
   const absolutePath = path.join(rootDir, file);
@@ -2386,26 +2585,42 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     'openLightbox',
     true
   );
-  const hasDesktopMenuQuery = hasExecutableMatch(
+  const hasMobileMenuQuery = hasExecutableMatch(
     source,
     codeMask,
-    /^[\t ]*var\s+desktopMenuQuery\s*=\s*window\.matchMedia\(\s*(['"])\(min-width:\s*834px\)\1\s*\)\s*;/m
+    new RegExp(
+      `^[\\t ]*var\\s+mobileMenuQuery\\s*=\\s*window\\.matchMedia\\(\\s*` +
+      `(['"])\\(max-width:\\s*${MOBILE_BREAKPOINT_PX}px\\)\\1\\s*\\)\\s*;`,
+      'm'
+    )
   );
-  const hasDesktopMenuHandler = handler !== null;
-  const hasDesktopMenuListener = hasExecutableMatch(
+  const hasMenuBreakpointHandler = handler !== null;
+  const hasMobileMenuListener = hasExecutableMatch(
     source,
     codeMask,
-    /^[\t ]*desktopMenuQuery\.(?:addEventListener\(\s*['"]change['"]\s*,\s*handleMenuBreakpointChange\s*\)|addListener\(\s*handleMenuBreakpointChange\s*\))\s*;/m
+    /^[\t ]*mobileMenuQuery\.(?:addEventListener\(\s*['"]change['"]\s*,\s*handleMenuBreakpointChange\s*\)|addListener\(\s*handleMenuBreakpointChange\s*\))\s*;/m
   );
-  const hasDesktopGate = handler !== null && hasExecutableMatch(
+  const mobileExitGateMatch = handler !== null && findExecutableMatch(
     handler.source,
     handler.codeMask,
-    /^[\t ]*if\s*\(\s*!event\.matches\s*\|\|\s*!document\.body\.classList\.contains\(\s*(['"])menu-open\1\s*\)\s*\)\s*return\s*;/m
+    /^[\t ]*if\s*\(\s*event\.matches\s*\|\|\s*!document\.body\.classList\.contains\(\s*(['"])menu-open\1\s*\)\s*\)\s*return\s*;/m
   );
-  const closesWithoutHiddenToggleFocus = handler !== null && hasExecutableMatch(
+  const closeMenuMatch = handler !== null && findExecutableMatch(
     handler.source,
     handler.codeMask,
     /^[\t ]*closeMenu\(\s*false\s*\)\s*;/m
+  );
+  const hasMobileExitGate = Boolean(
+    handler &&
+    mobileExitGateMatch &&
+    executableBraceDepthAt(handler.source, handler.codeMask, mobileExitGateMatch.index) === 0
+  );
+  const closesWithoutHiddenToggleFocus = Boolean(
+    handler &&
+    mobileExitGateMatch &&
+    closeMenuMatch &&
+    executableBraceDepthAt(handler.source, handler.codeMask, closeMenuMatch.index) === 0 &&
+    mobileExitGateMatch.index < closeMenuMatch.index
   );
   const hasVisibleDesktopFocusFallback = handler !== null &&
     hasExecutableMatch(
@@ -2420,14 +2635,14 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     );
 
   if (
-    !hasDesktopMenuQuery ||
-    !hasDesktopMenuHandler ||
-    !hasDesktopMenuListener ||
-    !hasDesktopGate ||
+    !hasMobileMenuQuery ||
+    !hasMenuBreakpointHandler ||
+    !hasMobileMenuListener ||
+    !hasMobileExitGate ||
     !closesWithoutHiddenToggleFocus ||
     !hasVisibleDesktopFocusFallback
   ) {
-    addIssue(issues, file, 'missing 834px desktop breakpoint menu cleanup');
+    addIssue(issues, file, MOBILE_MENU_CLEANUP_ISSUE);
   }
 
   const closesLightboxBackground = closeLightboxHandler !== null &&
@@ -2515,6 +2730,7 @@ function validateRepository(rootDir) {
   validateRobots(absoluteRoot, issues);
   validateJavaScriptSyntax(absoluteRoot, issues);
   validateStatsJavaScriptContracts(absoluteRoot, issues);
+  validateMobileNavigationCssContract(absoluteRoot, issues);
   validateSiteJavaScriptContracts(absoluteRoot, issues);
 
   return {

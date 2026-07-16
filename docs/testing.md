@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 144 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 包含 156 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -34,13 +34,13 @@ node --test --test-name-pattern="structured data" scripts/validate-site.test.js
 当前成功输出应包含：
 
 ```text
-tests 144
-pass 144
+tests 156
+pass 156
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，不要把这行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数，显示 `144 tests`、`79 pass`、`65 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，不要把这行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数，显示 `156 tests`、`79 pass`、`77 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -145,7 +145,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 
 ### 3.8 共享交互结构合同
 
-验证器继续静态检查 `site.js` 是否将 `(min-width: 834px)` 查询绑定到移动菜单断点处理器、是否使用 `event.matches` 限定进入桌面断点的路径，以及该处理器是否调用不返回隐藏菜单按钮焦点的关闭逻辑并保留可见桌面导航焦点回退。
+验证器先按 `{}`、`()`、`[]` 平衡块提取 CSS 媒体块与规则，并排除注释、字符串伪实现；只接受整份样式表顶层的 `(max-width: 833px)` 媒体块，不接受由外层 `@supports` 等条件组包裹的目标媒体块。至少一个合格媒体块必须在其媒体体顶层同时包含精确直接 `.site-nav` 与 `.menu-toggle` 规则，且合并全部合格同谓词块后两者的最终有效 `display` 值分别为 `none` 和 `inline-flex`。这里只在所有块深度均为零的分号处分割顶层声明，再按 `!important` 优先级与源码顺序解析真实 `display:`，不把嵌套条件组、普通或嵌套块型自定义属性当作直接声明，也不扩展为完整的选择器优先级引擎。随后检查 `site.js` 的 `mobileMenuQuery` 是否使用同一谓词、变化监听器是否绑定到该查询，以及 `event.matches` 退出门是否与 `closeMenu(false)` 同处处理器顶层且位于清理之前；处理器还必须保留不返回隐藏菜单按钮焦点的关闭逻辑与可见桌面导航焦点回退。
 
 Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLightbox` 必须把 `[overlay]` 作为允许元素调用 `setBackgroundInert(true, ...)`，`closeLightbox` 必须调用 `setBackgroundInert(false)`；`setElementInert` 必须只有一个可执行同名函数语法，且其后不得在任意语句位置由裸赋值或 `var setElementInert = ...` 覆盖。点属性与字符串计算属性赋值只修改对象属性，不计作本地绑定覆盖。声明检测不依赖行首；为避免引入通用 JavaScript 解析器，任何经 `codeMask` 确认为可执行的 `function setElementInert(...)` 同名语法均保守计作竞争声明。注释和字符串中的同形文本不计为接线、声明或重赋值。
 
@@ -176,7 +176,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - 未登记的嵌套 HTML；
 - 非统计页误加统计服务 preconnect；
 - `stats.js` 的非负 ASCII 整数格式、`0`、前导零、全角数字等异常主来源回退、超长数字原样保留、全部异常降级，以及本地日期文本不受计数校验影响；
-- 移动菜单的 834px 桌面断点清理合同，以及错误查询、遗漏 `event.matches`、缺少可见焦点回退、关闭逻辑落在无关函数或关键实现被注释掉的变异用例；
+- 移动菜单共享 `(max-width: 833px)` 谓词的退出清理合同，以及 CSS 断点漂移、导航规则跨媒体块、外层 `@supports` 包裹目标媒体块、媒体块内部嵌套 `@supports` 条件组、注释/字符串/普通或嵌套块型自定义属性伪实现、同一规则/后续直接规则/后续同谓词媒体块覆盖 `display`、旧 `(min-width: 834px)` 间隙实现、错误查询、遗漏/反向/嵌套使用 `event.matches`、退出门晚于清理、缺少可见焦点回退、关闭逻辑落在无关函数、关键实现被注释掉或只出现在字符串中的变异用例；
 - Lightbox 打开/关闭背景接线与 `inert` 行为合同：等价实现正向夹具，以及缺少任一端接线、任意语句位置的裸赋值或 `var` 覆盖、对象属性赋值 decoy、非行首同名函数语法、遗漏属性值、显式 `aria-hidden="false"` 丢失、多元素共享快照串扰、重复/无关/注释/字符串处理器、激活分支贯穿、倒序恢复、抛错、语法错误、超时、恢复后立即或通过微任务延后再次清除等变异用例；
 - JavaScript 字符串和正则字面量中的注释形文本不会干扰交互合同识别；
 - 验证器只读保证；
@@ -223,6 +223,7 @@ http://127.0.0.1:8000/en/
 | 419px | 极窄屏断点上界 |
 | 640px | 手机/小平板断点 |
 | 833px | 移动导航最后一个像素 |
+| `833px < W < 834px` | 页面缩放产生的小数 CSS 视口，必须已退出移动状态 |
 | 834px | 桌面导航第一个像素 |
 | 1068px | 单列 Hero 最后一个像素 |
 | 1069px | 双列 Hero 第一个像素 |
@@ -270,8 +271,9 @@ http://127.0.0.1:8000/en/
 3. Tab/Shift+Tab 不逃离抽屉。
 4. Escape、遮罩和导航链接均可关闭。
 5. 关闭后焦点回到菜单按钮。
-6. 拉宽到 834px 后，`body.menu-open`、遮罩、滚动锁和背景 `inert` 均已清理，抽屉恢复 `aria-hidden="true"` 与 `inert`；原焦点若在抽屉内，应转移到可见的当前桌面导航项；404 等没有当前项的页面应转移到首个桌面导航链接。
-7. 抽屉关闭时打开并关闭证明图 Lightbox，抽屉仍保持 `aria-hidden="true"` 与 `inert`，屏外抽屉链接不能进入 Tab 顺序。
+6. 通过页面缩放或开发者工具使 CSS 视口进入 `833px < width < 834px` 后，`matchMedia('(max-width: 833px)').matches` 为 false，移动菜单状态立即清理。
+7. 继续拉宽到 834px 后，`body.menu-open`、遮罩、滚动锁和背景 `inert` 均已清理，抽屉恢复 `aria-hidden="true"` 与 `inert`；原焦点若在抽屉内，应转移到可见的当前桌面导航项；404 等没有当前项的页面应转移到首个桌面导航链接。
+8. 抽屉关闭时打开并关闭证明图 Lightbox，抽屉仍保持 `aria-hidden="true"` 与 `inert`，屏外抽屉链接不能进入 Tab 顺序。
 
 ### 7.5 Lightbox
 
@@ -332,7 +334,7 @@ http://127.0.0.1:8000/en/
 - 页面、人物或网站稳定 ID 漂移，内部关系带额外字段或形成悬空引用；
 - 项目/研究节点借用隐藏、非活动或 `aria-hidden` 内容充当可见证据；
 - 统计页结构化数据暴露计数、本地访问、访客或浏览器信息；
-- 834px 仍启用移动导航；
+- `833px < width < 834px` 的小数 CSS 视口仍残留移动导航状态，或 834px 仍启用移动导航；
 - 非统计页加载 `stats.js` 或统计专用依赖；
 - 英文页面重新指向中文 manifest，或任一页面出现重复/正文内 manifest 链接；
 - 把本地四页累计描述为 14 页全站累计；
@@ -347,7 +349,7 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：144 passed / 0 failed
+自动测试：156 passed / 0 failed
 结构化数据子集：79 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题

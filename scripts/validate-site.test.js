@@ -23,7 +23,9 @@ const COPIED_FIXTURE_EXTENSIONS = new Set([
 ]);
 
 const MENU_CLEANUP_ISSUE =
-  'assets/js/site.js: missing 834px desktop breakpoint menu cleanup';
+  'assets/js/site.js: mobile menu cleanup must share the (max-width: 833px) breakpoint predicate';
+const MOBILE_CSS_BREAKPOINT_ISSUE =
+  'assets/css/site.css: mobile navigation rules must share one (max-width: 833px) media block';
 const MODAL_INERT_RESTORE_ISSUE =
   'assets/js/site.js: modal background cleanup must restore each element\'s pre-existing inert state';
 const STATS_INTEGER_CONTRACT_ISSUE =
@@ -290,12 +292,28 @@ test('validateRepository accepts the checked-in site baseline', () => {
   assert.equal(result.summary.sitemapUrls, 12);
 });
 
-test('validateRepository requires desktop breakpoint menu cleanup', (t) => {
+test('validateRepository requires shared mobile breakpoint menu cleanup', (t) => {
   const result = validateSiteScriptFixture(t, [
     '(function () {',
-    '  var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
-    '  void desktopMenuQuery;',
+    '  var mobileMenuQuery = window.matchMedia("(max-width: 833px)");',
+    '  void mobileMenuQuery;',
     '}());'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository requires the breakpoint handler to exit while the mobile query still matches', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    'var mobileMenuQuery = window.matchMedia("(max-width: 833px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  closeMenu(false);',
+    '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
+    '    document.querySelector(\'.site-nav a\');',
+    '  focusNode(desktopTarget);',
+    '}',
+    'mobileMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
   ]);
 
   assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
@@ -303,15 +321,49 @@ test('validateRepository requires desktop breakpoint menu cleanup', (t) => {
 
 test('validateRepository requires the breakpoint handler to inspect event.matches', (t) => {
   const result = validateSiteScriptFixture(t, [
-    'var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
-    'function handleMenuBreakpointChange(event) {',
+    'var mobileMenuQuery = window.matchMedia("(max-width: 833px)");',
+    'function handleMenuBreakpointChange() {',
     '  if (!document.body.classList.contains("menu-open")) return;',
     '  closeMenu(false);',
     '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
     '    document.querySelector(\'.site-nav a\');',
     '  focusNode(desktopTarget);',
     '}',
-    'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
+    'mobileMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository requires the mobile exit gate before cleanup', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    'var mobileMenuQuery = window.matchMedia("(max-width: 833px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  closeMenu(false);',
+    '  if (event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
+    '    document.querySelector(\'.site-nav a\');',
+    '  focusNode(desktopTarget);',
+    '}',
+    'mobileMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository rejects a nested mobile exit gate decoy', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    'var mobileMenuQuery = window.matchMedia("(max-width: 833px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  if (window.fakeCondition) {',
+    '    if (event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  }',
+    '  closeMenu(false);',
+    '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
+    '    document.querySelector(\'.site-nav a\');',
+    '  focusNode(desktopTarget);',
+    '}',
+    'mobileMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
   ]);
 
   assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
@@ -319,14 +371,14 @@ test('validateRepository requires the breakpoint handler to inspect event.matche
 
 test('validateRepository requires closeMenu inside the breakpoint handler', (t) => {
   const result = validateSiteScriptFixture(t, [
-    'var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
+    'var mobileMenuQuery = window.matchMedia("(max-width: 833px)");',
     'function handleMenuBreakpointChange(event) {',
-    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  if (event.matches || !document.body.classList.contains("menu-open")) return;',
     '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
     '    document.querySelector(\'.site-nav a\');',
     '  focusNode(desktopTarget);',
     '}',
-    'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);',
+    'mobileMenuQuery.addEventListener("change", handleMenuBreakpointChange);',
     'function unrelated() {',
     '  closeMenu(false);',
     '}'
@@ -335,30 +387,15 @@ test('validateRepository requires closeMenu inside the breakpoint handler', (t) 
   assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
 });
 
-test('validateRepository binds cleanup to the 834px media query', (t) => {
+test('validateRepository rejects the gapped min-width desktop breakpoint predicate', (t) => {
   const result = validateSiteScriptFixture(t, [
-    'var desktopMenuQuery = window.matchMedia("(min-width: 900px)");',
-    'var unrelated = window.matchMedia("(min-width: 834px)");',
+    'var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
     'function handleMenuBreakpointChange(event) {',
     '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
     '  closeMenu(false);',
     '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
     '    document.querySelector(\'.site-nav a\');',
     '  focusNode(desktopTarget);',
-    '}',
-    'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);',
-    'void unrelated;'
-  ]);
-
-  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
-});
-
-test('validateRepository requires a visible desktop focus fallback', (t) => {
-  const result = validateSiteScriptFixture(t, [
-    'var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
-    'function handleMenuBreakpointChange(event) {',
-    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
-    '  closeMenu(false);',
     '}',
     'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
   ]);
@@ -366,42 +403,206 @@ test('validateRepository requires a visible desktop focus fallback', (t) => {
   assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
 });
 
-test('validateRepository ignores commented-out breakpoint cleanup', (t) => {
+test('validateRepository requires a visible desktop focus fallback', (t) => {
   const result = validateSiteScriptFixture(t, [
-    '// var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
+    'var mobileMenuQuery = window.matchMedia("(max-width: 833px)");',
+    'function handleMenuBreakpointChange(event) {',
+    '  if (event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  closeMenu(false);',
+    '}',
+    'mobileMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
+  ]);
+
+  assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository ignores commented and string breakpoint cleanup decoys', (t) => {
+  const result = validateSiteScriptFixture(t, [
+    '// var mobileMenuQuery = window.matchMedia("(max-width: 833px)");',
+    'var queryDecoy = \'var mobileMenuQuery = window.matchMedia("(max-width: 833px)");\';',
+    'var listenerDecoy = \'mobileMenuQuery.addEventListener("change", handleMenuBreakpointChange);\';',
     'function handleMenuBreakpointChange(event) {',
     '  /*',
-    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  if (event.matches || !document.body.classList.contains("menu-open")) return;',
     '  closeMenu(false);',
     '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
     '    document.querySelector(\'.site-nav a\');',
     '  focusNode(desktopTarget);',
     '  */',
     '}',
-    '// desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);'
+    '// mobileMenuQuery.addEventListener("change", handleMenuBreakpointChange);',
+    'void queryDecoy;',
+    'void listenerDecoy;'
   ]);
 
   assert.ok(result.issues.includes(MENU_CLEANUP_ISSUE));
 });
 
-test('validateRepository preserves comment-like text inside JavaScript literals', (t) => {
+test('validateRepository accepts the max-width mobile breakpoint with comment-like literals', (t) => {
   const result = validateSiteScriptFixture(t, [
     'var commentLikePattern = /[/*]/;',
     'var commentLikeUrl = "https://example.com/*not-comment*/";',
-    'var desktopMenuQuery = window.matchMedia("(min-width: 834px)");',
+    'var mobileMenuQuery = window.matchMedia("(max-width: 833px)");',
     'function handleMenuBreakpointChange(event) {',
-    '  if (!event.matches || !document.body.classList.contains("menu-open")) return;',
+    '  if (event.matches || !document.body.classList.contains("menu-open")) return;',
     '  closeMenu(false);',
     '  var desktopTarget = document.querySelector(\'.site-nav [aria-current="page"]\') ||',
     '    document.querySelector(\'.site-nav a\');',
     '  focusNode(desktopTarget);',
     '}',
-    'desktopMenuQuery.addEventListener("change", handleMenuBreakpointChange);',
+    'mobileMenuQuery.addEventListener("change", handleMenuBreakpointChange);',
     'void commentLikePattern;',
     'void commentLikeUrl;'
   ]);
 
   assert.ok(!result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository rejects CSS navigation breakpoint drift and comment decoys', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '@media (max-width:833px){',
+    '/* @media (max-width:833px){.site-nav{display:none}.menu-toggle{display:inline-flex}} */\n' +
+      ':root{--media-decoy:"@media (max-width:833px){.site-nav{display:none}.menu-toggle{display:inline-flex}}"}\n' +
+      '@media (max-width:832px){'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+});
+
+test('validateRepository rejects a mobile media block nested inside an outer supports rule', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '@media (max-width:833px){\n  .header-shell',
+    '@supports (display:grid){\n@media (max-width:833px){\n  .header-shell'
+  );
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  .footer-actions{justify-content:flex-start}\n}\n\n@media (max-width:640px){',
+    '  .footer-actions{justify-content:flex-start}\n}\n}\n\n@media (max-width:640px){'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+});
+
+test('validateRepository requires mobile navigation rules in the same CSS media block', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  .site-nav{display:none}\n  .menu-toggle{display:inline-flex}',
+    '  .site-nav{display:none}\n}\n\n@media (max-width:833px){\n  .menu-toggle{display:inline-flex}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+});
+
+test('validateRepository rejects nested supports-rule mobile display decoys', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  .site-nav{display:none}\n  .menu-toggle{display:inline-flex}',
+    '  @supports (display:grid){\n' +
+      '    .decoy{}\n' +
+      '    .site-nav{display:none}\n' +
+      '    .menu-toggle{display:inline-flex}\n' +
+      '  }'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+});
+
+test('validateRepository rejects custom-property mobile display decoys', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  .site-nav{display:none}\n  .menu-toggle{display:inline-flex}',
+    '  .site-nav{--display:none;display:flex}\n' +
+      '  .menu-toggle{--display:inline-flex;display:none}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+});
+
+test('validateRepository rejects nested custom-property display decoys', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  .site-nav{display:none}\n  .menu-toggle{display:inline-flex}',
+    '  .site-nav{--x:{a:b;display:none}}\n' +
+      '  .menu-toggle{--x:{a:b;display:inline-flex}}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+});
+
+test('validateRepository rejects overridden mobile display declarations', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  .site-nav{display:none}\n  .menu-toggle{display:inline-flex}',
+    '  .site-nav{display:none;display:flex}\n' +
+      '  .menu-toggle{display:inline-flex;display:none}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+});
+
+test('validateRepository rejects later mobile display rule overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  .site-nav{display:none}\n  .menu-toggle{display:inline-flex}',
+    '  .site-nav{display:none}\n' +
+      '  .menu-toggle{display:inline-flex}\n' +
+      '  .site-nav{display:flex}\n' +
+      '  .menu-toggle{display:none}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+});
+
+test('validateRepository rejects overrides in a later matching CSS media block', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '@media (max-width:833px){\n  .page-hero > .section-title-wrap,',
+    '@media (max-width:833px){\n' +
+      '  .site-nav{display:flex}\n' +
+      '  .menu-toggle{display:none}\n' +
+      '  .page-hero > .section-title-wrap,'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
 });
 
 test('validateRepository requires Lightbox close background cleanup wiring', (t) => {
