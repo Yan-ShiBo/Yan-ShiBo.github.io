@@ -41,6 +41,8 @@ const STATS_UNAVAILABLE_CONTRACT_ISSUE =
   'assets/js/stats.js: invalid public counters must render -- and end in warn state';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'assets/js/stats.js: local visit dates must remain formatted text';
+const STATS_LEGACY_STORAGE_CONTRACT_ISSUE =
+  'assets/js/stats.js: legacy local history must transition safely without overriding canonical values, deleting legacy keys, or activating invalid data';
 const MANIFEST_INSTALL_ICONS = [
   {
     src: '/assets/icons/app-icon-192.png',
@@ -1606,6 +1608,186 @@ test('validateRepository keeps local date text outside counter validation', (t) 
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(STATS_LOCAL_DATE_CONTRACT_ISSUE));
+});
+
+test('validateRepository migrates valid legacy localStorage counters safely', (t) => {
+  const rootDir = createRepositoryFixture(t);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.includes(STATS_LEGACY_STORAGE_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects an omitted legacy localStorage migration field', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /  function getStorage\(\) \{[\s\S]*?\r?\n  \}/,
+    [
+      '  function getStorage() {',
+      '    var storage = window.localStorage;',
+      '    return {',
+      '      getItem: function (key) {',
+      "        return key === 'ysb_visit_total' ? null : storage.getItem(key);",
+      '      },',
+      '      setItem: function (key, value) {',
+      '        storage.setItem(key, value);',
+      '      }',
+      '    };',
+      '  }'
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_LEGACY_STORAGE_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects legacy localStorage overwriting canonical fields', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /(  function updateLocalCounters\(\) \{\r?\n    var storage = getStorage\(\);\r?\n    if \(!storage\) return;\r?\n)/,
+    [
+      '$1',
+      "    if (storage.getItem('ysb-visit-total') === '7') {",
+      "      storage.setItem('ysb-visit-total', storage.getItem('ysb_visit_total'));",
+      "      storage.setItem('ysb-visit-total', '7');",
+      '    }',
+      ''
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_LEGACY_STORAGE_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects transient legacy localStorage page counter migration', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /(  function updateLocalCounters\(\) \{\r?\n    var storage = getStorage\(\);\r?\n    if \(!storage\) return;\r?\n)/,
+    [
+      '$1',
+      "    storage.setItem('ysb-page:/analytics.html', storage.getItem('ysb_page:/analytics.html'));",
+      "    storage.setItem('ysb-page:/analytics.html', '0');",
+      ''
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_LEGACY_STORAGE_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects activation of invalid legacy localStorage data', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /(  function updateLocalCounters\(\) \{\r?\n    var storage = getStorage\(\);\r?\n    if \(!storage\) return;\r?\n)/,
+    [
+      '$1',
+      "    if (storage.getItem('ysb-visit-total') === null && storage.getItem('ysb_visit_total') !== null) {",
+      "      storage.setItem('ysb-visit-total', storage.getItem('ysb_visit_total'));",
+      '    }',
+      ''
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_LEGACY_STORAGE_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects deleting migrated legacy localStorage keys', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /(      storage\.setItem\(canonicalKey, value\);\r?\n)/,
+    [
+      '$1',
+      '      var legacyValue = storage.getItem(legacyKey);',
+      '      storage.removeItem(legacyKey);',
+      '      storage.setItem(legacyKey, legacyValue);',
+      ''
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_LEGACY_STORAGE_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects legacy localStorage migration without per-field exception isolation', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/stats.js',
+    /  function migrateLegacyField\(storage, canonicalKey, legacyKey, validate\) \{[\s\S]*?\r?\n  \}/,
+    [
+      '  function migrateLegacyField(storage, canonicalKey, legacyKey, validate) {',
+      '    if (storage.getItem(canonicalKey) !== null) return;',
+      '    var value = storage.getItem(legacyKey);',
+      '    if (value === null || !validate(value)) return;',
+      '    storage.setItem(canonicalKey, value);',
+      '  }'
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(STATS_LEGACY_STORAGE_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects loose legacy localStorage value shapes', (t) => {
+  const mutations = [
+    {
+      name: 'leading-zero and unsafe totals',
+      pattern: /  function validLegacyTotal\(value\) \{[\s\S]*?\r?\n  \}/,
+      replacement: [
+        '  function validLegacyTotal(value) {',
+        '    return /^[0-9]+$/.test(value);',
+        '  }'
+      ].join('\n')
+    },
+    {
+      name: 'non-canonical ISO timestamps',
+      pattern: /  function validLegacyTimestamp\(value\) \{[\s\S]*?\r?\n  \}/,
+      replacement: [
+        '  function validLegacyTimestamp(value) {',
+        '    var date = new Date(value);',
+        '    if (isNaN(date.getTime())) return false;',
+        '    var iso = date.toISOString();',
+        "    return value === iso || value === iso.replace('.000Z', 'Z');",
+        '  }'
+      ].join('\n')
+    },
+    {
+      name: 'duplicate visit days',
+      pattern: '        if (!validLegacyDay(days[i]) || seen[days[i]]) return false;',
+      replacement: '        if (!validLegacyDay(days[i])) return false;'
+    }
+  ];
+
+  for (const mutation of mutations) {
+    const rootDir = createRepositoryFixture(t);
+    if (typeof mutation.pattern === 'string') {
+      replaceOnce(rootDir, 'assets/js/stats.js', mutation.pattern, mutation.replacement);
+    } else {
+      replaceMatching(rootDir, 'assets/js/stats.js', mutation.pattern, mutation.replacement);
+    }
+    const result = validateRepository(rootDir);
+    assert.ok(
+      result.issues.includes(STATS_LEGACY_STORAGE_CONTRACT_ISSUE),
+      mutation.name
+    );
+  }
 });
 
 test('validateRepository checks local URLs in the Font Awesome stylesheet', (t) => {

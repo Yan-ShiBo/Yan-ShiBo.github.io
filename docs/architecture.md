@@ -149,6 +149,17 @@ stateDiagram-v2
 
 因此本地累计访问只表示当前浏览器在这四个页面上的累计，不是 14 个页面的全站总访问量。其他页面既不加载统计脚本，也不应保留统计服务的专用依赖提示。
 
+本地记录的规范键为 `ysb-visit-total`、`ysb-visit-first`、`ysb-visit-last` 和 `ysb-visit-days`。为兼容旧版内联统计脚本，`stats.js` 在更新本次访问前按字段检查以下历史键：
+
+| 字段 | 规范键 | 历史键 | 兼容处理 |
+| --- | --- | --- | --- |
+| 累计次数 | `ysb-visit-total` | `ysb_visit_total` | 规范键缺失且旧值有效时迁移 |
+| 首次访问 | `ysb-visit-first` | `ysb_first_visit` | 规范键缺失且旧值有效时迁移 |
+| 最近访问 | `ysb-visit-last` | `ysb_last_visit` | 保留旧键但不复制；规范键直接记录本次访问 |
+| 访问日期 | `ysb-visit-days` | `ysb_visit_days` | 规范键缺失且旧值有效时迁移 |
+
+对三个可迁移字段，只有 `getItem(规范键) === null` 才表示规范键缺失；空字符串或损坏的现有规范值也不会被历史值覆盖。累计次数必须是无前导零的非负 ASCII 十进制串（`0` 除外），且本次递增后仍处于 JavaScript 安全整数范围；首次访问必须与 `toISOString()` 完全往返一致；访问日期必须是由不重复真实 `YYYY-MM-DD` 日期组成的 JSON 数组。单个迁移字段的历史读取、验证或写入失败时只跳过该字段，其他迁移字段仍独立检查，随后仍尝试本次更新；若 localStorage 持续不可用，则沿用本地计数可选降级。旧版和当前脚本都会在加载时把最近访问更新为现在，因此复制旧 `last` 只会产生一次立即被覆盖的冗余写入，明确不执行。兼容处理不删除或改写历史键，也不合并两套记录；`ysb-page:${pathname}` 是后来新增的页面计数，没有历史键映射。
+
 ```mermaid
 sequenceDiagram
     participant Page as 统计页面

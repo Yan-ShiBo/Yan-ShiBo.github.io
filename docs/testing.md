@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 228 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 包含 236 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -37,16 +37,22 @@ node --test --test-name-pattern="structured data" scripts/validate-site.test.js
 node --test --test-name-pattern="manifest|install icon|PNG|favicon|ICO" scripts/validate-site.test.js
 ```
 
+仅定位历史 localStorage 键迁移时可以运行以下名称子集；它同样不能替代全量入口：
+
+```powershell
+node --test --test-name-pattern="legacy localStorage" scripts/validate-site.test.js
+```
+
 当前成功输出应包含：
 
 ```text
-tests 228
-pass 228
+tests 236
+pass 236
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `44 passed / 0 failed`，不要把这两行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `228 tests`、`79 pass`、`149 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `44 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `236 tests`、`79 pass`、`157 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -100,7 +106,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 其他页面不误加载统计脚本；
 - Busuanzi、jsDelivr 与 Vercount 的统计专用 preconnect 只出现在这四页。
 
-它不会访问第三方计数服务，因此不能证明线上值真实或递增；验证器会在隔离沙箱中执行实际 `stats.js`，核对非负 ASCII 十进制整数格式、`0` 与前导零、全角数字等异常主来源回退、超长数字不丢失、全部异常降级，以及本地日期文本不受计数校验影响。
+它不会访问第三方计数服务，因此不能证明线上值真实或递增；验证器会在隔离沙箱中执行实际 `stats.js`，核对非负 ASCII 十进制整数格式、`0` 与前导零、全角数字等异常主来源回退、超长数字不丢失、全部异常降级，以及本地日期文本不受计数校验影响。它还执行[架构文档](architecture.md#6-访问统计)定义的历史 localStorage 兼容处理：验证安全整数、精确 ISO 时间戳与唯一真实日期数组的严格形状，有效累计、首次访问和日期旧值逐字段延续，单个历史键读取异常不阻断合法兄弟字段，现有规范键始终优先，损坏旧值不被激活，旧键从未被删除或瞬时覆盖，旧 `last` 不产生冗余迁移写入，以及页面计数不存在历史键映射或瞬时迁入。
 
 ### 3.5 SEO 与结构化数据
 
@@ -192,7 +198,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - robots 全站禁止与 user-agent 作用域；
 - 未登记的嵌套 HTML；
 - 非统计页误加统计服务 preconnect；
-- `stats.js` 的非负 ASCII 整数格式、`0`、前导零、全角数字等异常主来源回退、超长数字原样保留、全部异常降级，以及本地日期文本不受计数校验影响；
+- `stats.js` 的非负 ASCII 整数格式、`0`、前导零、全角数字等异常主来源回退、超长数字原样保留、全部异常降级、本地日期文本不受计数校验影响，以及历史 localStorage 逐字段安全迁移、规范键优先、旧 `last` 直接刷新、损坏值隔离、旧键保留和伪造旧页面键忽略；
 - 移动菜单共享 `(max-width: 833px)` 谓词的退出清理合同，以及 CSS 断点漂移、导航规则跨媒体块、外层 `@supports` 包裹目标媒体块、媒体块内部嵌套 `@supports` 条件组、注释/字符串/普通或嵌套块型自定义属性伪实现、同一规则/后续直接规则/后续同谓词媒体块覆盖 `display`、旧 `(min-width: 834px)` 间隙实现、错误查询、遗漏/反向/嵌套使用 `event.matches`、退出门晚于清理、缺少可见焦点回退、关闭逻辑落在无关函数、关键实现被注释掉或只出现在字符串中的变异用例；
 - 简历文档卡片、联系方式和长小按钮的全局收缩合同，以及注释/字符串、等价空白、选择器列表、条件覆盖、非 `!important` 高特异性覆盖、`:nth-child(... of selector)` 特异性、较短的 `!important` 覆盖、实际 `.subtle` 动作变体、祖先/通配符否定、复杂函数选择器、嵌套状态否定、陈旧错误声明后续修复、错误值和后续覆盖变异；另有无关条件属性、最终 subject 的类型/ID/类单 compound `:not(...)`、简单与复合伪元素及 `!important` 正确优先级的正向用例，防止验证器在已建模范围内过度拒绝或误算层叠；
 - Lightbox 打开/关闭背景接线与 `inert` 行为合同：等价实现正向夹具，以及缺少任一端接线、任意语句位置的裸赋值或 `var` 覆盖、对象属性赋值 decoy、非行首同名函数语法、遗漏属性值、显式 `aria-hidden="false"` 丢失、多元素共享快照串扰、重复/无关/注释/字符串处理器、激活分支贯穿、倒序恢复、抛错、语法错误、超时、恢复后立即或通过微任务延后再次清除等变异用例；
@@ -319,6 +325,7 @@ http://127.0.0.1:8000/en/
 - 本地首次与最近访问日期仍正常显示；
 - 第三方超时或被拦截；
 - localStorage 可用、为空或被限制；
+- 仅存在历史下划线键、历史与规范键冲突、部分历史字段损坏，以及伪造历史页面键；
 - 刷新与中英文页面切换。
 
 无论第三方状态如何，页面主体、本地计数和明确的降级文案都不应崩溃。不要把四页本地累计写成 14 页全站累计。
@@ -364,6 +371,7 @@ http://127.0.0.1:8000/en/
 - 英文页面重新指向中文 manifest，或任一页面出现重复/正文内 manifest 链接；
 - manifest 重新使用 `site.ico`、缺少 192/512 安装 PNG、增加未经声明的 maskable 用途，或 favicon 尺寸/嵌入 PNG 漂移；
 - 把本地四页累计描述为 14 页全站累计；
+- 重命名本地统计键却没有逐字段兼容迁移，或用历史值覆盖任何已存在的规范键；
 - 异常 provider 文本被展示为计数、无效主来源遮蔽有效备用来源，或计数校验误伤本地日期文本；
 - Lightbox 关闭时清除关闭抽屉原有的 `inert`，或让仅因模态打开而设置的背景 `inert` 残留；
 - 把相同 `lastmod` 日期直接判为错误；
@@ -375,9 +383,10 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：228 passed / 0 failed
+自动测试：236 passed / 0 failed
 结构化数据子集：79 passed / 0 failed
 图标名称子集：44 passed / 0 failed
+历史 localStorage 子集：8 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
 人工检查：页面、主题、视口、键盘路径；涉及结构化数据时记录 12 路由矩阵

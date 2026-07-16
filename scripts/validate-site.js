@@ -149,6 +149,8 @@ const STATS_UNAVAILABLE_CONTRACT_ISSUE =
   'invalid public counters must render -- and end in warn state';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'local visit dates must remain formatted text';
+const STATS_LEGACY_STORAGE_CONTRACT_ISSUE =
+  'legacy local history must transition safely without overriding canonical values, deleting legacy keys, or activating invalid data';
 
 function toPosix(value) {
   return value.split(path.sep).join('/');
@@ -2376,6 +2378,9 @@ function validateJavaScriptSyntax(rootDir, issues) {
 function runStatsScenario(source, options = {}) {
   const providerValues = options.providerValues || {};
   const storageSeed = options.storageSeed || {};
+  const storageGetFailures = new Set(
+    (options.storageGetFailures || []).map((key) => String(key))
+  );
   const elementIds = [
     ...PUBLIC_STATS_IDS,
     ...PROVIDER_STATS_IDS,
@@ -2399,12 +2404,30 @@ function runStatsScenario(source, options = {}) {
   const documentEvents = {};
   const windowEvents = {};
   const intervalCallbacks = [];
+  const storageWrites = [];
+  const storageRemovals = [];
+  let storageClearCount = 0;
   const localStorage = {
     getItem(key) {
-      return storage.has(key) ? storage.get(key) : null;
+      const normalizedKey = String(key);
+      if (storageGetFailures.has(normalizedKey)) {
+        throw new Error(`simulated localStorage getItem failure for ${normalizedKey}`);
+      }
+      return storage.has(normalizedKey) ? storage.get(normalizedKey) : null;
     },
     setItem(key, value) {
-      storage.set(key, String(value));
+      const entry = Object.freeze({ key: String(key), value: String(value) });
+      storageWrites.push(entry);
+      storage.set(entry.key, entry.value);
+    },
+    removeItem(key) {
+      const normalizedKey = String(key);
+      storageRemovals.push(normalizedKey);
+      storage.delete(normalizedKey);
+    },
+    clear() {
+      storageClearCount += 1;
+      storage.clear();
     }
   };
   const document = {
@@ -2461,7 +2484,13 @@ function runStatsScenario(source, options = {}) {
     };
   }
 
-  return { readElement };
+  return {
+    readElement,
+    storage: Object.freeze(Object.fromEntries(storage)),
+    storageWrites: Object.freeze(storageWrites.slice()),
+    storageRemovals: Object.freeze(storageRemovals.slice()),
+    storageClearCount
+  };
 }
 
 function validateStatsJavaScriptContracts(rootDir, issues) {
@@ -2566,6 +2595,284 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
     !datePattern.test(localScenario.readElement('local-last').text)
   ) {
     addIssue(issues, file, STATS_LOCAL_DATE_CONTRACT_ISSUE);
+  }
+
+  const legacySeed = {
+    ysb_visit_total: '4',
+    ysb_first_visit: '2001-02-03T04:05:06.000Z',
+    ysb_last_visit: '2001-02-04T05:06:07.000Z',
+    ysb_visit_days: '["2001-02-03"]',
+    'ysb_page:/analytics.html': '99'
+  };
+  const canonicalSeed = {
+    'ysb-visit-total': '7',
+    'ysb-visit-first': '2002-03-04T05:06:07.000Z',
+    'ysb-visit-last': '2002-03-05T06:07:08.000Z',
+    'ysb-visit-days': '["2002-03-04"]',
+    ysb_visit_total: '40',
+    ysb_first_visit: '1999-01-01T00:00:00.000Z',
+    ysb_last_visit: '1999-01-02T00:00:00.000Z',
+    ysb_visit_days: '["1999-01-01"]'
+  };
+  const emptyCanonicalSeed = {
+    'ysb-visit-total': '',
+    'ysb-visit-first': '',
+    'ysb-visit-last': '',
+    'ysb-visit-days': '',
+    ysb_visit_total: '40',
+    ysb_first_visit: '1998-01-01T00:00:00.000Z',
+    ysb_last_visit: '1998-01-02T00:00:00.000Z',
+    ysb_visit_days: '["1998-01-01"]'
+  };
+  const invalidLegacySeed = {
+    ysb_visit_total: '１２',
+    ysb_first_visit: '2001-02-30T04:05:06.000Z',
+    ysb_last_visit: '2001-02-30T05:06:07.000Z',
+    ysb_visit_days: '{"not":"an array"}'
+  };
+  const invalidLegacyDaysSeed = {
+    ysb_visit_days: '["2003-02-30"]'
+  };
+  const mixedLegacySeed = {
+    ysb_visit_total: '9',
+    ysb_first_visit: '2004-02-30T00:00:00.000Z',
+    ysb_last_visit: '2004-03-01T00:00:00.000Z',
+    ysb_visit_days: '["2004-03-01"]'
+  };
+  const strictInvalidLegacySeeds = [
+    { ysb_visit_total: '01' },
+    { ysb_visit_total: '9007199254740991' },
+    { ysb_first_visit: '2001-02-03T04:05:06Z' },
+    { ysb_visit_days: '["2005-01-01","2005-01-01"]' },
+    { ysb_visit_days: '[20050101]' }
+  ];
+  const storageFailureSeed = {
+    ysb_visit_total: '9',
+    ysb_first_visit: '2006-01-02T03:04:05.000Z',
+    ysb_visit_days: '["2006-01-02"]'
+  };
+  let legacyScenario;
+  let canonicalScenario;
+  let emptyCanonicalScenario;
+  let invalidLegacyScenario;
+  let invalidLegacyDaysScenario;
+  let mixedLegacyScenario;
+  let strictInvalidLegacyScenarios;
+  let storageFailureScenario;
+  try {
+    legacyScenario = runStatsScenario(source, {
+      storageSeed: legacySeed,
+      triggerDomContentLoaded: true
+    });
+    canonicalScenario = runStatsScenario(source, {
+      storageSeed: canonicalSeed,
+      triggerDomContentLoaded: true
+    });
+    emptyCanonicalScenario = runStatsScenario(source, {
+      storageSeed: emptyCanonicalSeed,
+      triggerDomContentLoaded: true
+    });
+    invalidLegacyScenario = runStatsScenario(source, {
+      storageSeed: invalidLegacySeed,
+      triggerDomContentLoaded: true
+    });
+    invalidLegacyDaysScenario = runStatsScenario(source, {
+      storageSeed: invalidLegacyDaysSeed,
+      triggerDomContentLoaded: true
+    });
+    mixedLegacyScenario = runStatsScenario(source, {
+      storageSeed: mixedLegacySeed,
+      triggerDomContentLoaded: true
+    });
+    strictInvalidLegacyScenarios = strictInvalidLegacySeeds.map((storageSeed) =>
+      runStatsScenario(source, {
+        storageSeed,
+        triggerDomContentLoaded: true
+      })
+    );
+    storageFailureScenario = runStatsScenario(source, {
+      storageSeed: storageFailureSeed,
+      storageGetFailures: ['ysb_first_visit'],
+      triggerDomContentLoaded: true
+    });
+  } catch (error) {
+    addIssue(issues, file, STATS_LEGACY_STORAGE_CONTRACT_ISSUE);
+    return;
+  }
+
+  function storedDays(scenario) {
+    try {
+      const value = JSON.parse(scenario.storage['ysb-visit-days']);
+      return Array.isArray(value) ? value : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function validStoredDate(value) {
+    if (typeof value !== 'string') return false;
+    const date = new Date(value);
+    return !Number.isNaN(date.getTime()) && date.toISOString() === value;
+  }
+
+  const legacyDays = storedDays(legacyScenario);
+  const canonicalDays = storedDays(canonicalScenario);
+  const emptyCanonicalDays = storedDays(emptyCanonicalScenario);
+  const invalidLegacyDays = storedDays(invalidLegacyScenario);
+  const invalidEntryDays = storedDays(invalidLegacyDaysScenario);
+  const mixedLegacyDays = storedDays(mixedLegacyScenario);
+  const storageFailureDays = storedDays(storageFailureScenario);
+  const legacyLastWrites = legacyScenario.storageWrites.filter(
+    (entry) => entry.key === 'ysb-visit-last'
+  );
+  const canonicalLastWrites = canonicalScenario.storageWrites.filter(
+    (entry) => entry.key === 'ysb-visit-last'
+  );
+  const invalidLastWrites = invalidLegacyScenario.storageWrites.filter(
+    (entry) => entry.key === 'ysb-visit-last'
+  );
+  const mixedLastWrites = mixedLegacyScenario.storageWrites.filter(
+    (entry) => entry.key === 'ysb-visit-last'
+  );
+  const legacyKeyMappings = [
+    ['ysb-visit-total', 'ysb_visit_total'],
+    ['ysb-visit-first', 'ysb_first_visit'],
+    ['ysb-visit-last', 'ysb_last_visit'],
+    ['ysb-visit-days', 'ysb_visit_days']
+  ];
+  function wroteSeededLegacyValue(scenario, seed) {
+    return scenario.storageWrites.some((entry) => legacyKeyMappings.some(
+      ([canonicalKey, legacyKey]) =>
+        entry.key === canonicalKey && entry.value === seed[legacyKey]
+    ));
+  }
+  const canonicalLegacyWasActivated = wroteSeededLegacyValue(
+    canonicalScenario,
+    canonicalSeed
+  );
+  const emptyCanonicalLegacyWasActivated = wroteSeededLegacyValue(
+    emptyCanonicalScenario,
+    emptyCanonicalSeed
+  );
+  const invalidLegacyWasActivated = wroteSeededLegacyValue(
+    invalidLegacyScenario,
+    invalidLegacySeed
+  );
+  const legacyPageWasActivated = legacyScenario.storageWrites.some(
+    (entry) =>
+      entry.key === 'ysb-page:/analytics.html' &&
+      entry.value === legacySeed['ysb_page:/analytics.html']
+  );
+  const preservedLegacyKeys = new Set([
+    'ysb_visit_total',
+    'ysb_first_visit',
+    'ysb_last_visit',
+    'ysb_visit_days',
+    'ysb_page:/analytics.html'
+  ]);
+  const destructiveLegacyStorageOperation = [
+    legacyScenario,
+    canonicalScenario,
+    emptyCanonicalScenario,
+    invalidLegacyScenario,
+    invalidLegacyDaysScenario,
+    mixedLegacyScenario,
+    storageFailureScenario,
+    ...strictInvalidLegacyScenarios
+  ].some(
+    (scenario) =>
+      scenario.storageClearCount > 0 ||
+      scenario.storageRemovals.some((key) => preservedLegacyKeys.has(key)) ||
+      scenario.storageWrites.some((entry) => preservedLegacyKeys.has(entry.key))
+  );
+  const legacyKeysRemain = Object.entries(legacySeed).every(
+    ([key, value]) => legacyScenario.storage[key] === value
+  );
+  const canonicalLegacyKeysRemain = Object.entries(canonicalSeed)
+    .filter(([key]) => key.includes('_'))
+    .every(([key, value]) => canonicalScenario.storage[key] === value);
+
+  const legacyContractHolds =
+    legacyScenario.storage['ysb-visit-total'] === '5' &&
+    legacyScenario.storage['ysb-visit-first'] === legacySeed.ysb_first_visit &&
+    legacyScenario.storage['ysb-page:/analytics.html'] === '1' &&
+    legacyScenario.storage['ysb_page:/analytics.html'] === '99' &&
+    !legacyPageWasActivated &&
+    legacyDays.length === 2 &&
+    legacyDays.includes('2001-02-03') &&
+    legacyLastWrites.length === 1 &&
+    validStoredDate(legacyLastWrites.at(-1).value) &&
+    legacyLastWrites.at(-1).value !== legacySeed.ysb_last_visit &&
+    legacyKeysRemain;
+  const canonicalContractHolds =
+    canonicalScenario.storage['ysb-visit-total'] === '8' &&
+    canonicalScenario.storage['ysb-visit-first'] === canonicalSeed['ysb-visit-first'] &&
+    canonicalDays.length === 2 &&
+    canonicalDays.includes('2002-03-04') &&
+    !canonicalDays.includes('1999-01-01') &&
+    !canonicalLastWrites.some((entry) => entry.value === canonicalSeed.ysb_last_visit) &&
+    !canonicalLegacyWasActivated &&
+    canonicalLegacyKeysRemain;
+  const emptyCanonicalContractHolds =
+    emptyCanonicalScenario.storage['ysb-visit-total'] === '1' &&
+    emptyCanonicalScenario.storage['ysb-visit-first'] !== emptyCanonicalSeed.ysb_first_visit &&
+    validStoredDate(emptyCanonicalScenario.storage['ysb-visit-first']) &&
+    emptyCanonicalDays.length === 1 &&
+    !emptyCanonicalDays.includes('1998-01-01') &&
+    !emptyCanonicalLegacyWasActivated &&
+    !emptyCanonicalScenario.storageWrites.some(
+      (entry) => entry.value === emptyCanonicalSeed.ysb_last_visit
+    );
+  const invalidLegacyContractHolds =
+    invalidLegacyScenario.storage['ysb-visit-total'] === '1' &&
+    validStoredDate(invalidLegacyScenario.storage['ysb-visit-first']) &&
+    validStoredDate(invalidLegacyScenario.storage['ysb-visit-last']) &&
+    invalidLegacyScenario.storage['ysb-page:/analytics.html'] === '1' &&
+    invalidLegacyDays.length === 1 &&
+    !invalidLastWrites.some((entry) => entry.value === invalidLegacySeed.ysb_last_visit) &&
+    invalidLegacyScenario.readElement('local-total').text === '1' &&
+    invalidLegacyScenario.readElement('local-page').text === '1' &&
+    invalidLegacyScenario.readElement('local-days').text === '1' &&
+    !invalidLegacyWasActivated &&
+    invalidEntryDays.length === 1 &&
+    !invalidEntryDays.includes('2003-02-30');
+  const mixedLegacyContractHolds =
+    mixedLegacyScenario.storage['ysb-visit-total'] === '10' &&
+    mixedLegacyScenario.storage['ysb-visit-first'] !== mixedLegacySeed.ysb_first_visit &&
+    validStoredDate(mixedLegacyScenario.storage['ysb-visit-first']) &&
+    mixedLegacyDays.length === 2 &&
+    mixedLegacyDays.includes('2004-03-01') &&
+    !mixedLastWrites.some((entry) => entry.value === mixedLegacySeed.ysb_last_visit) &&
+    mixedLegacyScenario.readElement('local-total').text === '10' &&
+    mixedLegacyScenario.readElement('local-days').text === '2';
+  const strictInvalidLegacyContractHolds = strictInvalidLegacyScenarios.every(
+    (scenario, index) =>
+      !wroteSeededLegacyValue(scenario, strictInvalidLegacySeeds[index]) &&
+      scenario.storage['ysb-visit-total'] === '1' &&
+      storedDays(scenario).length === 1 &&
+      scenario.readElement('local-total').text === '1' &&
+      scenario.readElement('local-days').text === '1'
+  );
+  const storageFailureContractHolds =
+    storageFailureScenario.storage['ysb-visit-total'] === '10' &&
+    storageFailureScenario.storage['ysb-visit-first'] !== storageFailureSeed.ysb_first_visit &&
+    validStoredDate(storageFailureScenario.storage['ysb-visit-first']) &&
+    storageFailureDays.length === 2 &&
+    storageFailureDays.includes('2006-01-02') &&
+    storageFailureScenario.readElement('local-total').text === '10' &&
+    storageFailureScenario.readElement('local-days').text === '2';
+
+  if (
+    !legacyContractHolds ||
+    !canonicalContractHolds ||
+    !emptyCanonicalContractHolds ||
+    !invalidLegacyContractHolds ||
+    !mixedLegacyContractHolds ||
+    !strictInvalidLegacyContractHolds ||
+    !storageFailureContractHolds ||
+    destructiveLegacyStorageOperation
+  ) {
+    addIssue(issues, file, STATS_LEGACY_STORAGE_CONTRACT_ISSUE);
   }
 }
 

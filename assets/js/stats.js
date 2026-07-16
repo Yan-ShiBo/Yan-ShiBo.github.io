@@ -12,12 +12,69 @@
     days: 'ysb-visit-days'
   };
 
+  var MIGRATABLE_LEGACY_STORAGE_KEYS = {
+    total: 'ysb_visit_total',
+    first: 'ysb_first_visit',
+    days: 'ysb_visit_days'
+  };
+
   function getStorage() {
     try {
       return window.localStorage;
     } catch (err) {
       return null;
     }
+  }
+
+  function validLegacyTotal(value) {
+    if (!/^(?:0|[1-9][0-9]*)$/.test(value)) return false;
+    var total = Number(value);
+    return Number.isSafeInteger(total) && total < Number.MAX_SAFE_INTEGER;
+  }
+
+  function validLegacyTimestamp(value) {
+    var date = new Date(value);
+    return !isNaN(date.getTime()) && date.toISOString() === value;
+  }
+
+  function validLegacyDay(value) {
+    if (typeof value !== 'string' || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value)) {
+      return false;
+    }
+    var date = new Date(value + 'T00:00:00.000Z');
+    return !isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }
+
+  function validLegacyDays(value) {
+    try {
+      var days = JSON.parse(value);
+      if (!Array.isArray(days)) return false;
+      var seen = Object.create(null);
+      for (var i = 0; i < days.length; i += 1) {
+        if (!validLegacyDay(days[i]) || seen[days[i]]) return false;
+        seen[days[i]] = true;
+      }
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function migrateLegacyField(storage, canonicalKey, legacyKey, validate) {
+    try {
+      if (storage.getItem(canonicalKey) !== null) return;
+      var value = storage.getItem(legacyKey);
+      if (value === null || !validate(value)) return;
+      storage.setItem(canonicalKey, value);
+    } catch (err) {
+      /* isolate unavailable or malformed legacy fields */
+    }
+  }
+
+  function migrateLegacyStorage(storage) {
+    migrateLegacyField(storage, STORAGE_KEYS.total, MIGRATABLE_LEGACY_STORAGE_KEYS.total, validLegacyTotal);
+    migrateLegacyField(storage, STORAGE_KEYS.first, MIGRATABLE_LEGACY_STORAGE_KEYS.first, validLegacyTimestamp);
+    migrateLegacyField(storage, STORAGE_KEYS.days, MIGRATABLE_LEGACY_STORAGE_KEYS.days, validLegacyDays);
   }
 
   function locale() {
@@ -160,6 +217,8 @@
   function updateLocalCounters() {
     var storage = getStorage();
     if (!storage) return;
+
+    migrateLegacyStorage(storage);
 
     try {
       var total = parseInt(storage.getItem(STORAGE_KEYS.total) || '0', 10) + 1;
