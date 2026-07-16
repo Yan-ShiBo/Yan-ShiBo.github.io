@@ -510,6 +510,64 @@
     });
   }
 
+  function initNotFoundPage() {
+    var page = document.querySelector('[data-not-found-page]');
+    if (!page) return;
+
+    var rootElement = document.documentElement;
+    var localizesByPath = page.hasAttribute('data-not-found-localizable');
+    var usesEnglish = localizesByPath
+      ? /^\/en(?:\/|$)/.test(window.location.pathname)
+      : rootElement.lang === 'en';
+    var language = usesEnglish ? 'en' : 'zh-CN';
+    var localeKey = usesEnglish ? 'en' : 'zh';
+    var home = usesEnglish ? '/en/' : '/';
+
+    rootElement.lang = language;
+    page.setAttribute('data-not-found-locale', language);
+    page.setAttribute('data-not-found-home', home);
+
+    function applyLocalizedAttribute(sourceSuffix, targetAttribute) {
+      var zhAttribute = 'data-not-found-zh-' + sourceSuffix;
+      var enAttribute = 'data-not-found-en-' + sourceSuffix;
+      var sourceAttribute = localeKey === 'en' ? enAttribute : zhAttribute;
+      document.querySelectorAll('[' + zhAttribute + '][' + enAttribute + ']').forEach(function (node) {
+        var value = node.getAttribute(sourceAttribute);
+        if (targetAttribute) {
+          node.setAttribute(targetAttribute, value);
+        } else {
+          node.textContent = value;
+        }
+      });
+    }
+
+    if (localizesByPath) {
+      applyLocalizedAttribute('text', '');
+      applyLocalizedAttribute('href', 'href');
+      applyLocalizedAttribute('content', 'content');
+      applyLocalizedAttribute('aria-label', 'aria-label');
+      applyLocalizedAttribute('label-dark', 'data-label-dark');
+      applyLocalizedAttribute('label-light', 'data-label-light');
+    }
+
+    document.querySelectorAll('.lang-switch a[lang]').forEach(function (link) {
+      link.classList.toggle('active', link.getAttribute('lang') === language);
+    });
+
+    var countdown = document.querySelector('[data-countdown]');
+    if (!countdown) return;
+    var remaining = 5;
+    countdown.textContent = remaining;
+    var timer = window.setInterval(function () {
+      remaining -= 1;
+      countdown.textContent = remaining;
+      if (remaining <= 0) {
+        window.clearInterval(timer);
+        window.location.href = home;
+      }
+    }, 1000);
+  }
+
   function initYear() {
     document.querySelectorAll('[data-year]').forEach(function (node) {
       node.textContent = new Date().getFullYear();
@@ -517,6 +575,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    initNotFoundPage();
     initTheme();
     initMenu();
     initSpotlight();

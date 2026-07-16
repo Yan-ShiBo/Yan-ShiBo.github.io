@@ -28,6 +28,8 @@ const MOBILE_CSS_BREAKPOINT_ISSUE =
   'assets/css/site.css: mobile navigation rules must share one (max-width: 833px) media block';
 const RESUME_OVERFLOW_CSS_ISSUE =
   'assets/css/site.css: resume cards, contact values, and long actions must remain shrinkable on narrow viewports';
+const NOT_FOUND_LOCALIZATION_ISSUE =
+  'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const MODAL_INERT_RESTORE_ISSUE =
   'assets/js/site.js: modal background cleanup must restore each element\'s pre-existing inert state';
 const STATS_INTEGER_CONTRACT_ISSUE =
@@ -283,6 +285,235 @@ test('resolveLocalReference preserves question marks inside fragments', (t) => {
 
   assert.equal(result.fragment, 'section?mode=full');
 });
+
+test('root 404 declares bilingual deep-path localization hooks', () => {
+  const html = fs.readFileSync(path.resolve(__dirname, '..', '404.html'), 'utf8');
+
+  assert.match(
+    html,
+    /<body\b[^>]*\bdata-not-found-page\b[^>]*\bdata-not-found-localizable\b[^>]*>/i
+  );
+  assert.match(html, /data-not-found-en-text="Page not found\."/);
+  assert.match(html, /data-not-found-en-href="\/en\/index\.html"/);
+  assert.match(html, /<link\b[^>]*href="\/assets\/css\/site\.css"/i);
+  assert.match(html, /<script\b[^>]*src="\/assets\/js\/site\.js"/i);
+});
+
+test('validateRepository requires the root 404 localization marker', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    '404.html',
+    ' data-not-found-localizable=""',
+    ' data-missing-not-found-localizable=""'
+  );
+
+  const result = validateRepository(rootDir);
+  assert.ok(result.issues.includes(`404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+});
+
+test('validateRepository rejects relative root 404 resources', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    '404.html',
+    'href="/assets/css/site.css"',
+    'href="./assets/css/site.css"'
+  );
+
+  const result = validateRepository(rootDir);
+  assert.ok(result.issues.includes(`404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+});
+
+test('validateRepository rejects an unpaired root 404 English mapping', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    '404.html',
+    'data-not-found-en-text="Page not found."',
+    'data-missing-not-found-en-text="Page not found."'
+  );
+
+  const result = validateRepository(rootDir);
+  assert.ok(result.issues.includes(`404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+});
+
+test('validateRepository rejects root 404 English navigation drift', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    '404.html',
+    /data-not-found-en-href="\/en\/index\.html"/g,
+    'data-not-found-en-href="/index.html"'
+  );
+
+  const result = validateRepository(rootDir);
+  assert.ok(result.issues.includes(`404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+});
+
+test('validateRepository rejects root 404 English visible-text drift from the physical page', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    '404.html',
+    'data-not-found-en-text="Home">',
+    'data-not-found-en-text="Start">'
+  );
+
+  const result = validateRepository(rootDir);
+  assert.ok(result.issues.includes(`404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+});
+
+test('validateRepository rejects root 404 English metadata drift from the physical page', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    '404.html',
+    'data-not-found-en-content="Page not found. Continue to ShiBo Yan\'s homepage, research page, projects, or the resume page."',
+    'data-not-found-en-content="Wrong English description."'
+  );
+
+  const result = validateRepository(rootDir);
+  assert.ok(result.issues.includes(`404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+});
+
+for (const mutation of [
+  {
+    name: 'title',
+    search: 'data-not-found-en-text="Page Not Found · ShiBo Yan"',
+    replacement: 'data-not-found-en-text="Missing · ShiBo Yan"'
+  },
+  {
+    name: 'ARIA label',
+    search: 'data-not-found-en-aria-label="Open navigation"',
+    replacement: 'data-not-found-en-aria-label="Open menu"'
+  },
+  {
+    name: 'theme label',
+    search: 'data-not-found-en-label-dark="Dark"',
+    replacement: 'data-not-found-en-label-dark="Night"'
+  }
+]) {
+  test(`validateRepository rejects root 404 English ${mutation.name} drift from the physical page`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(rootDir, '404.html', mutation.search, mutation.replacement);
+
+    const result = validateRepository(rootDir);
+    assert.ok(result.issues.includes(`404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+  });
+}
+
+test('validateRepository requires exactly one countdown on each 404 page', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    '404.html',
+    '</main>',
+    '<span data-countdown="">5</span>\n</main>'
+  );
+
+  const result = validateRepository(rootDir);
+  assert.ok(result.issues.includes(`404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+});
+
+test('validateRepository rejects executable inline scripts on 404 pages', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/404.html',
+    '</body>',
+    '<script>void 0;</script>\n</body>'
+  );
+
+  const result = validateRepository(rootDir);
+  assert.ok(result.issues.includes(`en/404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+});
+
+test('validateRepository rejects decoy localization mappings on the physical English 404', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/404.html',
+    '<h1>Page not found.</h1>',
+    '<h1 data-not-found-en-text="Page not found.">Wrong physical text.</h1>'
+  );
+
+  const result = validateRepository(rootDir);
+  assert.ok(result.issues.includes(`en/404.html: ${NOT_FOUND_LOCALIZATION_ISSUE}`));
+});
+
+for (const mutation of [
+  {
+    name: 'a missing ordinary-page early return',
+    search: "    if (!page) return;\n\n    var rootElement",
+    replacement: "\n    var rootElement"
+  },
+  {
+    name: 'an ordinary-page early-return location side effect',
+    search: '    if (!page) return;',
+    replacement: "    if (!page) { window.location.pathname = '/changed'; return; }"
+  },
+  {
+    name: 'a pre-countdown pathname mutation',
+    search: "    var countdown = document.querySelector('[data-countdown]');",
+    replacement: "    window.location.pathname = '/changed';\n    var countdown = document.querySelector('[data-countdown]');"
+  },
+  {
+    name: 'a pre-countdown search mutation',
+    search: "    var countdown = document.querySelector('[data-countdown]');",
+    replacement: "    window.location.search = '?changed=1';\n    var countdown = document.querySelector('[data-countdown]');"
+  },
+  {
+    name: 'a pre-countdown hash mutation',
+    search: "    var countdown = document.querySelector('[data-countdown]');",
+    replacement: "    window.location.hash = '#changed';\n    var countdown = document.querySelector('[data-countdown]');"
+  },
+  {
+    name: 'a pre-countdown href mutation',
+    search: "    var countdown = document.querySelector('[data-countdown]');",
+    replacement: "    window.location.href = '/changed';\n    var countdown = document.querySelector('[data-countdown]');"
+  },
+  {
+    name: 'a pre-countdown location replacement',
+    search: "    var countdown = document.querySelector('[data-countdown]');",
+    replacement: "    window.location = '/changed';\n    var countdown = document.querySelector('[data-countdown]');"
+  },
+  {
+    name: 'a broad English path prefix',
+    search: "      ? /^\\/en(?:\\/|$)/.test(window.location.pathname)",
+    replacement: "      ? /^\\/en/.test(window.location.pathname)"
+  },
+  {
+    name: 'the wrong English redirect target',
+    search: "    var home = usesEnglish ? '/en/' : '/';",
+    replacement: "    var home = usesEnglish ? '/' : '/';"
+  },
+  {
+    name: 'a non-five-second countdown interval',
+    search: "    }, 1000);\n  }\n\n  function initYear()",
+    replacement: "    }, 900);\n  }\n\n  function initYear()"
+  },
+  {
+    name: '404 localization after theme initialization',
+    search: "    initNotFoundPage();\n    initTheme();",
+    replacement: "    initTheme();\n    initNotFoundPage();"
+  }
+]) {
+  test(`validateRepository rejects ${mutation.name}`, (t) => {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(
+      rootDir,
+      'assets/js/site.js',
+      mutation.search,
+      mutation.replacement
+    );
+
+    const result = validateRepository(rootDir);
+    assert.ok(
+      result.issues.includes(`assets/js/site.js: ${NOT_FOUND_LOCALIZATION_ISSUE}`)
+    );
+  });
+}
 
 test('validateRepository accepts the checked-in site baseline', () => {
   const rootDir = path.resolve(__dirname, '..');

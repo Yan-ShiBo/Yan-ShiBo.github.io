@@ -105,6 +105,8 @@ const MOBILE_CSS_BREAKPOINT_ISSUE =
   `mobile navigation rules must share one (max-width: ${MOBILE_BREAKPOINT_PX}px) media block`;
 const RESUME_OVERFLOW_CSS_ISSUE =
   'resume cards, contact values, and long actions must remain shrinkable on narrow viewports';
+const NOT_FOUND_LOCALIZATION_ISSUE =
+  'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const PROVIDER_STATS_IDS = [
   'busuanzi_value_site_pv',
   'busuanzi_value_site_uv',
@@ -1569,6 +1571,347 @@ function validateNotFoundMetadata(page, html, issues) {
   }
 }
 
+function hasExecutableInlineScript(html) {
+  const activeHtml = removeHtmlComments(html);
+  const pattern = /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi;
+  return Array.from(activeHtml.matchAll(pattern)).some((match) => {
+    const attributes = parseAttributes(match[0].slice(0, match[0].indexOf('>') + 1));
+    if (attributes.src) return false;
+    const type = String(attributes.type || '').trim().toLowerCase().split(';')[0];
+    return !type || type === 'module' || type === 'text/javascript' ||
+      type === 'application/javascript';
+  });
+}
+
+function collectOpeningHtmlTags(html) {
+  const source = removeHtmlComments(html);
+  const tags = [];
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    const tagStart = source.indexOf('<', cursor);
+    if (tagStart < 0) break;
+    const tag = readHtmlTag(source, tagStart);
+    if (!tag) {
+      cursor = tagStart + 1;
+      continue;
+    }
+    if (!tag.isClosing) {
+      tags.push({
+        name: tag.name,
+        attributes: parseAttributes(tag.raw)
+      });
+    }
+    if (!tag.isClosing && isScriptingEnabledRawTextElement(tag.name)) {
+      const closingTag = findHtmlClosingTag(source, tag.name, tag.end);
+      cursor = closingTag ? closingTag.end : tag.end;
+      continue;
+    }
+    cursor = tag.end;
+  }
+
+  return tags;
+}
+
+function localizedNotFoundAttribute(attributes, locale, suffix, targetName) {
+  const localizedName = locale ? `data-not-found-${locale}-${suffix}` : '';
+  return localizedName && Object.hasOwn(attributes, localizedName)
+    ? attributes[localizedName]
+    : attributes[targetName];
+}
+
+function normalizeNotFoundParityReference(rootDir, file, reference) {
+  const value = String(reference == null ? '' : reference).trim();
+  if (!value || isExternalReference(value)) return value;
+  if (value.startsWith('#')) return `self:${value}`;
+  const resolved = resolveLocalReference(rootDir, file, value);
+  if (resolved.kind !== 'local') return `invalid:${value}`;
+  const undecorated = stripUrlDecorations(value);
+  return `local:${resolved.relativePath}${value.slice(undecorated.length)}`;
+}
+
+function extractLocalizedNotFoundElementText(html, tagName, locale) {
+  const source = removeHtmlComments(html);
+  const pattern = new RegExp(`<${tagName}(?=[\\t\\n\\f\\r />])`, 'i');
+  const match = pattern.exec(source);
+  if (!match) return '';
+  const openingTag = readHtmlTag(source, match.index);
+  if (!openingTag || openingTag.isClosing || openingTag.name !== tagName) return '';
+  const attributes = parseAttributes(openingTag.raw);
+  const localizedName = locale ? `data-not-found-${locale}-text` : '';
+  if (localizedName && Object.hasOwn(attributes, localizedName)) {
+    return normalizeHtmlText(attributes[localizedName]);
+  }
+  const closingTag = findHtmlClosingTag(source, tagName, openingTag.end);
+  if (!closingTag) return '';
+  return normalizeHtmlText(source.slice(openingTag.end, closingTag.index).replace(/<[^>]*>/g, ' '));
+}
+
+function extractLocalizedNotFoundBodyText(html, locale) {
+  const source = removeHtmlComments(html);
+  const bodyMatch = /<body(?=[\t\n\f\r />])/i.exec(source);
+  if (!bodyMatch) return [];
+  const bodyTag = readHtmlTag(source, bodyMatch.index);
+  if (!bodyTag || bodyTag.isClosing || bodyTag.name !== 'body') return [];
+  const bodyClosingTag = findHtmlClosingTag(source, 'body', bodyTag.end);
+  if (!bodyClosingTag) return [];
+
+  const bodySource = source.slice(bodyTag.end, bodyClosingTag.index);
+  const voidElements = new Set([
+    'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+    'link', 'meta', 'param', 'source', 'track', 'wbr'
+  ]);
+  const excludedElements = new Set(['script', 'style', 'template', 'noscript']);
+  const stack = [];
+  const parts = [];
+  let suppressedDepth = 0;
+  let excludedDepth = 0;
+  let cursor = 0;
+
+  function appendText(value) {
+    const normalized = normalizeHtmlText(value);
+    if (normalized) parts.push(normalized);
+  }
+
+  while (cursor < bodySource.length) {
+    const tagStart = bodySource.indexOf('<', cursor);
+    const textEnd = tagStart < 0 ? bodySource.length : tagStart;
+    if (suppressedDepth === 0 && excludedDepth === 0) {
+      appendText(bodySource.slice(cursor, textEnd));
+    }
+    if (tagStart < 0) break;
+
+    const tag = readHtmlTag(bodySource, tagStart);
+    if (!tag) {
+      cursor = tagStart + 1;
+      continue;
+    }
+
+    if (tag.isClosing) {
+      let matchingIndex = -1;
+      for (let index = stack.length - 1; index >= 0; index -= 1) {
+        if (stack[index].name === tag.name) {
+          matchingIndex = index;
+          break;
+        }
+      }
+      if (matchingIndex >= 0) {
+        while (stack.length > matchingIndex) {
+          const frame = stack.pop();
+          if (frame.suppresses) suppressedDepth -= 1;
+          if (frame.excludes) excludedDepth -= 1;
+        }
+      }
+      cursor = tag.end;
+      continue;
+    }
+
+    const attributes = parseAttributes(tag.raw);
+    const localizedName = locale ? `data-not-found-${locale}-text` : '';
+    const suppresses = Boolean(localizedName) && Object.hasOwn(attributes, localizedName);
+    const excludes = excludedElements.has(tag.name);
+    if (suppresses && suppressedDepth === 0 && excludedDepth === 0 && !excludes) {
+      appendText(attributes[localizedName]);
+    }
+
+    const selfClosing = /\/\s*>$/.test(tag.raw);
+    if (!selfClosing && !voidElements.has(tag.name)) {
+      stack.push({ name: tag.name, suppresses, excludes });
+      if (suppresses) suppressedDepth += 1;
+      if (excludes) excludedDepth += 1;
+    }
+    cursor = tag.end;
+  }
+
+  return parts;
+}
+
+function createNotFoundEnglishParitySnapshot(rootDir, file, html, applyEnglishMappings) {
+  const tags = collectOpeningHtmlTags(html);
+  const locale = applyEnglishMappings ? 'en' : null;
+  const referenceInventory = (tagName, attributeName, suffix = attributeName) => tags
+    .filter((tag) => tag.name === tagName && (
+      Object.hasOwn(tag.attributes, attributeName) ||
+      (locale && Object.hasOwn(tag.attributes, `data-not-found-${locale}-${suffix}`))
+    ))
+    .map((tag) => normalizeNotFoundParityReference(
+      rootDir,
+      file,
+      localizedNotFoundAttribute(tag.attributes, locale, suffix, attributeName)
+    ));
+
+  return {
+    title: extractLocalizedNotFoundElementText(html, 'title', locale),
+    metadata: tags
+      .filter((tag) => tag.name === 'meta')
+      .map((tag) => ({
+        key: Object.hasOwn(tag.attributes, 'charset')
+          ? 'charset'
+          : tag.attributes.name
+            ? `name:${tag.attributes.name}`
+            : `property:${tag.attributes.property || ''}`,
+        charset: tag.attributes.charset || '',
+        content: localizedNotFoundAttribute(tag.attributes, locale, 'content', 'content') || ''
+      })),
+    links: tags
+      .filter((tag) => tag.name === 'link')
+      .map((tag) => ({
+        rel: tag.attributes.rel || '',
+        type: tag.attributes.type || '',
+        href: normalizeNotFoundParityReference(
+          rootDir,
+          file,
+          localizedNotFoundAttribute(tag.attributes, locale, 'href', 'href')
+        )
+      })),
+    scripts: referenceInventory('script', 'src'),
+    anchors: referenceInventory('a', 'href'),
+    images: referenceInventory('img', 'src'),
+    ariaLabels: tags
+      .filter((tag) => (
+        Object.hasOwn(tag.attributes, 'aria-label') ||
+        Object.hasOwn(tag.attributes, `data-not-found-${locale}-aria-label`)
+      ))
+      .map((tag) => ({
+        tag: tag.name,
+        value: localizedNotFoundAttribute(tag.attributes, locale, 'aria-label', 'aria-label')
+      })),
+    themeLabels: tags
+      .filter((tag) => (
+        Object.hasOwn(tag.attributes, 'data-label-dark') ||
+        Object.hasOwn(tag.attributes, `data-not-found-${locale}-label-dark`)
+      ))
+      .map((tag) => ({
+        dark: localizedNotFoundAttribute(tag.attributes, locale, 'label-dark', 'data-label-dark'),
+        light: localizedNotFoundAttribute(tag.attributes, locale, 'label-light', 'data-label-light')
+      })),
+    bodyText: extractLocalizedNotFoundBodyText(html, locale)
+  };
+}
+
+function validateNotFoundLocalizationMarkup(rootDir, page, html, issues) {
+  const activeHtml = removeHtmlComments(html);
+  const openingTags = Array.from(activeHtml.matchAll(/<[a-z][^>]*>/gi), (match) => ({
+    raw: match[0],
+    attributes: parseAttributes(match[0])
+  }));
+  const bodyTags = extractTags(activeHtml, 'body');
+  const hasPageMarker = bodyTags.length === 1 &&
+    Object.hasOwn(bodyTags[0].attributes, 'data-not-found-page');
+  const localizable = bodyTags.length === 1 &&
+    Object.hasOwn(bodyTags[0].attributes, 'data-not-found-localizable');
+  const hasForbiddenPhysicalLocalization = page.file === 'en/404.html' && openingTags.some((tag) => (
+    Object.keys(tag.attributes).some((name) => (
+      /^data-not-found-(?:zh|en)-(?:text|href|content|aria-label|label-dark|label-light)$/.test(name)
+    ))
+  ));
+  const countdownCount = openingTags.filter((tag) => (
+    Object.hasOwn(tag.attributes, 'data-countdown')
+  )).length;
+
+  if (
+    !hasPageMarker ||
+    countdownCount !== 1 ||
+    hasExecutableInlineScript(activeHtml) ||
+    (page.file === '404.html' && !localizable) ||
+    (page.file === 'en/404.html' && (localizable || hasForbiddenPhysicalLocalization))
+  ) {
+    addIssue(issues, page.file, NOT_FOUND_LOCALIZATION_ISSUE);
+    return;
+  }
+
+  if (page.file !== '404.html') return;
+
+  const referenceAttributes = [
+    ['a', 'href'],
+    ['link', 'href'],
+    ['script', 'src'],
+    ['img', 'src'],
+    ['iframe', 'src'],
+    ['source', 'src'],
+    ['video', 'poster']
+  ];
+  const hasRelativeActiveReference = referenceAttributes.some(([tagName, attributeName]) => (
+    extractTags(activeHtml, tagName).some((tag) => {
+      const reference = String(tag.attributes[attributeName] || '').trim();
+      return reference && !reference.startsWith('#') && !reference.startsWith('/') &&
+        !isExternalReference(reference);
+    })
+  ));
+
+  const localizedSuffixes = [
+    'text',
+    'href',
+    'content',
+    'aria-label',
+    'label-dark',
+    'label-light'
+  ];
+  const pairCounts = new Map(localizedSuffixes.map((suffix) => [suffix, 0]));
+  let hasUnpairedLocalization = false;
+  const localizedHrefValues = { zh: new Set(), en: new Set() };
+
+  for (const tag of openingTags) {
+    for (const suffix of localizedSuffixes) {
+      const zhName = `data-not-found-zh-${suffix}`;
+      const enName = `data-not-found-en-${suffix}`;
+      const hasZh = Object.hasOwn(tag.attributes, zhName);
+      const hasEn = Object.hasOwn(tag.attributes, enName);
+      if (hasZh !== hasEn) hasUnpairedLocalization = true;
+      if (!hasZh || !hasEn) continue;
+      pairCounts.set(suffix, pairCounts.get(suffix) + 1);
+      if (suffix === 'href') {
+        localizedHrefValues.zh.add(tag.attributes[zhName]);
+        localizedHrefValues.en.add(tag.attributes[enName]);
+      }
+    }
+  }
+
+  const requiredZhHrefs = new Set([
+    ...PAGE_PAIRS.map((pair) => pair.zhFile === 'index.html' ? '/index.html' : pair.zhRoute),
+    '/manifest.webmanifest'
+  ]);
+  const requiredEnHrefs = new Set([
+    ...PAGE_PAIRS.map((pair) => pair.enFile === 'en/index.html' ? '/en/index.html' : pair.enRoute),
+    '/manifest.en.webmanifest'
+  ]);
+  const hasRequiredLocalizedHrefs = (
+    [...requiredZhHrefs].every((reference) => localizedHrefValues.zh.has(reference)) &&
+    [...requiredEnHrefs].every((reference) => localizedHrefValues.en.has(reference))
+  );
+  const localizedHrefsAreValid = [...localizedHrefValues.zh, ...localizedHrefValues.en]
+    .every((reference) => {
+      if (!reference.startsWith('/')) return false;
+      const result = resolveLocalReference(rootDir, page.file, reference);
+      return result.kind === 'local' && result.exists && result.exactCase;
+    });
+  const hasEveryMappingKind = localizedSuffixes.every((suffix) => pairCounts.get(suffix) > 0);
+  const physicalEnglishPath = path.join(rootDir, 'en', '404.html');
+  const hasPhysicalEnglishFile = fs.existsSync(physicalEnglishPath) &&
+    fs.statSync(physicalEnglishPath).isFile();
+  const matchesPhysicalEnglishPage = hasPhysicalEnglishFile && (() => {
+    const physicalEnglishHtml = fs.readFileSync(physicalEnglishPath, 'utf8');
+    return JSON.stringify(createNotFoundEnglishParitySnapshot(rootDir, page.file, html, true)) ===
+      JSON.stringify(createNotFoundEnglishParitySnapshot(
+        rootDir,
+        'en/404.html',
+        physicalEnglishHtml,
+        false
+      ));
+  })();
+
+  if (
+    hasRelativeActiveReference ||
+    hasUnpairedLocalization ||
+    !hasEveryMappingKind ||
+    !hasRequiredLocalizedHrefs ||
+    !localizedHrefsAreValid ||
+    !matchesPhysicalEnglishPage
+  ) {
+    addIssue(issues, page.file, NOT_FOUND_LOCALIZATION_ISSUE);
+  }
+}
+
 function validateCssReferences(rootDir, issues, anchorCache) {
   const files = [
     'assets/css/site.css',
@@ -2885,6 +3228,296 @@ function hasResumeOverflowProtectionCss(rootDir) {
   ));
 }
 
+const NOT_FOUND_VM_TIMEOUT_MS = 100;
+
+function preservesNotFoundPageBehavior(handler) {
+  if (!handler || handler.parameters.trim()) return false;
+
+  const subjectSource = `'use strict';
+globalThis.__notFoundSubject = function () {
+${handler.source}
+};`;
+  const harnessSource = `
+'use strict';
+(function () {
+  if (typeof require !== 'undefined' || typeof process !== 'undefined' ||
+      typeof fs !== 'undefined') return false;
+
+  var initNotFoundPage = globalThis.__notFoundSubject;
+  delete globalThis.__notFoundSubject;
+  var hasOwn = Function.call.bind(Object.prototype.hasOwnProperty);
+
+  function createElement(initialAttributes, initialText, initialClasses) {
+    var attributes = Object.create(null);
+    Object.keys(initialAttributes || {}).forEach(function (name) {
+      attributes[name] = String(initialAttributes[name]);
+    });
+    var classes = Object.create(null);
+    (initialClasses || []).forEach(function (name) { classes[name] = true; });
+    return {
+      textContent: initialText || '',
+      hasAttribute: function (name) { return hasOwn(attributes, String(name)); },
+      getAttribute: function (name) {
+        var key = String(name);
+        return hasOwn(attributes, key) ? attributes[key] : null;
+      },
+      setAttribute: function (name, value) { attributes[String(name)] = String(value); },
+      classList: {
+        toggle: function (name, force) {
+          var key = String(name);
+          var present = arguments.length > 1 ? Boolean(force) : !hasOwn(classes, key);
+          if (present) {
+            classes[key] = true;
+          } else {
+            delete classes[key];
+          }
+          return present;
+        },
+        contains: function (name) { return hasOwn(classes, String(name)); }
+      }
+    };
+  }
+
+  function runOrdinaryPageScenario() {
+    var root = { lang: 'en' };
+    var unexpectedQueries = 0;
+    var intervalCalls = 0;
+    var originalLocation = {
+      pathname: '/ordinary-page.html',
+      search: '?keep=1',
+      hash: '#section',
+      href: 'https://example.test/ordinary-page.html?keep=1#section'
+    };
+    var locationState = {
+      pathname: originalLocation.pathname,
+      search: originalLocation.search,
+      hash: originalLocation.hash,
+      href: originalLocation.href
+    };
+    var locationWrites = [];
+    var location = {};
+    ['pathname', 'search', 'hash', 'href'].forEach(function (property) {
+      Object.defineProperty(location, property, {
+        configurable: true,
+        enumerable: true,
+        get: function () { return locationState[property]; },
+        set: function (value) {
+          var stringValue = String(value);
+          locationWrites.push({ property: property, value: stringValue });
+          locationState[property] = stringValue;
+        }
+      });
+    });
+    globalThis.document = {
+      documentElement: root,
+      querySelector: function (selector) {
+        if (selector === '[data-not-found-page]') return null;
+        unexpectedQueries += 1;
+        return null;
+      },
+      querySelectorAll: function () {
+        unexpectedQueries += 1;
+        return [];
+      }
+    };
+    var windowObject = {
+      setInterval: function () {
+        intervalCalls += 1;
+        return intervalCalls;
+      },
+      clearInterval: function () {}
+    };
+    Object.defineProperty(windowObject, 'location', {
+      configurable: true,
+      enumerable: true,
+      get: function () { return location; },
+      set: function (value) {
+        locationWrites.push({ property: 'location', value: String(value) });
+      }
+    });
+    globalThis.window = windowObject;
+
+    initNotFoundPage();
+    return root.lang === 'en' && unexpectedQueries === 0 && intervalCalls === 0 &&
+      locationWrites.length === 0 &&
+      ['pathname', 'search', 'hash', 'href'].every(function (property) {
+        return location[property] === originalLocation[property];
+      });
+  }
+
+  function runScenario(pathname, expectedEnglish, localizable, initialLanguage) {
+    var pageAttributes = { 'data-not-found-page': '' };
+    if (localizable) pageAttributes['data-not-found-localizable'] = '';
+    var page = createElement(pageAttributes);
+    var localized = {
+      text: createElement(
+        { 'data-not-found-zh-text': '中文', 'data-not-found-en-text': 'English' },
+        initialLanguage === 'en' ? 'English' : '中文'
+      ),
+      href: createElement({
+        'data-not-found-zh-href': '/zh-target',
+        'data-not-found-en-href': '/en-target'
+      }),
+      content: createElement({
+        'data-not-found-zh-content': 'zh-content',
+        'data-not-found-en-content': 'en-content'
+      }),
+      aria: createElement({
+        'data-not-found-zh-aria-label': '中文标签',
+        'data-not-found-en-aria-label': 'English label'
+      }),
+      dark: createElement({
+        'data-not-found-zh-label-dark': '深色',
+        'data-not-found-en-label-dark': 'Dark'
+      }),
+      light: createElement({
+        'data-not-found-zh-label-light': '浅色',
+        'data-not-found-en-label-light': 'Light'
+      })
+    };
+    var languageLinks = [
+      createElement({ lang: 'zh-CN' }, '', ['active']),
+      createElement({ lang: 'en' })
+    ];
+    var countdown = createElement({ 'data-countdown': '' }, '99');
+    var root = { lang: initialLanguage };
+    var callbacks = [];
+    var delays = [];
+    var cleared = [];
+    var originalHref = 'https://example.test' + pathname + '?keep=1#section';
+    var locationState = {
+      pathname: pathname,
+      search: '?keep=1',
+      hash: '#section',
+      href: originalHref
+    };
+    var locationWrites = [];
+    var location = {};
+    ['pathname', 'search', 'hash', 'href'].forEach(function (property) {
+      Object.defineProperty(location, property, {
+        configurable: true,
+        enumerable: true,
+        get: function () { return locationState[property]; },
+        set: function (value) {
+          var stringValue = String(value);
+          locationWrites.push({ property: property, value: stringValue });
+          locationState[property] = stringValue;
+        }
+      });
+    });
+    var selectorMap = Object.create(null);
+    selectorMap['[data-not-found-zh-text][data-not-found-en-text]'] = [localized.text];
+    selectorMap['[data-not-found-zh-href][data-not-found-en-href]'] = [localized.href];
+    selectorMap['[data-not-found-zh-content][data-not-found-en-content]'] = [localized.content];
+    selectorMap['[data-not-found-zh-aria-label][data-not-found-en-aria-label]'] = [localized.aria];
+    selectorMap['[data-not-found-zh-label-dark][data-not-found-en-label-dark]'] = [localized.dark];
+    selectorMap['[data-not-found-zh-label-light][data-not-found-en-label-light]'] = [localized.light];
+    selectorMap['.lang-switch a[lang]'] = languageLinks;
+
+    globalThis.document = {
+      documentElement: root,
+      querySelector: function (selector) {
+        if (selector === '[data-not-found-page]') return page;
+        if (selector === '[data-countdown]') return countdown;
+        return null;
+      },
+      querySelectorAll: function (selector) { return selectorMap[selector] || []; }
+    };
+    var windowObject = {
+      setInterval: function (callback, delay) {
+        callbacks.push(callback);
+        delays.push(delay);
+        return callbacks.length;
+      },
+      clearInterval: function (timer) { cleared.push(timer); }
+    };
+    Object.defineProperty(windowObject, 'location', {
+      configurable: true,
+      enumerable: true,
+      get: function () { return location; },
+      set: function (value) {
+        locationWrites.push({ property: 'location', value: String(value) });
+      }
+    });
+    globalThis.window = windowObject;
+
+    initNotFoundPage();
+
+    var expectedLanguage = expectedEnglish ? 'en' : 'zh-CN';
+    var expectedHome = expectedEnglish ? '/en/' : '/';
+    var expectedValues = expectedEnglish
+      ? ['English', '/en-target', 'en-content', 'English label', 'Dark', 'Light']
+      : ['中文', '/zh-target', 'zh-content', '中文标签', '深色', '浅色'];
+    var actualValues = [
+      localized.text.textContent,
+      localized.href.getAttribute('href'),
+      localized.content.getAttribute('content'),
+      localized.aria.getAttribute('aria-label'),
+      localized.dark.getAttribute('data-label-dark'),
+      localized.light.getAttribute('data-label-light')
+    ];
+    var localizedValuesMatch = localizable
+      ? actualValues.every(function (value, index) { return value === expectedValues[index]; })
+      : true;
+    if (
+      root.lang !== expectedLanguage ||
+      page.getAttribute('data-not-found-locale') !== expectedLanguage ||
+      page.getAttribute('data-not-found-home') !== expectedHome ||
+      !localizedValuesMatch ||
+      languageLinks[0].classList.contains('active') === expectedEnglish ||
+      languageLinks[1].classList.contains('active') !== expectedEnglish ||
+      callbacks.length !== 1 || delays[0] !== 1000 ||
+      String(countdown.textContent) !== '5' || location.href !== originalHref ||
+      location.pathname !== pathname || location.search !== '?keep=1' ||
+      location.hash !== '#section' || locationWrites.length !== 0
+    ) {
+      return false;
+    }
+
+    for (var tick = 0; tick < 4; tick += 1) callbacks[0]();
+    if (
+      String(countdown.textContent) !== '1' || location.href !== originalHref ||
+      location.pathname !== pathname || location.search !== '?keep=1' ||
+      location.hash !== '#section' || locationWrites.length !== 0 || cleared.length
+    ) {
+      return false;
+    }
+    callbacks[0]();
+    return String(countdown.textContent) === '0' && location.href === expectedHome &&
+      locationWrites.length === 1 && locationWrites[0].property === 'href' &&
+      locationWrites[0].value === expectedHome &&
+      cleared.length === 1 && cleared[0] === 1;
+  }
+
+  return [
+    runOrdinaryPageScenario(),
+    runScenario('/missing', false, true, 'zh-CN'),
+    runScenario('/deep/missing', false, true, 'zh-CN'),
+    runScenario('/enough/missing', false, true, 'zh-CN'),
+    runScenario('/en-US/missing', false, true, 'zh-CN'),
+    runScenario('/foo/en/missing', false, true, 'zh-CN'),
+    runScenario('/en', true, true, 'zh-CN'),
+    runScenario('/en/missing', true, true, 'zh-CN'),
+    runScenario('/en/deep/missing', true, true, 'zh-CN'),
+    runScenario('/en/404.html', true, false, 'en')
+  ].every(Boolean);
+})()`;
+
+  try {
+    const context = vm.createContext(Object.create(null), {
+      codeGeneration: { strings: false, wasm: false }
+    });
+    new vm.Script(subjectSource, {
+      filename: 'assets/js/site.js#initNotFoundPage'
+    }).runInContext(context, { timeout: NOT_FOUND_VM_TIMEOUT_MS });
+    return new vm.Script(harnessSource).runInContext(context, {
+      timeout: NOT_FOUND_VM_TIMEOUT_MS
+    }) === true;
+  } catch (_error) {
+    return false;
+  }
+}
+
 const MODAL_INERT_VM_TIMEOUT_MS = 100;
 
 function preservesModalInertBehavior(inertHandler) {
@@ -3099,6 +3732,12 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     'openLightbox',
     true
   );
+  const notFoundHandler = extractNamedFunctionBody(
+    source,
+    codeMask,
+    'initNotFoundPage',
+    true
+  );
   const hasMobileMenuQuery = hasExecutableMatch(
     source,
     codeMask,
@@ -3157,6 +3796,36 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     !hasVisibleDesktopFocusFallback
   ) {
     addIssue(issues, file, MOBILE_MENU_CLEANUP_ISSUE);
+  }
+
+  const executableSource = maskedSource(source, codeMask);
+  const notFoundCalls = Array.from(
+    executableSource.matchAll(/\binitNotFoundPage\s*\(\s*\)\s*;/g)
+  );
+  const themeCalls = Array.from(executableSource.matchAll(/\binitTheme\s*\(\s*\)\s*;/g));
+  const hasOrderedNotFoundInitialization = notFoundCalls.length === 1 &&
+    themeCalls.length === 1 &&
+    notFoundCalls[0].index < themeCalls[0].index &&
+    executableBraceDepthAt(source, codeMask, notFoundCalls[0].index) ===
+      executableBraceDepthAt(source, codeMask, themeCalls[0].index);
+  const notFoundHandlerTail = notFoundHandler && notFoundHandler.declarationEnd < source.length
+    ? {
+        codeMask: codeMask.slice(notFoundHandler.declarationEnd),
+        source: source.slice(notFoundHandler.declarationEnd)
+      }
+    : null;
+  const reassignsNotFoundHandler = notFoundHandlerTail !== null && hasExecutableBindingAssignment(
+    notFoundHandlerTail.source,
+    notFoundHandlerTail.codeMask,
+    'initNotFoundPage'
+  );
+
+  if (
+    !preservesNotFoundPageBehavior(notFoundHandler) ||
+    !hasOrderedNotFoundInitialization ||
+    reassignsNotFoundHandler
+  ) {
+    addIssue(issues, file, NOT_FOUND_LOCALIZATION_ISSUE);
   }
 
   const closesLightboxBackground = closeLightboxHandler !== null &&
@@ -3234,6 +3903,7 @@ function validateRepository(rootDir) {
     validateLocalReferences(absoluteRoot, page.file, html, issues, anchorCache);
     validateNotFoundStructuredData(page, html, issues);
     validateNotFoundMetadata(page, html, issues);
+    validateNotFoundLocalizationMarkup(absoluteRoot, page, html, issues);
   }
 
   validateCssReferences(absoluteRoot, issues, anchorCache);

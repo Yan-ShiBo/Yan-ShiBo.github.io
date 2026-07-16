@@ -26,7 +26,7 @@
   <link href="../assets/css/site.css" rel="stylesheet"/>
   <script defer="" src="../assets/js/site.js"></script>
 </head>
-<body>
+<body data-not-found-page="">
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
 <div class="header-shell">
@@ -99,20 +99,5 @@
 <button aria-hidden="true" aria-label="Back to top" class="icon-btn back-to-top" data-back-to-top="" tabindex="-1" type="button">
 <i aria-hidden="true" class="fa fa-arrow-up"></i>
 </button>
-<script>
-(function(){
-  var el = document.querySelector('[data-countdown]');
-  if (!el) return;
-  var n = 5;
-  var t = setInterval(function(){
-    n--;
-    el.textContent = n;
-    if (n <= 0) {
-      clearInterval(t);
-      window.location.href = '/en/';
-    }
-  }, 1000);
-})();
-</script>
 </body>
 </html>

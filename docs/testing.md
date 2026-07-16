@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 174 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 包含 198 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -34,13 +34,13 @@ node --test --test-name-pattern="structured data" scripts/validate-site.test.js
 当前成功输出应包含：
 
 ```text
-tests 174
-pass 174
+tests 198
+pass 198
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，不要把这行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数，显示 `174 tests`、`79 pass`、`95 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，不要把这行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数，显示 `198 tests`、`79 pass`、`119 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -116,9 +116,13 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 存在 `noindex`；
 - 不存在 canonical 或 hreflang；
 - 不存在活动 JSON-LD；
-- 不进入 sitemap。
+- 不进入 sitemap；
+- 两页各有且仅有一个倒计时节点，均不含可执行内联脚本；
+- 根 `404.html` 声明单一 DOM 的成对中英文文案/属性映射；英文标题、meta、资源、导航链接、ARIA、主题标签与正文文本的语义快照精确等于物理 `en/404.html` 的实际值，物理英文页不得用不会执行的本地化映射掩盖实际内容；
+- 根页所有活动本地 `href` / `src` 与双语链接映射使用站点根绝对路径且目标存在；
+- `site.js` 在主题初始化前执行唯一的 404 初始化器；普通页面无 404 节点时立即无副作用退出；隔离运行合同覆盖 `/en`、`/en/...`、中文默认及 `/enough/...`、`/en-US/...`、`/foo/en/...` 反例，逐次审计 `location.pathname`、`search`、`hash`、`href` 与 `window.location` 写入，确认前 4 次计时不改变完整 URL，第 5 次仅按语言写入 `/` 或 `/en/`。
 
-验证器只使用 Node.js 内置模块，保持仓库只读，不访问网络，也不执行 JSON-LD。畸形 JSON 或超深嵌套输入会形成可定位问题，不使 `validateRepository()` 抛出；其他页面与后续独立检查继续运行。它仍不验证 Open Graph/Twitter 文案质量、404 的倒计时和最终跳转，也不证明搜索引擎的实际收录、展示或排名。
+验证器只使用 Node.js 内置模块，保持仓库只读，不访问网络，也不执行 JSON-LD。畸形 JSON 或超深嵌套输入会形成可定位问题，不使 `validateRepository()` 抛出；其他页面与后续独立检查继续运行。404 初始化器在无网络、无真实计时器的隔离能力面中运行，这能验证普通页面提前退出、语言边界、DOM 映射、计时、地址对象写入与跳转合同，但不能证明 GitHub Pages 的真实响应码、浏览器资源解析、渲染或真实地址栏行为；这些仍由浏览器矩阵核对。验证器也不评价全站 Open Graph/Twitter 文案质量，不证明搜索引擎的实际收录、展示或排名。
 
 ### 3.6 Sitemap 与 robots
 
@@ -172,6 +176,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - `Person` / `WebSite` 跨页身份与事实漂移，以及图节点和语言集合按集合而非数组顺序比较；
 - 项目和研究列表、顺序、可见文本、仓库、贡献者与禁止声明；
 - 统计页的数据类型、计数、本地访问和访客字段，以及两个 404 的活动 JSON-LD 排除；
+- 根 404 深层路径的根绝对资源、成对双语映射及其与物理英文 404 的标题/meta/资源/导航/ARIA/主题/正文精确等价，两页唯一倒计时节点和可执行内联脚本排除；共享初始化器在普通页面提前退出、调用顺序、精确 `/en/` 边界、中文反例、完整 URL 写入审计、5 秒保留与语言对应跳转；
 - 正文证据排除 `template`、启用脚本语义下的 `noscript`、`hidden`、`inert`、`aria-hidden="true"`，并正确处理属性引号内的 `>`；
 - sitemap alternate、XML 外壳和额外根元素；
 - 分语言 manifest 基线、唯一 `<head>` 链接、正文/HTML 注释误满足、入口/范围/语言字段，以及 `null`、畸形 icon、无效 `sizes`、ICO 尺寸声明不一致、截断目录与图像数据重叠；
@@ -311,13 +316,16 @@ http://127.0.0.1:8000/en/
 
 ### 7.7 404
 
-中英文 404 均检查：
+使用[运维指南提供的 Pages-like 本地 handler](operations.md#2-本地预览)，把根 `404.html` 作为缺失文档正文并保留 HTTP 404；普通 `python -m http.server` 只返回自身错误页，不能证明 Pages fallback。至少检查 `/missing`、`/deep/missing?x=1#keep`、`/en/missing`、`/en/deep/missing?x=1#keep`，并加入 `/enough/missing`、`/en-US/missing`、`/foo/en/missing` 三个中文反例。中英文状态均检查：
 
-- 页面可读且没有普通导航当前项；
-- 倒计时可见；
-- 中文最终进入 `/`，英文最终进入 `/en/`；
+- 缺失主文档返回 HTTP 404、没有 `Location`，倒计时结束前地址栏保留完整原 URL；
+- 页面可读且没有普通导航当前项，根页任意深度下 CSS、脚本、图标、manifest 与站内链接均从正确的根绝对路径解析；
+- `/en/...` 的标题、描述、head 元数据、桌面/抽屉导航、正文、操作、页脚、主题标签与 ARIA 名称等于物理 `en/404.html` 的现有英文值；边界反例保持中文；
+- 倒计时可见且只有一个；真实等待 5 秒后中文进入 `/`，英文进入 `/en/`；
+- 在 375、833、834、1440px 检查导航/抽屉边界、链接语言和页面级横向溢出；
 - `<head>` 保持 `noindex` 且没有 canonical/hreflang/活动 JSON-LD；
-- 不出现在 sitemap。
+- 不出现在 sitemap；
+- 404 页面在跳转前不请求外网或 PDF，除主文档预期 404 外没有资源 4xx、脚本异常或新增控制台错误。到达首页后由统计页发起的既有第三方请求另行计账，不能误归因于 404。
 
 ## 8. 变更类型与最低验收
 
@@ -357,7 +365,7 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：174 passed / 0 failed
+自动测试：198 passed / 0 failed
 结构化数据子集：79 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题

@@ -34,6 +34,37 @@ http://127.0.0.1:8000/en/
 
 预览结束后在原终端按 Ctrl+C。若端口已占用，先确认占用进程；不要随意结束不属于本项目的服务。
 
+`python -m http.server` 不会模拟 GitHub Pages 的自定义 404：缺失路径会显示 Python 自带错误页。验证根 `404.html` 对深层中文与 `/en/...` 缺失路径的真实 fallback、HTTP 404、URL 保留和资源解析时，从仓库根目录运行以下只读 handler；不能把普通预览服务器结果当作 Pages 行为：
+
+```powershell
+$serverCode = @'
+from functools import partial
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+from pathlib import Path
+
+ROOT = Path.cwd().resolve()
+
+class PagesHandler(SimpleHTTPRequestHandler):
+    def send_error(self, code, message=None, explain=None):
+        if code != 404:
+            return super().send_error(code, message, explain)
+        body = (ROOT / "404.html").read_bytes()
+        self.send_response(404)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
+
+handler = partial(PagesHandler, directory=str(ROOT))
+ThreadingHTTPServer(("127.0.0.1", 8000), handler).serve_forever()
+'@
+$serverCode | python -
+```
+
+该 handler 对存在文件保持普通 200，对缺失 GET/HEAD 返回根 404 正文和 HTTP 404，不发送 `Location`。结束方式与普通预览相同；浏览器断言按[测试规范的 404 矩阵](testing.md#77-404)执行。
+
 ## 3. Sitemap
 
 ### 3.1 何时生成
@@ -93,7 +124,7 @@ node scripts/generate-sitemap.js
 - canonical、hreflang、`og:url` 指向生产域名；
 - 涉及结构化数据时按[测试规范的 12 路由矩阵](testing.md#72-页面范围与结构化数据矩阵)检查：每页 `<head>` 一个活动图、正文零个，JSON 可解析，页面 type/ID/lang 正确；
 - 结构化数据变更没有改变页面可见内容、布局或交互；
-- 两个 404 保持 `noindex`、语言对应跳转且不进 sitemap；
+- 缺失中文与 `/en/...` 深层路径均返回真实 HTTP 404 且倒计时前保留原 URL；根 404 的语言、导航、manifest 和 5 秒跳转目标对应，且不进 sitemap；
 - `robots.txt` 与 `sitemap.xml` 可访问；
 - 浏览器控制台没有由本次变更引入的错误；
 - 强制刷新后仍显示新版本。
@@ -142,7 +173,9 @@ Pages 部署成功但浏览器仍显示旧内容时，按以下顺序判断：
 - 文件是否位于发布分支；
 - 相对路径是否按当前目录计算；
 - Pages 是否完成最新部署；
-- 该路径是预期删除还是意外缺失。
+- 该路径是预期删除还是意外缺失；
+- 缺失 URL 下 CSS、脚本和站内链接是否仍解析到站点根，而不是当前深层目录；
+- pathname 是否只有在精确 `/en` 或 `/en/...` 时切换英文，倒计时前是否仍保留原 URL 和 HTTP 404。
 
 ### 9.2 样式或脚本未加载
 
