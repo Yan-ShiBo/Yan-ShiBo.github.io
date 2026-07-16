@@ -17,6 +17,7 @@ const COPIED_FIXTURE_EXTENSIONS = new Set([
   '.html',
   '.ico',
   '.js',
+  '.png',
   '.txt',
   '.webmanifest',
   '.xml'
@@ -40,6 +41,39 @@ const STATS_UNAVAILABLE_CONTRACT_ISSUE =
   'assets/js/stats.js: invalid public counters must render -- and end in warn state';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'assets/js/stats.js: local visit dates must remain formatted text';
+const MANIFEST_INSTALL_ICONS = [
+  {
+    src: '/assets/icons/app-icon-192.png',
+    sizes: '192x192',
+    type: 'image/png',
+    purpose: 'any'
+  },
+  {
+    src: '/assets/icons/app-icon-512.png',
+    sizes: '512x512',
+    type: 'image/png',
+    purpose: 'any'
+  }
+];
+const MANIFEST_FILES = ['manifest.webmanifest', 'manifest.en.webmanifest'];
+const MANIFEST_ICON_INVENTORY_ISSUE =
+  'icons must exactly match the install icon inventory by src';
+const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+const FAVICON_SIZES = ['16x16', '32x32', '48x48', '256x256'];
+
+function createStructurallyValidPng(width, height) {
+  const data = Buffer.alloc(45);
+  PNG_SIGNATURE.copy(data, 0);
+  data.writeUInt32BE(13, 8);
+  data.write('IHDR', 12, 4, 'ascii');
+  data.writeUInt32BE(width, 16);
+  data.writeUInt32BE(height, 20);
+  data[24] = 8;
+  data[25] = 6;
+  data.writeUInt32BE(0, 33);
+  data.write('IEND', 37, 4, 'ascii');
+  return data;
+}
 
 function createRepositoryFixture(t) {
   const sourceRoot = path.resolve(__dirname, '..');
@@ -78,6 +112,90 @@ function replaceMatching(rootDir, relativePath, pattern, replacement) {
   const original = fs.readFileSync(absolutePath, 'utf8');
   assert.match(original, pattern, `${relativePath} must contain the fixture pattern`);
   fs.writeFileSync(absolutePath, original.replace(pattern, replacement));
+}
+
+function readManifest(rootDir, file) {
+  return JSON.parse(fs.readFileSync(path.join(rootDir, file), 'utf8'));
+}
+
+function writeManifest(rootDir, file, manifest) {
+  fs.writeFileSync(
+    path.join(rootDir, file),
+    `${JSON.stringify(manifest, null, 2)}\n`
+  );
+}
+
+function setManifestIcons(rootDir, file, icons) {
+  const manifest = readManifest(rootDir, file);
+  manifest.icons = icons;
+  writeManifest(rootDir, file, manifest);
+}
+
+function sortManifestIconsBySrc(icons) {
+  return [...icons].sort((left, right) => left.src.localeCompare(right.src));
+}
+
+function cloneInstallIcons() {
+  return MANIFEST_INSTALL_ICONS.map((icon) => ({ ...icon }));
+}
+
+function assertManifestInventoryMutationRejected(t, mutateIcons) {
+  for (const file of MANIFEST_FILES) {
+    const rootDir = createRepositoryFixture(t);
+    const icons = cloneInstallIcons();
+    mutateIcons(icons);
+    setManifestIcons(rootDir, file, icons);
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(
+      `${file}: ${MANIFEST_ICON_INVENTORY_ISSUE}`
+    ));
+  }
+}
+
+function mutateBinaryFile(rootDir, relativePath, mutate) {
+  const absolutePath = path.join(rootDir, relativePath);
+  const data = fs.readFileSync(absolutePath);
+  mutate(data);
+  fs.writeFileSync(absolutePath, data);
+}
+
+function readIcoEntry(data, index) {
+  const entryOffset = 6 + index * 16;
+  return {
+    entryOffset,
+    width: data[entryOffset] || 256,
+    height: data[entryOffset + 1] || 256,
+    imageBytes: data.readUInt32LE(entryOffset + 8),
+    imageOffset: data.readUInt32LE(entryOffset + 12)
+  };
+}
+
+function appendIcoPngEntry(data, width, height, png) {
+  const oldCount = data.readUInt16LE(4);
+  const oldDirectoryEnd = 6 + oldCount * 16;
+  const newDirectoryEnd = oldDirectoryEnd + 16;
+  const result = Buffer.alloc(data.length + 16 + png.length);
+
+  data.copy(result, 0, 0, oldDirectoryEnd);
+  data.copy(result, newDirectoryEnd, oldDirectoryEnd);
+  result.writeUInt16LE(oldCount + 1, 4);
+  for (let index = 0; index < oldCount; index += 1) {
+    const entry = readIcoEntry(data, index);
+    result.writeUInt32LE(entry.imageOffset + 16, entry.entryOffset + 12);
+  }
+
+  const entryOffset = 6 + oldCount * 16;
+  const imageOffset = data.length + 16;
+  result[entryOffset] = width === 256 ? 0 : width;
+  result[entryOffset + 1] = height === 256 ? 0 : height;
+  result.writeUInt16LE(1, entryOffset + 4);
+  result.writeUInt16LE(32, entryOffset + 6);
+  result.writeUInt32LE(png.length, entryOffset + 8);
+  result.writeUInt32LE(imageOffset, entryOffset + 12);
+  png.copy(result, imageOffset);
+  return result;
 }
 
 function validateSiteScriptFixture(t, sourceLines) {
@@ -1571,6 +1689,90 @@ test('validateRepository accepts split language manifests', (t) => {
   assert.deepEqual(result.issues, []);
 });
 
+test('language manifests declare the exact install icon inventory', (t) => {
+  const rootDir = createRepositoryFixture(t);
+
+  for (const file of MANIFEST_FILES) {
+    const manifest = readManifest(rootDir, file);
+    assert.deepEqual(
+      sortManifestIconsBySrc(manifest.icons),
+      sortManifestIconsBySrc(MANIFEST_INSTALL_ICONS)
+    );
+  }
+});
+
+test('validateRepository accepts install manifest icons in reverse order', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const reversedIcons = cloneInstallIcons().reverse();
+  for (const file of MANIFEST_FILES) {
+    setManifestIcons(rootDir, file, reversedIcons);
+  }
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('validateRepository rejects a missing install PNG asset', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.unlinkSync(path.join(rootDir, 'assets/icons/app-icon-192.png'));
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/app-icon-192.png: expected file is missing'
+  ));
+});
+
+test('validateRepository rejects a missing install icon in both language manifests', (t) => {
+  assertManifestInventoryMutationRejected(t, (icons) => icons.shift());
+});
+
+test('validateRepository rejects a duplicate install icon in both language manifests', (t) => {
+  assertManifestInventoryMutationRejected(t, (icons) => {
+    icons[1] = { ...icons[0] };
+  });
+});
+
+test('validateRepository rejects an extra install icon in both language manifests', (t) => {
+  assertManifestInventoryMutationRejected(t, (icons) => icons.push({
+    src: '/assets/icons/app-icon-1024.png',
+    sizes: '1024x1024',
+    type: 'image/png',
+    purpose: 'any'
+  }));
+});
+
+test('validateRepository rejects install icon src drift in both language manifests', (t) => {
+  assertManifestInventoryMutationRejected(t, (icons) => {
+    icons[0].src = '/assets/icons/app-icon-191.png';
+  });
+});
+
+test('validateRepository rejects install icon type drift in both language manifests', (t) => {
+  assertManifestInventoryMutationRejected(t, (icons) => {
+    icons[0].type = 'image/x-icon';
+  });
+});
+
+test('validateRepository rejects install icon purpose drift in both language manifests', (t) => {
+  assertManifestInventoryMutationRejected(t, (icons) => {
+    icons[0].purpose = 'maskable';
+  });
+});
+
+test('validateRepository rejects install icon size drift in both language manifests', (t) => {
+  assertManifestInventoryMutationRejected(t, (icons) => {
+    icons[0].sizes = '191x191';
+  });
+});
+
+test('validateRepository rejects extra install icon fields in both language manifests', (t) => {
+  assertManifestInventoryMutationRejected(t, (icons) => {
+    icons[0].platform = 'web';
+  });
+});
+
 test('validateRepository requires exactly one language-specific manifest link', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(
@@ -1680,20 +1882,6 @@ test('validateRepository enforces language-specific manifest metadata', (t) => {
   ));
 });
 
-test('validateRepository checks icon metadata in every language manifest', (t) => {
-  const rootDir = createRepositoryFixture(t);
-  const manifestPath = path.join(rootDir, 'manifest.en.webmanifest');
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  manifest.icons[0].sizes = '32x32';
-  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-
-  const result = validateRepository(rootDir);
-
-  assert.ok(result.issues.includes(
-    'manifest.en.webmanifest: icons[0].sizes declares "32x32" but ICO contains "16x16 32x32 48x48 256x256"'
-  ));
-});
-
 test('validateRepository reports a null manifest instead of throwing', (t) => {
   const rootDir = createRepositoryFixture(t);
   fs.writeFileSync(path.join(rootDir, 'manifest.webmanifest'), 'null\n');
@@ -1722,21 +1910,211 @@ test('validateRepository reports malformed manifest icon entries', (t) => {
   ));
 });
 
-test('validateRepository rejects manifest sizes that differ from ICO layers', (t) => {
+test('validateRepository reports a non-string manifest icon src without throwing', (t) => {
   const rootDir = createRepositoryFixture(t);
-  const manifestPath = path.join(rootDir, 'manifest.webmanifest');
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  manifest.icons[0].sizes = '32x32';
-  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  const manifest = readManifest(rootDir, 'manifest.webmanifest');
+  manifest.icons[0].src = { toString: null };
+  writeManifest(rootDir, 'manifest.webmanifest', manifest);
+
+  let result;
+  assert.doesNotThrow(() => {
+    result = validateRepository(rootDir);
+  });
+  assert.ok(result.issues.includes(
+    `manifest.webmanifest: ${MANIFEST_ICON_INVENTORY_ISSUE}`
+  ));
+  assert.ok(result.issues.includes(
+    'manifest.webmanifest: icons[0] must be an object with a non-empty src'
+  ));
+});
+
+test('validateRepository rejects a corrupt install PNG signature', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/app-icon-192.png', (png) => {
+    assert.deepEqual(png.subarray(0, PNG_SIGNATURE.length), PNG_SIGNATURE);
+    png[0] = 0;
+  });
 
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(
-    'manifest.webmanifest: icons[0].sizes declares "32x32" but ICO contains "16x16 32x32 48x48 256x256"'
+    'assets/icons/app-icon-192.png: invalid PNG: invalid PNG signature'
   ));
 });
 
-test('validateRepository safely reports a truncated ICO directory', (t) => {
+test('validateRepository accepts bounded PNG structure without CRC or pixel decoding', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.writeFileSync(
+    path.join(rootDir, 'assets/icons/app-icon-192.png'),
+    createStructurallyValidPng(192, 192)
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
+});
+
+test('validateRepository checks the 512 install PNG signature too', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/app-icon-512.png', (png) => {
+    png[0] = 0;
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/app-icon-512.png: invalid PNG: invalid PNG signature'
+  ));
+});
+
+test('validateRepository safely reports an extremely short install PNG', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.writeFileSync(
+    path.join(rootDir, 'assets/icons/app-icon-192.png'),
+    PNG_SIGNATURE.subarray(0, 4)
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/app-icon-192.png: invalid PNG: truncated PNG signature'
+  ));
+});
+
+test('validateRepository requires IHDR to be the first install PNG chunk', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/app-icon-192.png', (png) => {
+    png.write('IDAT', 12, 4, 'ascii');
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/app-icon-192.png: invalid PNG: first PNG chunk must be IHDR'
+  ));
+});
+
+test('validateRepository requires a 13-byte install PNG IHDR', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/app-icon-192.png', (png) => {
+    png.writeUInt32BE(12, 8);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/app-icon-192.png: invalid PNG: IHDR chunk length must be 13'
+  ));
+});
+
+test('validateRepository rejects zero install PNG dimensions', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/app-icon-192.png', (png) => {
+    png.writeUInt32BE(0, 16);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/app-icon-192.png: invalid PNG: IHDR dimensions must be non-zero'
+  ));
+});
+
+test('validateRepository rejects an install PNG chunk beyond the file boundary', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/app-icon-192.png', (png) => {
+    const secondChunkOffset = 8 + 12 + png.readUInt32BE(8);
+    png.writeUInt32BE(0xffffffff, secondChunkOffset);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/app-icon-192.png: invalid PNG: PNG chunk at byte 33 exceeds file boundary'
+  ));
+});
+
+test('validateRepository matches install PNG dimensions to the declared size', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/app-icon-512.png', (png) => {
+    png.writeUInt32BE(511, 16);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/app-icon-512.png: expected 512x512 but PNG IHDR declares 511x512'
+  ));
+});
+
+test('validateRepository requires the exact favicon size inventory independently of manifests', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    ico.writeUInt16LE(3, 4);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    `assets/icons/site.ico: expected favicon sizes "${FAVICON_SIZES.join(' ')}" without duplicates; ` +
+      'found "16x16 32x32 48x48"'
+  ));
+});
+
+test('validateRepository rejects duplicate favicon sizes instead of collapsing them', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    const entry = readIcoEntry(ico, 1);
+    ico[entry.entryOffset] = 16;
+    ico[entry.entryOffset + 1] = 16;
+    ico.writeUInt32BE(16, entry.imageOffset + 16);
+    ico.writeUInt32BE(16, entry.imageOffset + 20);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    `assets/icons/site.ico: expected favicon sizes "${FAVICON_SIZES.join(' ')}" without duplicates; ` +
+      'found "16x16 16x16 48x48 256x256"'
+  ));
+});
+
+test('validateRepository rejects four unique favicon entries with one wrong size', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    const entry = readIcoEntry(ico, 1);
+    ico[entry.entryOffset] = 64;
+    ico[entry.entryOffset + 1] = 64;
+    ico.writeUInt32BE(64, entry.imageOffset + 16);
+    ico.writeUInt32BE(64, entry.imageOffset + 20);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    `assets/icons/site.ico: expected favicon sizes "${FAVICON_SIZES.join(' ')}" without duplicates; ` +
+      'found "16x16 48x48 64x64 256x256"'
+  ));
+});
+
+test('validateRepository rejects a valid extra fifth favicon entry', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const icoPath = path.join(rootDir, 'assets/icons/site.ico');
+  const ico = fs.readFileSync(icoPath);
+  fs.writeFileSync(
+    icoPath,
+    appendIcoPngEntry(ico, 64, 64, createStructurallyValidPng(64, 64))
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    `assets/icons/site.ico: expected favicon sizes "${FAVICON_SIZES.join(' ')}" without duplicates; ` +
+      'found "16x16 32x32 48x48 64x64 256x256"'
+  ));
+});
+
+test('validateRepository safely reports a truncated favicon ICO directory', (t) => {
   const rootDir = createRepositoryFixture(t);
   fs.writeFileSync(
     path.join(rootDir, 'assets/icons/site.ico'),
@@ -1746,35 +2124,139 @@ test('validateRepository safely reports a truncated ICO directory', (t) => {
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(
-    'manifest.webmanifest: icons[0] references invalid ICO assets/icons/site.ico: truncated icon directory'
+    'assets/icons/site.ico: invalid ICO: truncated icon directory'
   ));
 });
 
-test('validateRepository rejects ICO image data that overlaps its directory', (t) => {
+test('validateRepository rejects favicon ICO image data overlapping its directory', (t) => {
   const rootDir = createRepositoryFixture(t);
-  const icoPath = path.join(rootDir, 'assets/icons/site.ico');
-  const ico = fs.readFileSync(icoPath);
-  ico.writeUInt32LE(0, 6 + 12);
-  fs.writeFileSync(icoPath, ico);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    ico.writeUInt32LE(0, 6 + 12);
+  });
 
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(
-    'manifest.webmanifest: icons[0] references invalid ICO assets/icons/site.ico: icon entry 0 image data overlaps the icon directory'
+    'assets/icons/site.ico: invalid ICO: icon entry 0 image data overlaps the icon directory'
   ));
 });
 
-test('validateRepository distinguishes invalid manifest sizes from missing sizes', (t) => {
+test('validateRepository rejects overlapping favicon ICO image entries', (t) => {
   const rootDir = createRepositoryFixture(t);
-  const manifestPath = path.join(rootDir, 'manifest.webmanifest');
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  manifest.icons[0].sizes = 123;
-  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    const firstEntry = readIcoEntry(ico, 0);
+    const secondEntry = readIcoEntry(ico, 1);
+    ico.writeUInt32LE(firstEntry.imageOffset, secondEntry.entryOffset + 12);
+  });
 
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(
-    'manifest.webmanifest: icons[0].sizes is invalid (123); ICO contains "16x16 32x32 48x48 256x256"'
+    'assets/icons/site.ico: invalid ICO: ' +
+      'icon entry 1 image data overlaps icon entry 0'
+  ));
+});
+
+test('validateRepository rejects favicon ICO image lengths outside the file', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    ico.writeUInt32LE(ico.length, 6 + 8);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/site.ico: invalid ICO: icon entry 0 image data is outside the file'
+  ));
+});
+
+test('validateRepository bounds embedded favicon PNG parsing to each ICO entry length', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    ico.writeUInt32LE(PNG_SIGNATURE.length, 6 + 8);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/site.ico: invalid ICO: icon entry 0: truncated PNG chunk header'
+  ));
+});
+
+test('validateRepository rejects a corrupt embedded favicon PNG signature', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    const entry = readIcoEntry(ico, 0);
+    assert.deepEqual(
+      ico.subarray(entry.imageOffset, entry.imageOffset + PNG_SIGNATURE.length),
+      PNG_SIGNATURE
+    );
+    ico[entry.imageOffset] = 0;
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/site.ico: invalid ICO: icon entry 0: invalid PNG signature'
+  ));
+});
+
+test('validateRepository checks embedded PNG signatures beyond the first favicon entry', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    const entry = readIcoEntry(ico, 2);
+    ico[entry.imageOffset] = 0;
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/site.ico: invalid ICO: icon entry 2: invalid PNG signature'
+  ));
+});
+
+test('validateRepository checks later PNG chunk bounds in the fourth favicon entry', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    const entry = readIcoEntry(ico, 3);
+    const secondChunkOffset = entry.imageOffset + 8 + 12 +
+      ico.readUInt32BE(entry.imageOffset + 8);
+    ico.writeUInt32BE(0xffffffff, secondChunkOffset);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/site.ico: invalid ICO: icon entry 3: ' +
+      'PNG chunk at byte 33 exceeds file boundary'
+  ));
+});
+
+test('validateRepository requires embedded favicon PNG images to begin with IHDR', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    const entry = readIcoEntry(ico, 0);
+    ico.write('IDAT', entry.imageOffset + 12, 4, 'ascii');
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/site.ico: invalid ICO: icon entry 0: first PNG chunk must be IHDR'
+  ));
+});
+
+test('validateRepository rejects favicon ICO directory and IHDR dimension drift', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/site.ico', (ico) => {
+    ico[6] = 17;
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
+    'assets/icons/site.ico: invalid ICO: icon entry 0 directory size 17x16 ' +
+      'does not match PNG IHDR 16x16'
   ));
 });
 

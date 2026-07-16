@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 198 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 包含 228 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -31,16 +31,22 @@ git diff --check
 node --test --test-name-pattern="structured data" scripts/validate-site.test.js
 ```
 
+仅定位 manifest、安装 PNG 或 favicon 回归时可以运行图标名称子集；它同样不能替代全量入口：
+
+```powershell
+node --test --test-name-pattern="manifest|install icon|PNG|favicon|ICO" scripts/validate-site.test.js
+```
+
 当前成功输出应包含：
 
 ```text
-tests 198
-pass 198
+tests 228
+pass 228
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，不要把这行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数，显示 `198 tests`、`79 pass`、`119 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `44 passed / 0 failed`，不要把这两行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `228 tests`、`79 pass`、`149 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -67,8 +73,9 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 带查询参数或 fragment 的本地资源仍能解析；
 - 每页 `<head>` 恰有一个 manifest 链接，中文 7 页和英文 7 页分别指向对应文件；
 - 两份 manifest 的 `start_url`、`scope` 和 `lang` 符合语言合同；
-- 两份 manifest 中列出的 icon `src` 存在；
-- ICO 的目录结构可解析，且两份 manifest 的 `sizes` 与内含图层尺寸集合一致。
+- 两份 manifest 的 icon 数组按 `src` 无序比较，且精确包含 192×192 与 512×512 两张 `image/png`、`purpose: any` 安装图标；缺失、重复、额外条目或任一字段漂移都会失败；
+- 两张安装 PNG 的签名、首块 IHDR、固定 13 字节 IHDR 长度、非零宽高、各块文件边界与声明尺寸一致；
+- `assets/icons/site.ico` 作为独立 favicon 固定资产，不从 manifest 推导：目录必须精确包含且不重复 16×16、32×32、48×48、256×256，所有 entry 偏移和长度均在边界内且互不重叠；每个 entry 的嵌入 PNG 都检查签名、IHDR、块边界，并要求 ICO 目录尺寸与 IHDR 一致。
 
 它不会验证外部网站、第三方 CDN 或统计服务在线可用性。
 
@@ -179,7 +186,8 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - 根 404 深层路径的根绝对资源、成对双语映射及其与物理英文 404 的标题/meta/资源/导航/ARIA/主题/正文精确等价，两页唯一倒计时节点和可执行内联脚本排除；共享初始化器在普通页面提前退出、调用顺序、精确 `/en/` 边界、中文反例、完整 URL 写入审计、5 秒保留与语言对应跳转；
 - 正文证据排除 `template`、启用脚本语义下的 `noscript`、`hidden`、`inert`、`aria-hidden="true"`，并正确处理属性引号内的 `>`；
 - sitemap alternate、XML 外壳和额外根元素；
-- 分语言 manifest 基线、唯一 `<head>` 链接、正文/HTML 注释误满足、入口/范围/语言字段，以及 `null`、畸形 icon、无效 `sizes`、ICO 尺寸声明不一致、截断目录与图像数据重叠；
+- 分语言 manifest 基线、唯一 `<head>` 链接、正文/HTML 注释误满足、入口/范围/语言字段，无序精确安装图标清单及其缺失、重复、额外、`src` / `type` / `purpose` / `sizes` / 字段库存漂移；
+- 独立 PNG 的短文件、签名、IHDR 首块/长度/非零宽高、块边界与声明尺寸，以及 favicon ICO 的精确非重复尺寸、目录和 entry 边界、每个嵌入 PNG、非首 entry 损坏与目录/IHDR 尺寸漂移；
 - 大小写错误路径；
 - robots 全站禁止与 user-agent 作用域；
 - 未登记的嵌套 HTML；
@@ -203,6 +211,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - Lightbox 的打开、键盘操作、关闭、背景实际状态与焦点恢复；
 - 视觉布局、文字遮挡、横向滚动和主题对比度；
 - 内联 `style`、其他未知域名的无用途 preconnect 等未纳入合同的代码质量偏差；
+- PNG chunk CRC、像素数据完整解码与实际渲染质量；结构校验通过不等于图像可完整解码；
 - 浏览器实际展示的安装 UI，以及安装后是否按语言入口启动；
 - 搜索引擎是否收录、如何展示或是否改变排名；
 - 第三方统计、外链和线上缓存；
@@ -353,6 +362,7 @@ http://127.0.0.1:8000/en/
 - `833px < width < 834px` 的小数 CSS 视口仍残留移动导航状态，或 834px 仍启用移动导航；
 - 非统计页加载 `stats.js` 或统计专用依赖；
 - 英文页面重新指向中文 manifest，或任一页面出现重复/正文内 manifest 链接；
+- manifest 重新使用 `site.ico`、缺少 192/512 安装 PNG、增加未经声明的 maskable 用途，或 favicon 尺寸/嵌入 PNG 漂移；
 - 把本地四页累计描述为 14 页全站累计；
 - 异常 provider 文本被展示为计数、无效主来源遮蔽有效备用来源，或计数校验误伤本地日期文本；
 - Lightbox 关闭时清除关闭抽屉原有的 `inert`，或让仅因模态打开而设置的背景 `inert` 残留；
@@ -365,8 +375,9 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：198 passed / 0 failed
+自动测试：228 passed / 0 failed
 结构化数据子集：79 passed / 0 failed
+图标名称子集：44 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
 人工检查：页面、主题、视口、键盘路径；涉及结构化数据时记录 12 路由矩阵

@@ -115,7 +115,7 @@ CSS 中的媒体查询按实际级联需要分布在多个位置，并非严格�
 
 ### 4.4 品牌与图标
 
-导航品牌标识是空的 `.brand-mark` 元素，通过 CSS 背景图加载 `assets/icons/brand-mark.png`。它不是 Font Awesome terminal 字形。favicon 使用 `assets/icons/site.ico`，内含 16×16、32×32、48×48、256×256 四个图层；两份 manifest 的 `sizes` 都必须与该集合一致。Font Awesome 仅承担普通功能图标。
+导航品牌标识是空的 `.brand-mark` 元素，通过 CSS 背景图加载 `assets/icons/brand-mark.png`。它不是 Font Awesome terminal 字形。两份 manifest 的安装图标清单按 `src` 无序比较，必须精确包含 `app-icon-192.png` 与 `app-icon-512.png`：尺寸分别为 192×192 和 512×512，类型均为 `image/png`，用途均为 `any`，不声明 `maskable`。`assets/icons/site.ico` 独立承担 HTML favicon，内含不重复的 16×16、32×32、48×48、256×256 四个图层，不进入 manifest。Font Awesome 仅承担普通功能图标。
 
 ## 5. 状态模型
 
@@ -171,7 +171,7 @@ sequenceDiagram
 - `assets/css/`：共享样式；
 - `assets/js/`：共享交互与统计；
 - `assets/fonts/`：本地 Inter 字体；
-- `assets/icons/`：品牌标识与 favicon；
+- `assets/icons/`：品牌标识、manifest 安装 PNG 与 HTML favicon；
 - `assets/images/`：项目、档案与证明图；
 - `assets/profile/`：头像；
 - `assets/vendor/`：本地 Font Awesome 样式与字体；
@@ -284,7 +284,7 @@ GitHub Pages 对任意不存在的路径返回根 `404.html`，不会根据 `/en
 
 ## 9. Manifest、爬虫与 sitemap
 
-7 个中文页面引用 `manifest.webmanifest`，其 `start_url` 为 `/`、`scope` 为 `/`、`lang` 为 `zh-CN`；7 个英文页面引用 `manifest.en.webmanifest`，其 `start_url` 为 `/en/`、`scope` 为 `/`、`lang` 为 `en`。共享根 scope 保留双语站内导航，安装后的默认启动入口则随页面语言变化。验证器要求每页 `<head>` 内恰有一个语言匹配的 manifest 链接，并分别校验两份文件的入口、语言和图标合同。
+7 个中文页面引用 `manifest.webmanifest`，其 `start_url` 为 `/`、`scope` 为 `/`、`lang` 为 `zh-CN`；7 个英文页面引用 `manifest.en.webmanifest`，其 `start_url` 为 `/en/`、`scope` 为 `/`、`lang` 为 `en`。共享根 scope 保留双语站内导航，安装后的默认启动入口则随页面语言变化。验证器要求每页 `<head>` 内恰有一个语言匹配的 manifest 链接，并分别校验两份文件的入口、语言和[安装图标合同](#44-品牌与图标)；favicon 作为独立固定资产校验。具体机器校验与人工边界见[测试规范](testing.md#32-本地引用与-manifest)。
 
 `robots.txt` 允许正常抓取并声明 sitemap。`scripts/generate-sitemap.js` 维护六组可索引页面，不包含 404。每条 `<lastmod>` 来自对应 HTML 文件的本地文件系统 mtime；多个页面同日修改时日期可以完全相同。
 

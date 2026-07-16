@@ -90,6 +90,26 @@ const MANIFEST_CONTRACTS = [
     scope: '/'
   }
 ];
+const MANIFEST_INSTALL_ICONS = [
+  {
+    src: '/assets/icons/app-icon-192.png',
+    sizes: '192x192',
+    type: 'image/png',
+    purpose: 'any'
+  },
+  {
+    src: '/assets/icons/app-icon-512.png',
+    sizes: '512x512',
+    type: 'image/png',
+    purpose: 'any'
+  }
+];
+const MANIFEST_ICON_KEYS = ['purpose', 'sizes', 'src', 'type'];
+const MANIFEST_ICON_INVENTORY_ISSUE =
+  'icons must exactly match the install icon inventory by src';
+const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+const FAVICON_FILE = 'assets/icons/site.ico';
+const FAVICON_SIZES = ['16x16', '32x32', '48x48', '256x256'];
 
 const MANIFEST_BY_LANGUAGE = new Map(
   MANIFEST_CONTRACTS.map((contract) => [contract.lang, contract])
@@ -1937,7 +1957,52 @@ function sortImageSizes(sizes) {
   });
 }
 
-function readIcoSizes(absolutePath) {
+function readPngDimensions(data) {
+  if (data.length < PNG_SIGNATURE.length) {
+    throw new Error('truncated PNG signature');
+  }
+  if (!data.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE)) {
+    throw new Error('invalid PNG signature');
+  }
+  if (data.length < PNG_SIGNATURE.length + 8) {
+    throw new Error('truncated PNG chunk header');
+  }
+
+  const ihdrLength = data.readUInt32BE(8);
+  const firstChunkType = data.toString('ascii', 12, 16);
+  if (firstChunkType !== 'IHDR') {
+    throw new Error('first PNG chunk must be IHDR');
+  }
+  if (ihdrLength !== 13) {
+    throw new Error('IHDR chunk length must be 13');
+  }
+  if (8 + 12 + ihdrLength > data.length) {
+    throw new Error('PNG chunk at byte 8 exceeds file boundary');
+  }
+
+  const width = data.readUInt32BE(16);
+  const height = data.readUInt32BE(20);
+  if (width === 0 || height === 0) {
+    throw new Error('IHDR dimensions must be non-zero');
+  }
+
+  let chunkOffset = PNG_SIGNATURE.length;
+  while (chunkOffset < data.length) {
+    if (data.length - chunkOffset < 8) {
+      throw new Error(`truncated PNG chunk header at byte ${chunkOffset}`);
+    }
+    const chunkLength = data.readUInt32BE(chunkOffset);
+    const chunkEnd = chunkOffset + 12 + chunkLength;
+    if (chunkEnd > data.length) {
+      throw new Error(`PNG chunk at byte ${chunkOffset} exceeds file boundary`);
+    }
+    chunkOffset = chunkEnd;
+  }
+
+  return { width, height };
+}
+
+function readIcoEntries(absolutePath) {
   const data = fs.readFileSync(absolutePath);
   if (data.length < 6) throw new Error('truncated icon directory');
   if (data.readUInt16LE(0) !== 0 || data.readUInt16LE(2) !== 1) {
@@ -1949,7 +2014,7 @@ function readIcoSizes(absolutePath) {
   const directoryEnd = 6 + count * 16;
   if (data.length < directoryEnd) throw new Error('truncated icon directory');
 
-  const sizes = new Set();
+  const entries = [];
   for (let index = 0; index < count; index += 1) {
     const entryOffset = 6 + index * 16;
     const width = data[entryOffset] || 256;
@@ -1959,20 +2024,129 @@ function readIcoSizes(absolutePath) {
     if (imageOffset < directoryEnd) {
       throw new Error(`icon entry ${index} image data overlaps the icon directory`);
     }
-    if (imageBytes === 0 || imageBytes > data.length - imageOffset) {
+    if (
+      imageBytes === 0 ||
+      imageOffset > data.length ||
+      imageBytes > data.length - imageOffset
+    ) {
       throw new Error(`icon entry ${index} image data is outside the file`);
     }
-    sizes.add(`${width}x${height}`);
+    entries.push({ index, width, height, imageBytes, imageOffset });
   }
 
-  return sortImageSizes(sizes);
+  const ranges = [...entries].sort((left, right) => (
+    left.imageOffset - right.imageOffset || left.index - right.index
+  ));
+  for (let index = 1; index < ranges.length; index += 1) {
+    const previous = ranges[index - 1];
+    const current = ranges[index];
+    if (current.imageOffset < previous.imageOffset + previous.imageBytes) {
+      throw new Error(
+        `icon entry ${current.index} image data overlaps icon entry ${previous.index}`
+      );
+    }
+  }
+
+  for (const entry of entries) {
+    let dimensions;
+    try {
+      dimensions = readPngDimensions(data.subarray(
+        entry.imageOffset,
+        entry.imageOffset + entry.imageBytes
+      ));
+    } catch (error) {
+      throw new Error(`icon entry ${entry.index}: ${error.message}`);
+    }
+    if (dimensions.width !== entry.width || dimensions.height !== entry.height) {
+      throw new Error(
+        `icon entry ${entry.index} directory size ${entry.width}x${entry.height} ` +
+        `does not match PNG IHDR ${dimensions.width}x${dimensions.height}`
+      );
+    }
+  }
+
+  return entries;
 }
 
-function normalizeDeclaredSizes(value) {
-  if (typeof value !== 'string' || !value.trim()) return null;
-  const sizes = value.trim().split(/\s+/);
-  if (sizes.some((size) => !/^[1-9]\d*x[1-9]\d*$/.test(size))) return null;
-  return sortImageSizes(new Set(sizes));
+function hasExactManifestIconInventory(icons) {
+  if (!Array.isArray(icons) || icons.length !== MANIFEST_INSTALL_ICONS.length) {
+    return false;
+  }
+
+  const hasComparableIconShape = icons.every((icon) => {
+    if (!icon || typeof icon !== 'object' || Array.isArray(icon)) return false;
+    const keys = Object.keys(icon).sort();
+    return (
+      typeof icon.src === 'string' &&
+      keys.length === MANIFEST_ICON_KEYS.length &&
+      keys.every((key, index) => key === MANIFEST_ICON_KEYS[index])
+    );
+  });
+  if (!hasComparableIconShape) return false;
+
+  const sortedIcons = [...icons].sort((left, right) => (
+    left.src.localeCompare(right.src)
+  ));
+  const expectedIcons = [...MANIFEST_INSTALL_ICONS].sort((left, right) => (
+    left.src.localeCompare(right.src)
+  ));
+
+  return sortedIcons.every((icon, index) => {
+    const expected = expectedIcons[index];
+    return MANIFEST_ICON_KEYS.every((key) => icon[key] === expected[key]);
+  });
+}
+
+function validateInstallIconAssets(rootDir, issues) {
+  for (const icon of MANIFEST_INSTALL_ICONS) {
+    const file = icon.src.replace(/^\//, '');
+    if (!ensureFile(rootDir, file, issues)) continue;
+
+    let dimensions;
+    try {
+      dimensions = readPngDimensions(fs.readFileSync(path.join(rootDir, file)));
+    } catch (error) {
+      addIssue(issues, file, `invalid PNG: ${error.message}`);
+      continue;
+    }
+
+    const [expectedWidth, expectedHeight] = icon.sizes.split('x').map(Number);
+    if (dimensions.width !== expectedWidth || dimensions.height !== expectedHeight) {
+      addIssue(
+        issues,
+        file,
+        `expected ${icon.sizes} but PNG IHDR declares ` +
+          `${dimensions.width}x${dimensions.height}`
+      );
+    }
+  }
+}
+
+function validateFavicon(rootDir, issues) {
+  if (!ensureFile(rootDir, FAVICON_FILE, issues)) return;
+
+  let entries;
+  try {
+    entries = readIcoEntries(path.join(rootDir, FAVICON_FILE));
+  } catch (error) {
+    addIssue(issues, FAVICON_FILE, `invalid ICO: ${error.message}`);
+    return;
+  }
+
+  const actualSizes = sortImageSizes(entries.map((entry) => (
+    `${entry.width}x${entry.height}`
+  )));
+  if (
+    actualSizes.length !== FAVICON_SIZES.length ||
+    actualSizes.some((size, index) => size !== FAVICON_SIZES[index])
+  ) {
+    addIssue(
+      issues,
+      FAVICON_FILE,
+      `expected favicon sizes "${FAVICON_SIZES.join(' ')}" without duplicates; ` +
+        `found "${actualSizes.join(' ')}"`
+    );
+  }
 }
 
 function validateManifest(rootDir, contract, issues, anchorCache) {
@@ -1998,10 +2172,11 @@ function validateManifest(rootDir, contract, issues, anchorCache) {
   if (manifest.lang !== lang) {
     addIssue(issues, file, `expected lang "${lang}"`);
   }
-  if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
-    addIssue(issues, file, 'expected at least one icon');
-    return;
+  if (!hasExactManifestIconInventory(manifest.icons)) {
+    addIssue(issues, file, MANIFEST_ICON_INVENTORY_ISSUE);
   }
+  if (!Array.isArray(manifest.icons)) return;
+
   for (let index = 0; index < manifest.icons.length; index += 1) {
     const icon = manifest.icons[index];
     if (
@@ -2015,51 +2190,6 @@ function validateManifest(rootDir, contract, issues, anchorCache) {
       continue;
     }
     validateReference(rootDir, file, icon.src, issues, anchorCache);
-
-    const resolvedIcon = resolveLocalReference(rootDir, file, icon.src);
-    if (
-      resolvedIcon.kind !== 'local' ||
-      !resolvedIcon.exists ||
-      path.extname(resolvedIcon.absolutePath).toLowerCase() !== '.ico'
-    ) {
-      continue;
-    }
-
-    let icoSizes;
-    try {
-      icoSizes = readIcoSizes(resolvedIcon.absolutePath);
-    } catch (error) {
-      addIssue(
-        issues,
-        file,
-        `icons[${index}] references invalid ICO ${resolvedIcon.relativePath}: ${error.message}`
-      );
-      continue;
-    }
-
-    const declaredSizes = normalizeDeclaredSizes(icon.sizes);
-    if (!declaredSizes) {
-      const hasSizes = Object.hasOwn(icon, 'sizes');
-      const invalidValue = hasSizes ? ` (${JSON.stringify(icon.sizes)})` : '';
-      const state = hasSizes ? `is invalid${invalidValue}` : 'is missing';
-      addIssue(
-        issues,
-        file,
-        `icons[${index}].sizes ${state}; ICO contains "${icoSizes.join(' ')}"`
-      );
-      continue;
-    }
-    if (
-      declaredSizes.length !== icoSizes.length ||
-      declaredSizes.some((size, sizeIndex) => size !== icoSizes[sizeIndex])
-    ) {
-      const declaredText = icon.sizes.trim().replace(/\s+/g, ' ');
-      addIssue(
-        issues,
-        file,
-        `icons[${index}].sizes declares "${declaredText}" but ICO contains "${icoSizes.join(' ')}"`
-      );
-    }
   }
 }
 
@@ -3910,6 +4040,8 @@ function validateRepository(rootDir) {
   for (const contract of MANIFEST_CONTRACTS) {
     validateManifest(absoluteRoot, contract, issues, anchorCache);
   }
+  validateInstallIconAssets(absoluteRoot, issues);
+  validateFavicon(absoluteRoot, issues);
   const sitemapUrls = validateSitemap(absoluteRoot, issues);
   validateRobots(absoluteRoot, issues);
   validateJavaScriptSyntax(absoluteRoot, issues);

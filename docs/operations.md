@@ -120,7 +120,7 @@ node scripts/generate-sitemap.js
 
 - `/` 与 `/en/`；
 - 本次修改页面及其语言对应页；
-- CSS、JavaScript、品牌图、favicon 和本次修改资源返回成功；
+- CSS、JavaScript、品牌图、两张 manifest 安装 PNG、favicon 和本次修改资源返回成功；
 - canonical、hreflang、`og:url` 指向生产域名；
 - 涉及结构化数据时按[测试规范的 12 路由矩阵](testing.md#72-页面范围与结构化数据矩阵)检查：每页 `<head>` 一个活动图、正文零个，JSON 可解析，页面 type/ID/lang 正确；
 - 结构化数据变更没有改变页面可见内容、布局或交互；
@@ -199,7 +199,7 @@ Pages 部署成功但浏览器仍显示旧内容时，按以下顺序判断：
 
 ### 9.7 Manifest 或图标异常
 
-区分“路径存在”“静态元数据正确”和“浏览器实际安装行为”。验证器会核对 14 页与两份语言 manifest 的映射、`start_url`、`scope`、`lang`、icon 路径及 ICO 图层；浏览器安装 UI 和安装后实际启动入口仍需人工验证。
+区分“路径存在”“静态结构与元数据正确”和“浏览器实际安装行为”。先运行[测试规范的最小验证入口](testing.md#2-最小验证入口)：验证器会核对 14 页与两份语言 manifest 的映射、入口和精确安装 PNG 清单，同时把 `site.ico` 作为独立 HTML favicon 校验。机器检查只覆盖 PNG/ICO 的签名、IHDR、块与 entry 边界、尺寸关系，不校验 PNG CRC、像素完整解码或视觉质量；浏览器安装 UI、安装后语言入口和各尺寸显示效果仍需人工验证。
 
 ### 9.8 结构化数据异常
 
