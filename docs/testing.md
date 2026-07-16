@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 124 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 包含 144 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -34,13 +34,13 @@ node --test --test-name-pattern="structured data" scripts/validate-site.test.js
 当前成功输出应包含：
 
 ```text
-tests 124
-pass 124
+tests 144
+pass 144
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，不要把这行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数，显示 `124 tests`、`79 pass`、`45 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，不要把这行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数，显示 `144 tests`、`79 pass`、`65 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -145,7 +145,13 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 
 ### 3.8 共享交互结构合同
 
-验证器静态检查 `site.js` 是否将 `(min-width: 834px)` 查询绑定到移动菜单断点处理器、是否使用 `event.matches` 限定进入桌面断点的路径，以及该处理器是否调用不返回隐藏菜单按钮焦点的关闭逻辑并保留可见桌面导航焦点回退。该检查用于防止关键监听被删除或被无关代码误满足，但不模拟 DOM、媒体查询事件或真实焦点行为；833/834px 的状态与焦点仍须使用浏览器验证。
+验证器继续静态检查 `site.js` 是否将 `(min-width: 834px)` 查询绑定到移动菜单断点处理器、是否使用 `event.matches` 限定进入桌面断点的路径，以及该处理器是否调用不返回隐藏菜单按钮焦点的关闭逻辑并保留可见桌面导航焦点回退。
+
+Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLightbox` 必须把 `[overlay]` 作为允许元素调用 `setBackgroundInert(true, ...)`，`closeLightbox` 必须调用 `setBackgroundInert(false)`；`setElementInert` 必须只有一个可执行同名函数语法，且其后不得在任意语句位置由裸赋值或 `var setElementInert = ...` 覆盖。点属性与字符串计算属性赋值只修改对象属性，不计作本地绑定覆盖。声明检测不依赖行首；为避免引入通用 JavaScript 解析器，任何经 `codeMask` 确认为可执行的 `function setElementInert(...)` 同名语法均保守计作竞争声明。注释和字符串中的同形文本不计为接线、声明或重赋值。
+
+行为检查只提取自包含的 `setElementInert` 函数体和两个普通参数，在新的 `node:vm` 上下文内创建闭包属性存储与假元素，然后执行首次/重复激活、清理、重复清理和第二轮开关。单元素场景覆盖无 `aria-hidden`、显式 `aria-hidden="false"`、关闭抽屉式的 `aria-hidden="true"` 与 `inert`、仅属性和仅属性值；另以两个相反初始 `inert` 状态的元素交错激活和清理，检查状态不会串扰。所有场景均检查模态标记，并在微任务排空后再次复核最终状态。
+
+假元素及其方法不从宿主注入；上下文不提供 `require`、`process`、`fs`，禁止字符串与 WebAssembly 代码生成，每段执行限制为 100ms。函数体的语法错误、运行时异常、超时、重复声明或任一状态不符均报告同一合同问题。这里的 `node:vm` 只用于缩小测试能力面和限制常规失控执行，不是针对恶意代码的安全边界。仅编译函数体也是有意的自包含合同：若正确实现改为调用同文件其他 helper，验证器会拒绝，届时必须同步扩展合同，而不是执行整份 `site.js`。该检查不模拟真实 DOM、媒体查询事件或焦点；833/834px 与 Lightbox 关闭后的状态和焦点仍须使用浏览器验证。
 
 ## 4. 验证器单元测试
 
@@ -171,6 +177,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 非统计页误加统计服务 preconnect；
 - `stats.js` 的非负 ASCII 整数格式、`0`、前导零、全角数字等异常主来源回退、超长数字原样保留、全部异常降级，以及本地日期文本不受计数校验影响；
 - 移动菜单的 834px 桌面断点清理合同，以及错误查询、遗漏 `event.matches`、缺少可见焦点回退、关闭逻辑落在无关函数或关键实现被注释掉的变异用例；
+- Lightbox 打开/关闭背景接线与 `inert` 行为合同：等价实现正向夹具，以及缺少任一端接线、任意语句位置的裸赋值或 `var` 覆盖、对象属性赋值 decoy、非行首同名函数语法、遗漏属性值、显式 `aria-hidden="false"` 丢失、多元素共享快照串扰、重复/无关/注释/字符串处理器、激活分支贯穿、倒序恢复、抛错、语法错误、超时、恢复后立即或通过微任务延后再次清除等变异用例；
 - JavaScript 字符串和正则字面量中的注释形文本不会干扰交互合同识别；
 - 验证器只读保证；
 - CLI 在无效仓库上返回非零状态。
@@ -182,8 +189,8 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 以下内容必须人工或使用浏览器工具验证：
 
 - 导航 `aria-current` 是否符合页面语义；
-- 移动抽屉的 `inert`、焦点陷阱、Escape 和焦点归还；
-- Lightbox 的打开、键盘操作、关闭与焦点恢复；
+- 移动抽屉的真实 `inert` 状态、焦点陷阱、Escape 和焦点归还；
+- Lightbox 的打开、键盘操作、关闭、背景实际状态与焦点恢复；
 - 视觉布局、文字遮挡、横向滚动和主题对比度；
 - 内联 `style`、其他未知域名的无用途 preconnect 等未纳入合同的代码质量偏差；
 - 浏览器实际展示的安装 UI，以及安装后是否按语言入口启动；
@@ -264,14 +271,16 @@ http://127.0.0.1:8000/en/
 4. Escape、遮罩和导航链接均可关闭。
 5. 关闭后焦点回到菜单按钮。
 6. 拉宽到 834px 后，`body.menu-open`、遮罩、滚动锁和背景 `inert` 均已清理，抽屉恢复 `aria-hidden="true"` 与 `inert`；原焦点若在抽屉内，应转移到可见的当前桌面导航项；404 等没有当前项的页面应转移到首个桌面导航链接。
+7. 抽屉关闭时打开并关闭证明图 Lightbox，抽屉仍保持 `aria-hidden="true"` 与 `inert`，屏外抽屉链接不能进入 Tab 顺序。
 
 ### 7.5 Lightbox
 
 1. 鼠标、触屏和 Enter 可打开证明图。
 2. 标题、图片与关闭按钮正确。
 3. Escape 可关闭，焦点返回原图链接。
-4. 脚本禁用时原图链接仍有效。
-5. 中英文资源路径和说明保持对应。
+4. 关闭后，原本可交互的背景恢复为非 `inert`；原本已 `inert` 的关闭抽屉仍保持 `inert`。
+5. 脚本禁用时原图链接仍有效。
+6. 中英文资源路径和说明保持对应。
 
 ### 7.6 统计
 
@@ -328,6 +337,7 @@ http://127.0.0.1:8000/en/
 - 英文页面重新指向中文 manifest，或任一页面出现重复/正文内 manifest 链接；
 - 把本地四页累计描述为 14 页全站累计；
 - 异常 provider 文本被展示为计数、无效主来源遮蔽有效备用来源，或计数校验误伤本地日期文本；
+- Lightbox 关闭时清除关闭抽屉原有的 `inert`，或让仅因模态打开而设置的背景 `inert` 残留；
 - 把相同 `lastmod` 日期直接判为错误；
 - 文档继续引用已删除路径或重复维护同一合同；
 - 未授权个人材料或未发表研究材料进入公开仓库。
@@ -337,7 +347,7 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：124 passed / 0 failed
+自动测试：144 passed / 0 failed
 结构化数据子集：79 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题

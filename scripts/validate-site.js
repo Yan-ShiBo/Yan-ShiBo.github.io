@@ -2123,11 +2123,33 @@ function hasExecutableMatch(source, codeMask, pattern) {
   return false;
 }
 
-function extractNamedFunctionBody(source, codeMask, functionName) {
+function hasExecutableBindingAssignment(source, codeMask, bindingName) {
+  const matcher = new RegExp(`\\b${bindingName}\\s*=(?!=)`, 'g');
+  let match = matcher.exec(source);
+
+  while (match) {
+    if (codeMask[match.index] === 1) {
+      let previousIndex = match.index - 1;
+      while (
+        previousIndex >= 0 &&
+        (codeMask[previousIndex] !== 1 || /\s/.test(source[previousIndex]))
+      ) {
+        previousIndex -= 1;
+      }
+      if (previousIndex < 0 || source[previousIndex] !== '.') return true;
+    }
+    match = matcher.exec(source);
+  }
+
+  return false;
+}
+
+function extractNamedFunctionBody(source, codeMask, functionName, requireUnique = false) {
   const signature = new RegExp(
-    `^[\\t ]*function\\s+${functionName}\\s*\\([^)]*\\)\\s*\\{`,
-    'gm'
+    `\\bfunction\\s+${functionName}\\s*\\(([^)]*)\\)\\s*\\{`,
+    'g'
   );
+  let extracted = null;
   let match = signature.exec(source);
 
   while (match) {
@@ -2142,10 +2164,16 @@ function extractNamedFunctionBody(source, codeMask, functionName) {
         } else if (source[index] === '}') {
           depth -= 1;
           if (depth === 0) {
-            return {
+            const candidate = {
               codeMask: codeMask.slice(openingBrace + 1, index),
+              declarationEnd: index + 1,
+              parameters: match[1],
               source: source.slice(openingBrace + 1, index)
             };
+            if (!requireUnique) return candidate;
+            if (extracted) return null;
+            extracted = candidate;
+            break;
           }
         }
       }
@@ -2153,7 +2181,179 @@ function extractNamedFunctionBody(source, codeMask, functionName) {
     match = signature.exec(source);
   }
 
-  return null;
+  return extracted;
+}
+
+const MODAL_INERT_VM_TIMEOUT_MS = 100;
+
+function preservesModalInertBehavior(inertHandler) {
+  if (!inertHandler) return false;
+
+  const parameters = /^\s*([A-Za-z_$][\w$]*)\s*,\s*([A-Za-z_$][\w$]*)\s*$/.exec(
+    inertHandler.parameters
+  );
+  if (!parameters) return false;
+
+  const subjectSource = `'use strict';
+globalThis.__modalInertSubject = function (${parameters[1]}, ${parameters[2]}) {
+${inertHandler.source}
+};`;
+  const harnessSource = `
+'use strict';
+(function () {
+  if (typeof require !== 'undefined' || typeof process !== 'undefined' ||
+      typeof fs !== 'undefined') return false;
+
+  const setElementInert = globalThis.__modalInertSubject;
+  delete globalThis.__modalInertSubject;
+  const createObject = Object.create;
+  const hasOwn = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
+  const toBoolean = Boolean;
+  const toString = String;
+
+  function createFakeElement(initialAria, initialInertAttribute, initialInertProperty) {
+    const attributes = createObject(null);
+    if (initialAria !== null) attributes['aria-hidden'] = initialAria;
+    if (initialInertAttribute) attributes.inert = '';
+
+    const element = createObject(null);
+    element.inert = initialInertProperty;
+    element.hasAttribute = function (name) { return hasOwn(attributes, toString(name)); };
+    element.getAttribute = function (name) {
+      const key = toString(name);
+      return hasOwn(attributes, key) ? attributes[key] : null;
+    };
+    element.setAttribute = function (name, value) { attributes[toString(name)] = toString(value); };
+    element.removeAttribute = function (name) { delete attributes[toString(name)]; };
+    element.toggleAttribute = function (name, force) {
+      const key = toString(name);
+      const present = arguments.length > 1 ? toBoolean(force) : !hasOwn(attributes, key);
+      if (present) {
+        attributes[key] = '';
+      } else {
+        delete attributes[key];
+      }
+      return present;
+    };
+
+    return {
+      element,
+      getAttribute: element.getAttribute,
+      hasAttribute: element.hasAttribute
+    };
+  }
+
+  function hasNoModalMarkers(fixture) {
+    return !fixture.hasAttribute('data-modal-inert') &&
+      !fixture.hasAttribute('data-modal-aria-hidden') &&
+      !fixture.hasAttribute('data-modal-was-inert');
+  }
+
+  function matchesActiveState(fixture) {
+    return fixture.getAttribute('aria-hidden') === 'true' &&
+      fixture.hasAttribute('inert') && fixture.element.inert === true;
+  }
+
+  function matchesState(fixture, aria, inertAttribute, inertProperty) {
+    return fixture.hasAttribute('aria-hidden') === (aria !== null) &&
+      fixture.getAttribute('aria-hidden') === aria &&
+      fixture.hasAttribute('inert') === inertAttribute &&
+      fixture.element.inert === inertProperty &&
+      hasNoModalMarkers(fixture);
+  }
+
+  function runCycle(fixture, initialAria, expectedInert) {
+    setElementInert(fixture.element, true);
+    if (!matchesActiveState(fixture)) return false;
+    setElementInert(fixture.element, true);
+    if (!matchesActiveState(fixture)) return false;
+    setElementInert(fixture.element, false);
+    if (!matchesState(fixture, initialAria, expectedInert, expectedInert)) return false;
+    setElementInert(fixture.element, false);
+    return matchesState(fixture, initialAria, expectedInert, expectedInert);
+  }
+
+  const finalChecks = [];
+  function rememberFinalState(fixture, aria, expectedInert) {
+    finalChecks[finalChecks.length] = function () {
+      return matchesState(fixture, aria, expectedInert, expectedInert);
+    };
+  }
+
+  function runScenario(initialAria, initialInertAttribute, initialInertProperty) {
+    const fixture = createFakeElement(initialAria, initialInertAttribute, initialInertProperty);
+    const expectedInert = initialInertAttribute || initialInertProperty;
+    const passed = matchesState(
+      fixture, initialAria, initialInertAttribute, initialInertProperty
+    ) &&
+      runCycle(fixture, initialAria, expectedInert) &&
+      runCycle(fixture, initialAria, expectedInert);
+    rememberFinalState(fixture, initialAria, expectedInert);
+    return passed;
+  }
+
+  function runInterleavedScenario() {
+    const first = createFakeElement(null, false, false);
+    const second = createFakeElement('true', true, true);
+    const initialStatesMatch = matchesState(first, null, false, false) &&
+      matchesState(second, 'true', true, true);
+    setElementInert(first.element, true);
+    const firstActivated = matchesActiveState(first);
+    setElementInert(second.element, true);
+    const secondActivated = matchesActiveState(second);
+    setElementInert(first.element, false);
+    const firstRestored = matchesState(first, null, false, false);
+    setElementInert(second.element, false);
+    const secondRestored = matchesState(second, 'true', true, true);
+    rememberFinalState(first, null, false);
+    rememberFinalState(second, 'true', true);
+    return initialStatesMatch && firstActivated && secondActivated &&
+      firstRestored && secondRestored;
+  }
+
+  const passed = runScenario(null, false, false) &&
+    runScenario('true', true, true) &&
+    runScenario('false', false, false) &&
+    runScenario(null, true, false) &&
+    runScenario(null, false, true) &&
+    runInterleavedScenario();
+  globalThis.__modalInertFinalCheck = function () {
+    if (!passed) return false;
+    for (let index = 0; index < finalChecks.length; index += 1) {
+      if (!finalChecks[index]()) return false;
+    }
+    return true;
+  };
+  return globalThis.__modalInertFinalCheck();
+})()
+`;
+  const finalCheckSource = `
+'use strict';
+(function () {
+  const verify = globalThis.__modalInertFinalCheck;
+  delete globalThis.__modalInertFinalCheck;
+  return typeof verify === 'function' && verify();
+})()
+`;
+
+  try {
+    const context = vm.createContext(Object.create(null), {
+      codeGeneration: { strings: false, wasm: false },
+      microtaskMode: 'afterEvaluate'
+    });
+    new vm.Script(subjectSource, {
+      filename: 'assets/js/site.js#setElementInert'
+    }).runInContext(context, { timeout: MODAL_INERT_VM_TIMEOUT_MS });
+    const passed = new vm.Script(harnessSource, {
+      filename: 'modal-inert-contract.vm.js'
+    }).runInContext(context, { timeout: MODAL_INERT_VM_TIMEOUT_MS });
+    if (passed !== true) return false;
+    return new vm.Script(finalCheckSource, {
+      filename: 'modal-inert-final-check.vm.js'
+    }).runInContext(context, { timeout: MODAL_INERT_VM_TIMEOUT_MS }) === true;
+  } catch {
+    return false;
+  }
 }
 
 function validateSiteJavaScriptContracts(rootDir, issues) {
@@ -2167,6 +2367,24 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     source,
     codeMask,
     'handleMenuBreakpointChange'
+  );
+  const inertHandler = extractNamedFunctionBody(
+    source,
+    codeMask,
+    'setElementInert',
+    true
+  );
+  const closeLightboxHandler = extractNamedFunctionBody(
+    source,
+    codeMask,
+    'closeLightbox',
+    true
+  );
+  const openLightboxHandler = extractNamedFunctionBody(
+    source,
+    codeMask,
+    'openLightbox',
+    true
   );
   const hasDesktopMenuQuery = hasExecutableMatch(
     source,
@@ -2210,6 +2428,43 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     !hasVisibleDesktopFocusFallback
   ) {
     addIssue(issues, file, 'missing 834px desktop breakpoint menu cleanup');
+  }
+
+  const closesLightboxBackground = closeLightboxHandler !== null &&
+    hasExecutableMatch(
+      closeLightboxHandler.source,
+      closeLightboxHandler.codeMask,
+      /^[\t ]*setBackgroundInert\(\s*false\s*\)\s*;/m
+    );
+  const opensLightboxBackground = openLightboxHandler !== null &&
+    hasExecutableMatch(
+      openLightboxHandler.source,
+      openLightboxHandler.codeMask,
+      /^[\t ]*setBackgroundInert\(\s*true\s*,\s*\[\s*overlay\s*\]\s*\)\s*;/m
+    );
+  const inertHandlerTail = inertHandler && inertHandler.declarationEnd < source.length
+    ? {
+        codeMask: codeMask.slice(inertHandler.declarationEnd),
+        source: source.slice(inertHandler.declarationEnd)
+      }
+    : null;
+  const reassignsInertHandler = inertHandlerTail !== null && hasExecutableBindingAssignment(
+    inertHandlerTail.source,
+    inertHandlerTail.codeMask,
+    'setElementInert'
+  );
+
+  if (
+    !preservesModalInertBehavior(inertHandler) ||
+    !closesLightboxBackground ||
+    !opensLightboxBackground ||
+    reassignsInertHandler
+  ) {
+    addIssue(
+      issues,
+      file,
+      'modal background cleanup must restore each element\'s pre-existing inert state'
+    );
   }
 }
 

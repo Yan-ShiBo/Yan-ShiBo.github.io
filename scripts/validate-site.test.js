@@ -24,6 +24,8 @@ const COPIED_FIXTURE_EXTENSIONS = new Set([
 
 const MENU_CLEANUP_ISSUE =
   'assets/js/site.js: missing 834px desktop breakpoint menu cleanup';
+const MODAL_INERT_RESTORE_ISSUE =
+  'assets/js/site.js: modal background cleanup must restore each element\'s pre-existing inert state';
 const STATS_INTEGER_CONTRACT_ISSUE =
   'assets/js/stats.js: public counters must accept only non-negative ASCII decimal integer text and fall back from invalid provider values';
 const STATS_ZERO_CONTRACT_ISSUE =
@@ -79,6 +81,68 @@ function validateSiteScriptFixture(t, sourceLines) {
     [...sourceLines, ''].join('\n')
   );
   return validateRepository(rootDir);
+}
+
+function validateModalSiteScriptFixture(t, sourceLines) {
+  return validateSiteScriptFixture(t, [
+    ...sourceLines,
+    'function closeLightbox() {',
+    '  setBackgroundInert(false);',
+    '}',
+    'function openLightbox() {',
+    '  setBackgroundInert(true, [overlay]);',
+    '}'
+  ]);
+}
+
+function modalInertFunctionLines(options = {}) {
+  const {
+    activationReturn = 'return;',
+    ariaRestoreCondition = 'previousAria !== null',
+    cleanupPrefix = [],
+    cleanupLines = [
+      'var previousAria = element.getAttribute("data-modal-aria-hidden");',
+      'var wasInert = element.getAttribute("data-modal-was-inert") === "true";',
+      'if (previousAria === "__unset__") {',
+      '  element.removeAttribute("aria-hidden");',
+      `} else if (${ariaRestoreCondition}) {`,
+      '  element.setAttribute("aria-hidden", previousAria);',
+      '}',
+      'element.removeAttribute("data-modal-inert");',
+      'element.removeAttribute("data-modal-aria-hidden");',
+      'element.removeAttribute("data-modal-was-inert");',
+      'element.toggleAttribute("inert", wasInert);',
+      'element.inert = wasInert;'
+    ],
+    cleanupSuffix = [],
+    inertSnapshotExpression =
+      'element.hasAttribute("inert") || element.inert',
+    snapshotSuffix = []
+  } = options;
+
+  return [
+    'function setElementInert(element, active) {',
+    '  if (!element) return;',
+    '  if (active) {',
+    '    if (!element.hasAttribute("data-modal-inert")) {',
+    '      element.setAttribute("data-modal-inert", "");',
+    '      element.setAttribute("data-modal-aria-hidden",',
+    '        element.hasAttribute("aria-hidden") ? element.getAttribute("aria-hidden") : "__unset__");',
+    '      element.setAttribute("data-modal-was-inert",',
+    `        ${inertSnapshotExpression} ? "true" : "false");`,
+    ...snapshotSuffix.map((line) => `      ${line}`),
+    '    }',
+    '    element.setAttribute("aria-hidden", "true");',
+    '    element.setAttribute("inert", "");',
+    '    element.inert = true;',
+    ...(activationReturn === null ? [] : [`    ${activationReturn}`]),
+    '  }',
+    '  if (!element.hasAttribute("data-modal-inert")) return;',
+    ...cleanupPrefix.map((line) => `  ${line}`),
+    ...cleanupLines.map((line) => `  ${line}`),
+    ...cleanupSuffix.map((line) => `  ${line}`),
+    '}'
+  ];
 }
 
 function snapshotFiles(rootDir) {
@@ -338,6 +402,279 @@ test('validateRepository preserves comment-like text inside JavaScript literals'
   ]);
 
   assert.ok(!result.issues.includes(MENU_CLEANUP_ISSUE));
+});
+
+test('validateRepository requires Lightbox close background cleanup wiring', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/site.js',
+    /(function closeLightbox\(\) \{[\s\S]*?)^[\t ]*setBackgroundInert\(false\);\r?\n/m,
+    '$1'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository requires Lightbox open background activation wiring', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/site.js',
+    /(function openLightbox\(trigger\) \{[\s\S]*?)^[\t ]*setBackgroundInert\(true,\s*\[overlay\]\);\r?\n/m,
+    '$1'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects executable modal inert handler reassignment', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/site.js',
+    /^([\t ]*function setBackgroundInert\(active, activeElements\) \{)/m,
+    '  setElementInert = function () {};\n\n$1'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects var modal inert handler reassignment', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/site.js',
+    /^([\t ]*function setBackgroundInert\(active, activeElements\) \{)/m,
+    '  var setElementInert = function () {};\n\n$1'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects modal inert reassignment after another statement', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/site.js',
+    /^([\t ]*function setBackgroundInert\(active, activeElements\) \{)/m,
+    '  void 0; setElementInert = function () {};\n\n$1'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects a same-line duplicate modal inert declaration', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/site.js',
+    /^([\t ]*function setBackgroundInert\(active, activeElements\) \{)/m,
+    '  ; function setElementInert(element, active) { void element; void active; }\n\n$1'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository ignores property, commented, and literal modal inert assignments', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceMatching(
+    rootDir,
+    'assets/js/site.js',
+    /^([\t ]*function setBackgroundInert\(active, activeElements\) \{)/m,
+    [
+      '  var inertAssignmentDecoy = "setElementInert = function () {};";',
+      '  var inertDeclarationDecoy = "; function setElementInert(element, active) {};";',
+      '  var inertAssignmentTarget = {};',
+      '  inertAssignmentTarget.setElementInert = function () {};',
+      '  inertAssignmentTarget[\'setElementInert\'] = function () {};',
+      '  // setElementInert = function () {};',
+      '  // ; function setElementInert(element, active) {}',
+      '  void inertAssignmentDecoy;',
+      '  void inertDeclarationDecoy;',
+      '  void inertAssignmentTarget;',
+      '',
+      '$1'
+    ].join('\n')
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository requires the modal snapshot to include the inert property', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    inertSnapshotExpression: 'element.hasAttribute("inert")'
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects commented, literal, and unrelated modal inert decoys', (t) => {
+  const result = validateModalSiteScriptFixture(t, [
+    'function setElementInert(element, active) {',
+    '  var decoy = "element.toggleAttribute(\\\"inert\\\", wasInert);";',
+    '  /*',
+    '  if (active) {',
+    '    if (!element.hasAttribute("data-modal-inert")) {',
+    '      element.setAttribute("data-modal-was-inert",',
+    '        element.hasAttribute("inert") || element.inert ? "true" : "false");',
+    '    }',
+    '  }',
+    '  var wasInert = element.getAttribute("data-modal-was-inert") === "true";',
+    '  element.removeAttribute("data-modal-was-inert");',
+    '  element.inert = wasInert;',
+    '  */',
+    '  void active;',
+    '  void decoy;',
+    '}',
+    ...modalInertFunctionLines().map((line) =>
+      line.replace('function setElementInert(', 'function unrelated(')
+    )
+  ]);
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository accepts equivalent modal inert behavior', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines());
+
+  assert.ok(!result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository preserves independent state across interleaved elements', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    snapshotSuffix: [
+      'globalThis.sharedPreviousAria = element.hasAttribute("aria-hidden") ?',
+      '  element.getAttribute("aria-hidden") : "__unset__";',
+      'globalThis.sharedWasInert = element.hasAttribute("inert") || element.inert;'
+    ],
+    cleanupLines: [
+      'var previousAria = globalThis.sharedPreviousAria;',
+      'var wasInert = globalThis.sharedWasInert;',
+      'if (previousAria === "__unset__") {',
+      '  element.removeAttribute("aria-hidden");',
+      '} else if (previousAria !== null) {',
+      '  element.setAttribute("aria-hidden", previousAria);',
+      '}',
+      'element.removeAttribute("data-modal-inert");',
+      'element.removeAttribute("data-modal-aria-hidden");',
+      'element.removeAttribute("data-modal-was-inert");',
+      'element.toggleAttribute("inert", wasInert);',
+      'element.inert = wasInert;'
+    ]
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository restores an explicit false aria-hidden value', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    ariaRestoreCondition: 'previousAria === "true"'
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects duplicate modal inert handlers', (t) => {
+  const result = validateModalSiteScriptFixture(t, [
+    ...modalInertFunctionLines(),
+    'function setElementInert(element, active) {',
+    '  if (active) return;',
+    '}'
+  ]);
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects modal activation fallthrough without return', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    activationReturn: null
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects a thrown cleanup before inert restoration', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    cleanupPrefix: ['throw new Error("stop before restoration");']
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository reports modal inert syntax errors', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    cleanupPrefix: ['var broken = ;']
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository times out non-terminating modal cleanup', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    cleanupPrefix: ['while (true) {}']
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects an unconditional inert clear after modal restoration', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    cleanupSuffix: [
+      'element.removeAttribute("inert");',
+      'element.inert = false;'
+    ]
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository rejects deferred inert clearing after restoration', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    cleanupSuffix: [
+      'Promise.resolve().then(function () {',
+      '  element.removeAttribute("inert");',
+      '  element.inert = false;',
+      '});'
+    ]
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository requires modal restoration after reading the inert snapshot', (t) => {
+  const result = validateModalSiteScriptFixture(t, modalInertFunctionLines({
+    cleanupLines: [
+      'var previousAria = element.getAttribute("data-modal-aria-hidden");',
+      'element.toggleAttribute("inert", wasInert);',
+      'element.inert = wasInert;',
+      'var wasInert = element.getAttribute("data-modal-was-inert") === "true";',
+      'if (previousAria === "__unset__") {',
+      '  element.removeAttribute("aria-hidden");',
+      '} else if (previousAria !== null) {',
+      '  element.setAttribute("aria-hidden", previousAria);',
+      '}',
+      'element.removeAttribute("data-modal-inert");',
+      'element.removeAttribute("data-modal-aria-hidden");',
+      'element.removeAttribute("data-modal-was-inert");'
+    ]
+  }));
+
+  assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
 });
 
 test('validateRepository does not depend on the current working directory', () => {

@@ -72,6 +72,10 @@
           'data-modal-aria-hidden',
           element.hasAttribute('aria-hidden') ? element.getAttribute('aria-hidden') : '__unset__'
         );
+        element.setAttribute(
+          'data-modal-was-inert',
+          element.hasAttribute('inert') || element.inert ? 'true' : 'false'
+        );
       }
       element.setAttribute('aria-hidden', 'true');
       element.setAttribute('inert', '');
@@ -81,6 +85,7 @@
 
     if (!element.hasAttribute('data-modal-inert')) return;
     var previousAria = element.getAttribute('data-modal-aria-hidden');
+    var wasInert = element.getAttribute('data-modal-was-inert') === 'true';
     if (previousAria === '__unset__') {
       element.removeAttribute('aria-hidden');
     } else if (previousAria !== null) {
@@ -88,8 +93,9 @@
     }
     element.removeAttribute('data-modal-inert');
     element.removeAttribute('data-modal-aria-hidden');
-    element.removeAttribute('inert');
-    element.inert = false;
+    element.removeAttribute('data-modal-was-inert');
+    element.toggleAttribute('inert', wasInert);
+    element.inert = wasInert;
   }
 
   function setBackgroundInert(active, activeElements) {
