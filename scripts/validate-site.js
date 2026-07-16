@@ -103,6 +103,8 @@ const MOBILE_MENU_CLEANUP_ISSUE =
   `mobile menu cleanup must share the (max-width: ${MOBILE_BREAKPOINT_PX}px) breakpoint predicate`;
 const MOBILE_CSS_BREAKPOINT_ISSUE =
   `mobile navigation rules must share one (max-width: ${MOBILE_BREAKPOINT_PX}px) media block`;
+const RESUME_OVERFLOW_CSS_ISSUE =
+  'resume cards, contact values, and long actions must remain shrinkable on narrow viewports';
 const PROVIDER_STATS_IDS = [
   'busuanzi_value_site_pv',
   'busuanzi_value_site_uv',
@@ -2286,30 +2288,78 @@ function extractCssMediaBlocks(source, codeMask, mediaPattern) {
   return blocks;
 }
 
-function directCssRuleBodies(source, selector) {
-  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const matcher = new RegExp(`${escapedSelector}\\s*\\{`, 'g');
-  const bodies = [];
-  let match = matcher.exec(source);
+function splitTopLevelCssSelectorList(source) {
+  const stack = [];
+  const selectors = [];
+  let start = 0;
 
-  while (match) {
-    let previousIndex = match.index - 1;
-    while (previousIndex >= 0 && /\s/.test(source[previousIndex])) previousIndex -= 1;
-    if (
-      cssSimpleBlockDepthAt(source, match.index) === 0 &&
-      (previousIndex < 0 || source[previousIndex] === '}')
-    ) {
-      const openingBrace = match.index + match[0].lastIndexOf('{');
-      const closingBrace = findCssBlockEnd(source, openingBrace);
-      if (closingBrace >= 0) {
-        bodies.push(source.slice(openingBrace + 1, closingBrace));
-        matcher.lastIndex = closingBrace + 1;
-      }
+  for (let index = 0; index < source.length; index += 1) {
+    if (CSS_SIMPLE_BLOCK_PAIRS[source[index]]) {
+      stack.push(CSS_SIMPLE_BLOCK_PAIRS[source[index]]);
+    } else if (source[index] === stack[stack.length - 1]) {
+      stack.pop();
+    } else if (source[index] === ',' && stack.length === 0) {
+      selectors.push(source.slice(start, index));
+      start = index + 1;
     }
-    match = matcher.exec(source);
+  }
+  selectors.push(source.slice(start));
+  return selectors;
+}
+
+function normalizeCssSelector(selector) {
+  return selector
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\s*([>+~])\s*/g, '$1');
+}
+
+function findCssRulePreludeStart(source, openingBrace) {
+  const stack = [];
+  const reversePairs = { ')': '(', ']': '[' };
+
+  for (let index = openingBrace - 1; index >= 0; index -= 1) {
+    const character = source[index];
+    if (reversePairs[character]) {
+      stack.push(reversePairs[character]);
+    } else if (character === stack[stack.length - 1]) {
+      stack.pop();
+    } else if (
+      stack.length === 0 &&
+      (character === '{' || character === '}' || character === ';')
+    ) {
+      return index + 1;
+    }
   }
 
-  return bodies;
+  return 0;
+}
+
+function collectCssRuleEntries(source) {
+  const rules = [];
+  let openingBrace = source.indexOf('{');
+
+  while (openingBrace >= 0) {
+    const depth = cssSimpleBlockDepthAt(source, openingBrace);
+    const preludeStart = findCssRulePreludeStart(source, openingBrace);
+    const prelude = source.slice(preludeStart, openingBrace).trim();
+    if (!prelude.startsWith('@')) {
+      const closingBrace = findCssBlockEnd(source, openingBrace);
+      if (closingBrace >= 0) {
+        rules.push({
+          body: source.slice(openingBrace + 1, closingBrace),
+          depth,
+          sourceIndex: openingBrace,
+          selectors: splitTopLevelCssSelectorList(prelude)
+            .map(normalizeCssSelector)
+            .filter(Boolean)
+        });
+      }
+    }
+    openingBrace = source.indexOf('{', openingBrace + 1);
+  }
+
+  return rules;
 }
 
 function splitTopLevelCssDeclarations(source) {
@@ -2331,27 +2381,435 @@ function splitTopLevelCssDeclarations(source) {
   return declarations;
 }
 
-function effectiveDirectCssDisplay(source, selector) {
-  let value = null;
-  let important = false;
+function effectiveCssPropertyInBody(body, property) {
+  const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const propertyPattern = new RegExp(
+    `^\\s*${escapedProperty}\\s*:\\s*(.+?)\\s*$`,
+    'i'
+  );
+  let effectiveDeclaration = null;
 
-  for (const body of directCssRuleBodies(source, selector)) {
-    for (const declaration of splitTopLevelCssDeclarations(body)) {
-      const displayMatch = /^\s*display\s*:\s*(.+?)\s*$/i.exec(declaration);
-      if (!displayMatch) continue;
-      const hasImportant = /!\s*important\s*$/i.test(displayMatch[1]);
-      const nextValue = displayMatch[1]
-        .replace(/!\s*important\s*$/i, '')
-        .trim()
-        .toLowerCase();
-      if (nextValue && (hasImportant || !important)) {
-        value = nextValue;
-        important = hasImportant;
-      }
+  for (const declaration of splitTopLevelCssDeclarations(body)) {
+    const propertyMatch = propertyPattern.exec(declaration);
+    if (!propertyMatch) continue;
+    const important = /!\s*important\s*$/i.test(propertyMatch[1]);
+    const value = propertyMatch[1]
+      .replace(/!\s*important\s*$/i, '')
+      .trim()
+      .toLowerCase();
+    if (value && (important || !effectiveDeclaration?.important)) {
+      effectiveDeclaration = { important, value };
     }
   }
 
-  return value;
+  return effectiveDeclaration;
+}
+
+function effectiveDirectCssDeclaration(source, selector, property, ruleEntries) {
+  const normalizedSelector = normalizeCssSelector(selector);
+  const rules = ruleEntries || collectCssRuleEntries(source);
+  let effectiveDeclaration = null;
+
+  for (const rule of rules) {
+    if (rule.depth !== 0 || !rule.selectors.includes(normalizedSelector)) continue;
+    const declaration = effectiveCssPropertyInBody(rule.body, property);
+    if (declaration && (declaration.important || !effectiveDeclaration?.important)) {
+      effectiveDeclaration = { ...declaration, sourceIndex: rule.sourceIndex };
+    }
+  }
+
+  return effectiveDeclaration;
+}
+
+function effectiveDirectCssProperty(source, selector, property, ruleEntries) {
+  return effectiveDirectCssDeclaration(source, selector, property, ruleEntries)?.value || null;
+}
+
+function effectiveDirectCssDisplay(source, selector, ruleEntries) {
+  return effectiveDirectCssProperty(source, selector, 'display', ruleEntries);
+}
+
+function parseCssSelectorChain(selector) {
+  const normalizedSelector = normalizeCssSelector(selector);
+  const compounds = [];
+  const combinators = [];
+  const stack = [];
+  let compound = '';
+
+  function finishCompound() {
+    const normalizedCompound = compound.trim().toLowerCase();
+    if (normalizedCompound) compounds.push(normalizedCompound);
+    compound = '';
+  }
+
+  for (let index = 0; index < normalizedSelector.length; index += 1) {
+    const character = normalizedSelector[index];
+    if (CSS_SIMPLE_BLOCK_PAIRS[character] && character !== '{') {
+      stack.push(CSS_SIMPLE_BLOCK_PAIRS[character]);
+      compound += character;
+    } else if (character === stack[stack.length - 1]) {
+      stack.pop();
+      compound += character;
+    } else if (stack.length === 0 && /[>+~]/.test(character)) {
+      finishCompound();
+      combinators.push(character);
+    } else if (stack.length === 0 && /\s/.test(character)) {
+      if (compound.trim()) {
+        finishCompound();
+        combinators.push(' ');
+      }
+      while (/\s/.test(normalizedSelector[index + 1] || '')) index += 1;
+    } else {
+      compound += character;
+    }
+  }
+  finishCompound();
+
+  if (compounds.length === 0 || combinators.length !== compounds.length - 1) {
+    return null;
+  }
+  return { combinators, compounds };
+}
+
+function addCssSpecificity(left, right) {
+  return [left[0] + right[0], left[1] + right[1], left[2] + right[2]];
+}
+
+function compareCssSpecificity(left, right) {
+  for (let index = 0; index < 3; index += 1) {
+    if (left[index] !== right[index]) return left[index] - right[index];
+  }
+  return 0;
+}
+
+function maximumCssSelectorListSpecificity(selectorList) {
+  let maximumSpecificity = [0, 0, 0];
+  for (const selector of splitTopLevelCssSelectorList(selectorList)) {
+    const specificity = cssSelectorSpecificity(selector);
+    if (compareCssSpecificity(specificity, maximumSpecificity) > 0) {
+      maximumSpecificity = specificity;
+    }
+  }
+  return maximumSpecificity;
+}
+
+function cssNthOfSelectorList(source) {
+  const stack = [];
+  for (let index = 0; index < source.length - 1; index += 1) {
+    const character = source[index];
+    if (CSS_SIMPLE_BLOCK_PAIRS[character]) {
+      stack.push(CSS_SIMPLE_BLOCK_PAIRS[character]);
+    } else if (character === stack[stack.length - 1]) {
+      stack.pop();
+    } else if (
+      stack.length === 0 &&
+      source.slice(index, index + 2).toLowerCase() === 'of' &&
+      /\s/.test(source[index - 1] || '') &&
+      /\s/.test(source[index + 2] || '')
+    ) {
+      return source.slice(index + 2).trim();
+    }
+  }
+  return '';
+}
+
+function cssCompoundSpecificity(compound) {
+  let executableCompound = compound;
+  let specificity = [0, 0, 0];
+  const functionalPseudoPattern = /:([A-Za-z_-][\w-]*)\(/g;
+  let functionalPseudo = functionalPseudoPattern.exec(executableCompound);
+
+  while (functionalPseudo) {
+    const pseudoName = functionalPseudo[1].toLowerCase();
+    const openingParenthesis = functionalPseudo.index + functionalPseudo[0].length - 1;
+    const closingParenthesis = findCssBlockEnd(executableCompound, openingParenthesis);
+    if (closingParenthesis < 0) break;
+    if (pseudoName === 'is' || pseudoName === 'not' || pseudoName === 'has') {
+      const content = executableCompound.slice(openingParenthesis + 1, closingParenthesis);
+      specificity = addCssSpecificity(
+        specificity,
+        maximumCssSelectorListSpecificity(content)
+      );
+    } else if (pseudoName === 'nth-child' || pseudoName === 'nth-last-child') {
+      specificity[1] += 1;
+      const content = executableCompound.slice(openingParenthesis + 1, closingParenthesis);
+      const ofSelectorList = cssNthOfSelectorList(content);
+      if (ofSelectorList) {
+        specificity = addCssSpecificity(
+          specificity,
+          maximumCssSelectorListSpecificity(ofSelectorList)
+        );
+      }
+    } else if (pseudoName !== 'where') {
+      specificity[1] += 1;
+    }
+    executableCompound = executableCompound.slice(0, functionalPseudo.index) +
+      ' '.repeat(closingParenthesis - functionalPseudo.index + 1) +
+      executableCompound.slice(closingParenthesis + 1);
+    functionalPseudoPattern.lastIndex = functionalPseudo.index;
+    functionalPseudo = functionalPseudoPattern.exec(executableCompound);
+  }
+
+  executableCompound = executableCompound.replace(/\[[^\]]*\]/g, (attribute) => {
+    specificity[1] += 1;
+    return ' '.repeat(attribute.length);
+  });
+  executableCompound = executableCompound.replace(
+    /::[A-Za-z_-][\w-]*|:(?:after|before|first-letter|first-line)\b/gi,
+    (pseudoElement) => {
+      specificity[2] += 1;
+      return ' '.repeat(pseudoElement.length);
+    }
+  );
+  executableCompound = executableCompound.replace(/:[A-Za-z_-][\w-]*/g, (pseudoClass) => {
+    specificity[1] += 1;
+    return ' '.repeat(pseudoClass.length);
+  });
+  specificity[0] += (executableCompound.match(/#[A-Za-z_][\w-]*/g) || []).length;
+  specificity[1] += (executableCompound.match(/\.[A-Za-z_][\w-]*/g) || []).length;
+  if (/^[A-Za-z][\w-]*/.test(executableCompound.trim())) specificity[2] += 1;
+  return specificity;
+}
+
+function cssSelectorSpecificity(selector) {
+  const chain = parseCssSelectorChain(selector);
+  if (!chain) return [0, 0, 0];
+  return chain.compounds.reduce(
+    (specificity, compound) => addCssSpecificity(
+      specificity,
+      cssCompoundSpecificity(compound)
+    ),
+    [0, 0, 0]
+  );
+}
+
+function cssCompoundTargetsPseudoElement(compound) {
+  const stack = [];
+  for (let index = 0; index < compound.length; index += 1) {
+    const character = compound[index];
+    if (CSS_SIMPLE_BLOCK_PAIRS[character] && character !== '{') {
+      stack.push(CSS_SIMPLE_BLOCK_PAIRS[character]);
+    } else if (character === stack[stack.length - 1]) {
+      stack.pop();
+    } else if (stack.length === 0 && character === ':') {
+      const pseudoSource = compound.slice(index);
+      if (
+        /^::[A-Za-z_-][\w-]*/.test(pseudoSource) ||
+        /^:(?:after|before|first-letter|first-line)\b/i.test(pseudoSource)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function cssCompoundSignature(compound) {
+  let executableCompound = compound;
+  const negations = [];
+  let notIndex = executableCompound.toLowerCase().indexOf(':not(');
+
+  while (notIndex >= 0) {
+    const openingParenthesis = notIndex + 4;
+    const closingParenthesis = findCssBlockEnd(executableCompound, openingParenthesis);
+    if (closingParenthesis < 0) break;
+    const notContent = executableCompound.slice(openingParenthesis + 1, closingParenthesis);
+    for (const alternative of splitTopLevelCssSelectorList(notContent)) {
+      negations.push(cssCompoundSignature(alternative));
+    }
+    executableCompound = executableCompound.slice(0, notIndex) +
+      ' '.repeat(closingParenthesis - notIndex + 1) +
+      executableCompound.slice(closingParenthesis + 1);
+    notIndex = executableCompound.toLowerCase().indexOf(':not(', notIndex + 1);
+  }
+
+  const classes = executableCompound.match(/\.[A-Za-z_][\w-]*/g) || [];
+  const ids = executableCompound.match(/#[A-Za-z_][\w-]*/g) || [];
+  const typeMatch = /^([A-Za-z][\w-]*|\*)/.exec(executableCompound.trim());
+  const tokens = [
+    ...classes.map((className) => `class:${className.toLowerCase()}`),
+    ...ids.map((id) => `id:${id.toLowerCase()}`)
+  ];
+  if (typeMatch && typeMatch[1] !== '*') {
+    tokens.push(`tag:${typeMatch[1].toLowerCase()}`);
+  }
+  return {
+    hasPseudoElement: cssCompoundTargetsPseudoElement(executableCompound),
+    isUniversal: typeMatch?.[1] === '*' || tokens.length === 0,
+    negations,
+    tokens: new Set(tokens)
+  };
+}
+
+function cssSignatureRequiresSubset(required, available) {
+  if (required.hasPseudoElement || required.tokens.size === 0) return false;
+  for (const token of required.tokens) {
+    if (!available.tokens.has(token)) return false;
+  }
+  return true;
+}
+
+function cssCompoundSignaturesConflict(left, right) {
+  if (left.hasPseudoElement !== right.hasPseudoElement) return true;
+  const leftTypes = [...left.tokens].filter((token) => token.startsWith('tag:'));
+  const rightTypes = [...right.tokens].filter((token) => token.startsWith('tag:'));
+  if (leftTypes.length > 0 && rightTypes.length > 0 && leftTypes[0] !== rightTypes[0]) {
+    return true;
+  }
+  const leftIds = [...left.tokens].filter((token) => token.startsWith('id:'));
+  const rightIds = [...right.tokens].filter((token) => token.startsWith('id:'));
+  if (leftIds.length > 0 && rightIds.length > 0 && leftIds[0] !== rightIds[0]) {
+    return true;
+  }
+  return left.negations.some((negation) => cssSignatureRequiresSubset(negation, right)) ||
+    right.negations.some((negation) => cssSignatureRequiresSubset(negation, left));
+}
+
+function cssCompoundSignaturesShareIdentity(candidate, target) {
+  for (const token of candidate.tokens) {
+    if (target.tokens.has(token)) return true;
+  }
+  return false;
+}
+
+function cssSelectorChainsShareIdentity(candidateSignatures, targetSignatures) {
+  return candidateSignatures.some((candidate) => targetSignatures.some((target) => (
+    cssCompoundSignaturesShareIdentity(candidate, target)
+  )));
+}
+
+function cssSelectorsCanOverlap(candidateSelector, targetSelector) {
+  const candidate = parseCssSelectorChain(candidateSelector);
+  const target = parseCssSelectorChain(targetSelector);
+  if (!candidate || !target) return false;
+
+  const candidateSignatures = candidate.compounds.map(cssCompoundSignature);
+  const targetSignatures = target.compounds.map(cssCompoundSignature);
+  let candidateIndex = candidate.compounds.length - 1;
+  let targetIndex = target.compounds.length - 1;
+  const candidateSubject = candidateSignatures[candidateIndex];
+  const targetSubject = targetSignatures[targetIndex];
+  if (
+    cssCompoundSignaturesConflict(candidateSubject, targetSubject) ||
+    (
+      !cssCompoundSignaturesShareIdentity(candidateSubject, targetSubject) &&
+      !(candidateSubject.isUniversal && candidate.compounds.length === 1) &&
+      !(
+        candidateSubject.isUniversal &&
+        cssSelectorChainsShareIdentity(candidateSignatures, targetSignatures)
+      )
+    )
+  ) {
+    return false;
+  }
+
+  while (
+    candidateIndex > 0 &&
+    targetIndex > 0 &&
+    candidate.combinators[candidateIndex - 1] === '>' &&
+    target.combinators[targetIndex - 1] === '>'
+  ) {
+    candidateIndex -= 1;
+    targetIndex -= 1;
+    if (cssCompoundSignaturesConflict(
+      candidateSignatures[candidateIndex],
+      targetSignatures[targetIndex]
+    )) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function cssSelectorUsesUnsupportedFunctionalOverlap(selector) {
+  const normalizedSelector = normalizeCssSelector(selector);
+  const chain = parseCssSelectorChain(normalizedSelector);
+  const subject = chain?.compounds[chain.compounds.length - 1] || '';
+  const subjectStart = normalizedSelector.toLowerCase().lastIndexOf(subject);
+  const functionalPseudoPattern = /(?<!:):([A-Za-z_-][\w-]*)\(/g;
+  let functionalPseudo = functionalPseudoPattern.exec(normalizedSelector);
+
+  while (functionalPseudo) {
+    const pseudoName = functionalPseudo[1].toLowerCase();
+    const openingParenthesis = functionalPseudo.index + functionalPseudo[0].length - 1;
+    const closingParenthesis = findCssBlockEnd(normalizedSelector, openingParenthesis);
+    if (closingParenthesis < 0) return true;
+    if (pseudoName === 'nth-child' || pseudoName === 'nth-last-child') {
+      const pseudoContent = normalizedSelector.slice(
+        openingParenthesis + 1,
+        closingParenthesis
+      );
+      if (/(?<!:):[A-Za-z_-][\w-]*\(/.test(pseudoContent)) return true;
+      functionalPseudoPattern.lastIndex = closingParenthesis + 1;
+      functionalPseudo = functionalPseudoPattern.exec(normalizedSelector);
+      continue;
+    }
+    if (pseudoName !== 'not') return true;
+    if (functionalPseudo.index < subjectStart) return true;
+
+    const notContent = normalizedSelector.slice(openingParenthesis + 1, closingParenthesis);
+    const hasOnlySimpleAlternatives = splitTopLevelCssSelectorList(notContent)
+      .every((alternative) => {
+        const chain = parseCssSelectorChain(alternative);
+        return chain?.compounds.length === 1 && !/[:\[\]*]/.test(alternative);
+      });
+    if (!hasOnlySimpleAlternatives) return true;
+    functionalPseudoPattern.lastIndex = closingParenthesis + 1;
+    functionalPseudo = functionalPseudoPattern.exec(normalizedSelector);
+  }
+
+  return false;
+}
+
+function cssSelectorTargetsPseudoElement(selector) {
+  const chain = parseCssSelectorChain(selector);
+  if (!chain) return false;
+  return cssCompoundSignature(chain.compounds[chain.compounds.length - 1]).hasPseudoElement;
+}
+
+function hasConflictingCssPropertyRule(
+  source,
+  selector,
+  declarations,
+  ruleEntries,
+  overlapSelector = selector
+) {
+  const normalizedSelector = normalizeCssSelector(selector);
+  const rules = ruleEntries || collectCssRuleEntries(source);
+  const baselineSpecificity = cssSelectorSpecificity(normalizedSelector);
+  const baselines = new Map(declarations.map(([property]) => [
+    property,
+    effectiveDirectCssDeclaration(source, selector, property, rules)
+  ]));
+  return rules.some((rule) => rule.selectors.some((candidateSelector) => {
+    const isAllowedDirectRule = rule.depth === 0 && candidateSelector === normalizedSelector;
+    const usesUnsupportedFunctionalOverlap =
+      cssSelectorUsesUnsupportedFunctionalOverlap(candidateSelector);
+    if (
+      isAllowedDirectRule ||
+      cssSelectorTargetsPseudoElement(candidateSelector) ||
+      (
+        !usesUnsupportedFunctionalOverlap &&
+        !cssSelectorsCanOverlap(candidateSelector, overlapSelector)
+      )
+    ) {
+      return false;
+    }
+    const candidateSpecificity = cssSelectorSpecificity(candidateSelector);
+    return declarations.some(([property, expectedValue]) => {
+      const candidate = effectiveCssPropertyInBody(rule.body, property);
+      const baseline = baselines.get(property);
+      if (!candidate || !baseline || candidate.value === expectedValue) return false;
+      if (candidate.important !== baseline.important) return candidate.important;
+      const specificityOrder = compareCssSpecificity(
+        candidateSpecificity,
+        baselineSpecificity
+      );
+      if (specificityOrder !== 0) return specificityOrder > 0;
+      return rule.sourceIndex > baseline.sourceIndex;
+    });
+  }));
 }
 
 function hasSharedMobileNavigationCss(rootDir) {
@@ -2375,6 +2833,56 @@ function hasSharedMobileNavigationCss(rootDir) {
   if (!hasCompleteMobileBlock) return false;
   return effectiveDirectCssDisplay(executableMobileCss, '.site-nav') === 'none' &&
     effectiveDirectCssDisplay(executableMobileCss, '.menu-toggle') === 'inline-flex';
+}
+
+function hasResumeOverflowProtectionCss(rootDir) {
+  const file = 'assets/css/site.css';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return false;
+
+  const source = readUtf8(rootDir, file);
+  const executableSource = maskedSource(source, buildCssCodeMask(source));
+  const ruleEntries = collectCssRuleEntries(executableSource);
+  const contracts = [
+    [
+      '.doc-grid > .doc-card',
+      '#main-content .doc-grid > article.doc-card',
+      [['min-width', '0']]
+    ],
+    [
+      '.resume-sidebar .meta-list li',
+      '#main-content .resume-sidebar .meta-list li',
+      [['min-width', '0']]
+    ],
+    [
+      '.resume-sidebar .meta-list li span',
+      '#main-content .resume-sidebar .meta-list li span',
+      [['min-width', '0'], ['overflow-wrap', 'anywhere']]
+    ],
+    [
+      '.resume-main .button.small',
+      '#main-content .resume-main a.button.small.subtle',
+      [['max-width', '100%'], ['white-space', 'normal']]
+    ]
+  ];
+
+  return contracts.every(([selector, overlapSelector, declarations]) => (
+    !hasConflictingCssPropertyRule(
+      executableSource,
+      selector,
+      declarations,
+      ruleEntries,
+      overlapSelector
+    ) &&
+    declarations.every(([property, expectedValue]) => (
+      effectiveDirectCssProperty(
+        executableSource,
+        selector,
+        property,
+        ruleEntries
+      ) === expectedValue
+    ))
+  ));
 }
 
 const MODAL_INERT_VM_TIMEOUT_MS = 100;
@@ -2555,6 +3063,12 @@ function validateMobileNavigationCssContract(rootDir, issues) {
   }
 }
 
+function validateResumeOverflowCssContract(rootDir, issues) {
+  if (!hasResumeOverflowProtectionCss(rootDir)) {
+    addIssue(issues, 'assets/css/site.css', RESUME_OVERFLOW_CSS_ISSUE);
+  }
+}
+
 function validateSiteJavaScriptContracts(rootDir, issues) {
   const file = 'assets/js/site.js';
   const absolutePath = path.join(rootDir, file);
@@ -2731,6 +3245,7 @@ function validateRepository(rootDir) {
   validateJavaScriptSyntax(absoluteRoot, issues);
   validateStatsJavaScriptContracts(absoluteRoot, issues);
   validateMobileNavigationCssContract(absoluteRoot, issues);
+  validateResumeOverflowCssContract(absoluteRoot, issues);
   validateSiteJavaScriptContracts(absoluteRoot, issues);
 
   return {

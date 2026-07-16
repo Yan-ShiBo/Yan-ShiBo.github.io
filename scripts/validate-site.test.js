@@ -26,6 +26,8 @@ const MENU_CLEANUP_ISSUE =
   'assets/js/site.js: mobile menu cleanup must share the (max-width: 833px) breakpoint predicate';
 const MOBILE_CSS_BREAKPOINT_ISSUE =
   'assets/css/site.css: mobile navigation rules must share one (max-width: 833px) media block';
+const RESUME_OVERFLOW_CSS_ISSUE =
+  'assets/css/site.css: resume cards, contact values, and long actions must remain shrinkable on narrow viewports';
 const MODAL_INERT_RESTORE_ISSUE =
   'assets/js/site.js: modal background cleanup must restore each element\'s pre-existing inert state';
 const STATS_INTEGER_CONTRACT_ISSUE =
@@ -603,6 +605,253 @@ test('validateRepository rejects overrides in a later matching CSS media block',
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+});
+
+test('validateRepository rejects a resume document card min-width override and CSS decoys', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n/* .doc-grid > .doc-card{min-width:0} */\n' +
+      ':root{--resume-card-decoy:".doc-grid > .doc-card{min-width:0}"}\n' +
+      '@supports (display:grid){.doc-grid > .doc-card{min-width:0}}\n' +
+      '.doc-grid > .doc-card{min-width:auto}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects non-shrinkable resume contact rows and values', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n.resume-sidebar .meta-list li{min-width:auto}\n' +
+      '.resume-sidebar .meta-list li span{min-width:auto;overflow-wrap:normal}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects a non-wrapping resume small action override', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n.resume-main .button.small{max-width:none;white-space:nowrap}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects conditional resume shrink-safety overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){.doc-grid > .doc-card{min-width:auto}}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects whitespace-variant conditional resume overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){.doc-grid  >  .doc-card{min-width:auto!important}}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects selector-list conditional resume overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){.decoy,.doc-grid > .doc-card{min-width:auto!important}}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository accepts unrelated conditional declarations for resume selectors', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){\n' +
+      '  .doc-grid  >  .doc-card{padding:12px}\n' +
+      '  .resume-sidebar .meta-list li span{color:inherit}\n' +
+      '}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects higher-specificity conditional resume overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){body .doc-grid > .doc-card.doc-card{min-width:auto}}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository counts nth-child of-selector specificity for resume overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){' +
+      'article:nth-child(2 of .doc-card){min-width:auto}' +
+      '}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects shorter important resume card overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){#main-content .doc-card{min-width:auto!important}}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects shorter important resume action overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){.resume-main .button{white-space:nowrap!important}}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects actual resume action variant overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){.subtle{white-space:nowrap!important}}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository accepts negated and pseudo-element non-target resume rules', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){\n' +
+      '  .doc-grid > :not(.doc-card){min-width:auto!important}\n' +
+      '  .doc-grid > .doc-card::before{min-width:auto!important}\n' +
+      '  .doc-grid > .doc-card:is(.doc-card)::before{min-width:auto!important}\n' +
+      '}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects unsupported complex functional resume selectors', (t) => {
+  const mutations = [
+    '.doc-grid > :not(.doc-grid > .doc-card){min-width:auto!important}',
+    '.doc-grid > :not(:is(.doc-grid > .doc-card,.other)){min-width:auto!important}',
+    '.doc-card:is(.doc-card::before,.doc-card){min-width:auto!important}',
+    '.doc-grid > :not(*,.doc-card){min-width:auto!important}',
+    '#main-content:not(#main-content) .doc-card{min-width:auto!important}'
+  ];
+
+  for (const mutation of mutations) {
+    const rootDir = createRepositoryFixture(t);
+    fs.appendFileSync(
+      path.join(rootDir, 'assets/css/site.css'),
+      `\n@media (max-width:640px){${mutation}}\n`
+    );
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+  }
+});
+
+test('validateRepository rejects nested state-dependent negated resume overrides', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n@media (max-width:640px){' +
+      'article.doc-card:not(:not(:hover)){min-width:auto!important}' +
+      '}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository preserves an earlier important resume shrink declaration', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '.doc-grid > .doc-card{min-width:0}',
+    '.doc-grid > .doc-card{min-width:0!important}\n' +
+      '.doc-grid > .doc-card{min-width:auto}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects stale resume overrides despite a later repair', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n#main-content .doc-card{min-width:auto!important}\n' +
+      '#main-content .doc-card{min-width:0!important}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects a conditional decoy instead of a global resume shrink rule', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '.doc-grid > .doc-card{min-width:0}',
+    '@supports (display:grid){.doc-grid > .doc-card{min-width:0}}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
 });
 
 test('validateRepository requires Lightbox close background cleanup wiring', (t) => {
