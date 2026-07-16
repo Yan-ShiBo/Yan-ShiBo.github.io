@@ -149,6 +149,9 @@ const STATS_UNAVAILABLE_CONTRACT_ISSUE =
   'invalid public counters must render -- and end in warn state';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'local visit dates must remain formatted text';
+const STATS_LOCAL_COUNT_CONTRACT_ISSUE =
+  'canonical local visit counters must use exact non-negative ASCII decimals, lossless increment, and invalid-state recovery';
+const STATS_LOCAL_COUNTER_VM_TIMEOUT_MS = 100;
 const STATS_LEGACY_STORAGE_CONTRACT_ISSUE =
   'legacy local history must transition safely without overriding canonical values, deleting legacy keys, or activating invalid data';
 
@@ -2446,7 +2449,7 @@ function runStatsScenario(source, options = {}) {
   const window = {
     document,
     localStorage,
-    location: { pathname: '/analytics.html' },
+    location: { pathname: options.pathname || '/analytics.html' },
     addEventListener(type, callback) {
       windowEvents[type] = callback;
     },
@@ -2457,6 +2460,7 @@ function runStatsScenario(source, options = {}) {
     }
   };
   const context = vm.createContext({
+    BigInt: undefined,
     __documentEvents: documentEvents,
     __intervalCallbacks: intervalCallbacks,
     __windowEvents: windowEvents,
@@ -2595,6 +2599,151 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
     !datePattern.test(localScenario.readElement('local-last').text)
   ) {
     addIssue(issues, file, STATS_LOCAL_DATE_CONTRACT_ISSUE);
+  }
+
+  const localCountPathname = '/en/local-count-contract.html';
+  const localPageKey = `ysb-page:${localCountPathname}`;
+  const validLocalCountCases = [
+    ['0', '0', '1', '1'],
+    ['41', '9', '42', '10'],
+    ['19', '1099', '20', '1100'],
+    ['41', 'junk', '42', '1'],
+    ['junk', '9', '1', '10'],
+    ['9007199254740991', '9007199254740991', '9007199254740992', '9007199254740992'],
+    ['9007199254740992', '9007199254740992', '9007199254740993', '9007199254740993'],
+    [
+      '9999999999999999999999999999999999999999',
+      '9999999999999999999999999999999999999999',
+      '10000000000000000000000000000000000000000',
+      '10000000000000000000000000000000000000000'
+    ]
+  ];
+  const invalidLocalCountValues = [
+    null,
+    '',
+    'junk',
+    'NaN',
+    '-1',
+    '1.5',
+    '1e3',
+    '01',
+    '+1',
+    ' 1',
+    '1 ',
+    '１２'
+  ];
+  let localCountContractHolds = false;
+  try {
+    const codeMask = buildJavaScriptCodeMask(source);
+    const localCounterHandler = extractNamedFunctionBody(
+      source,
+      codeMask,
+      'incrementLocalCounter',
+      true
+    );
+    const forbiddenNumericCapability = localCounterHandler && (
+      hasExecutableMatch(
+        localCounterHandler.source,
+        localCounterHandler.codeMask,
+        /\b(?:BigInt|Number|parseFloat|parseInt)\b/
+      ) ||
+      hasExecutableMatch(
+        localCounterHandler.source,
+        localCounterHandler.codeMask,
+        /\b(?:0[xX][0-9a-fA-F](?:_?[0-9a-fA-F])*|0[bB][01](?:_?[01])*|0[oO][0-7](?:_?[0-7])*|(?:0|[1-9](?:_?[0-9])*))n\b/
+      ) ||
+      hasJavaScriptTemplateLiteral(localCounterHandler.source)
+    );
+    let isolatedLocalCounterHolds = false;
+    if (localCounterHandler && !forbiddenNumericCapability) {
+      try {
+        const isolatedContext = vm.createContext({
+          BigInt: undefined,
+          Number: undefined,
+          parseFloat: undefined,
+          parseInt: undefined
+        });
+        const isolatedSource =
+          'globalThis.__incrementLocalCounter = function (' +
+          localCounterHandler.parameters +
+          ') {' +
+          localCounterHandler.source +
+          '\n};';
+        new vm.Script(isolatedSource, {
+          filename: 'stats-local-counter-contract.vm.js'
+        }).runInContext(isolatedContext, { timeout: STATS_LOCAL_COUNTER_VM_TIMEOUT_MS });
+        const isolatedCases = validLocalCountCases.flatMap(([
+          totalValue,
+          pageValue,
+          expectedTotal,
+          expectedPage
+        ]) => [
+          [totalValue, expectedTotal],
+          [pageValue, expectedPage]
+        ]).concat(invalidLocalCountValues.map((value) => [value, '1']));
+        isolatedLocalCounterHolds = isolatedCases.every(([value, expected]) => {
+          isolatedContext.__localCounterInput = value;
+          return new vm.Script(
+            '__incrementLocalCounter(__localCounterInput)',
+            { filename: 'stats-local-counter-call.vm.js' }
+          ).runInContext(
+            isolatedContext,
+            { timeout: STATS_LOCAL_COUNTER_VM_TIMEOUT_MS }
+          ) === expected;
+        });
+      } catch (error) {
+        isolatedLocalCounterHolds = false;
+      }
+    }
+    const validLocalCountScenarios = validLocalCountCases.map(([
+      totalValue,
+      pageValue,
+      expectedTotal,
+      expectedPage
+    ]) => ({
+      expectedTotal,
+      expectedPage,
+      scenario: runStatsScenario(source, {
+        pathname: localCountPathname,
+        storageSeed: {
+          'ysb-visit-total': totalValue,
+          [localPageKey]: pageValue
+        },
+        triggerDomContentLoaded: true
+      })
+    }));
+    const invalidLocalCountScenarios = invalidLocalCountValues.map((value) => {
+      const storageSeed = {};
+      if (value !== null) {
+        storageSeed['ysb-visit-total'] = value;
+        storageSeed[localPageKey] = value;
+      }
+      return runStatsScenario(source, {
+        pathname: localCountPathname,
+        storageSeed,
+        triggerDomContentLoaded: true
+      });
+    });
+    const matchesExpectedCounts = (scenario, expectedTotal, expectedPage) => (
+      scenario.storage['ysb-visit-total'] === expectedTotal &&
+      scenario.storage[localPageKey] === expectedPage &&
+      scenario.readElement('local-total').text === expectedTotal &&
+      scenario.readElement('local-page').text === expectedPage
+    );
+    localCountContractHolds = Boolean(localCounterHandler) &&
+      !forbiddenNumericCapability &&
+      isolatedLocalCounterHolds &&
+      validLocalCountScenarios.every(({ scenario, expectedTotal, expectedPage }) => (
+        matchesExpectedCounts(scenario, expectedTotal, expectedPage)
+      )) &&
+      invalidLocalCountScenarios.every((scenario) => (
+        matchesExpectedCounts(scenario, '1', '1')
+      ));
+  } catch (error) {
+    localCountContractHolds = false;
+  }
+  if (!localCountContractHolds) {
+    addIssue(issues, file, STATS_LOCAL_COUNT_CONTRACT_ISSUE);
   }
 
   const legacySeed = {
@@ -2878,6 +3027,21 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
 
 const JAVASCRIPT_NON_CODE_PATTERN =
   /"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|`(?:\\[\s\S]|[^`\\])*`|\/(?![/*])(?:\\[\s\S]|\[(?:\\[\s\S]|[^\]\\])*\]|[^/\\\r\n])+\/[dgimsuvy]*|\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g;
+
+function hasJavaScriptTemplateLiteral(source) {
+  const matcher = new RegExp(
+    JAVASCRIPT_NON_CODE_PATTERN.source,
+    JAVASCRIPT_NON_CODE_PATTERN.flags
+  );
+  let match = matcher.exec(source);
+
+  while (match) {
+    if (match[0].startsWith('`')) return true;
+    match = matcher.exec(source);
+  }
+
+  return false;
+}
 
 function buildJavaScriptCodeMask(source) {
   const mask = new Uint8Array(source.length);

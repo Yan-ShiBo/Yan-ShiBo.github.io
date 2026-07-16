@@ -41,6 +41,8 @@ const STATS_UNAVAILABLE_CONTRACT_ISSUE =
   'assets/js/stats.js: invalid public counters must render -- and end in warn state';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'assets/js/stats.js: local visit dates must remain formatted text';
+const STATS_LOCAL_COUNT_CONTRACT_ISSUE =
+  'assets/js/stats.js: canonical local visit counters must use exact non-negative ASCII decimals, lossless increment, and invalid-state recovery';
 const STATS_LEGACY_STORAGE_CONTRACT_ISSUE =
   'assets/js/stats.js: legacy local history must transition safely without overriding canonical values, deleting legacy keys, or activating invalid data';
 const MANIFEST_INSTALL_ICONS = [
@@ -1608,6 +1610,293 @@ test('validateRepository keeps local date text outside counter validation', (t) 
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(STATS_LOCAL_DATE_CONTRACT_ISSUE));
+});
+
+test('validateRepository accepts only lossless canonical localStorage counter increments', (t) => {
+  const rootDir = createRepositoryFixture(t);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.includes(STATS_LOCAL_COUNT_CONTRACT_ISSUE));
+
+  const commentRoot = createRepositoryFixture(t);
+  replaceOnce(
+    commentRoot,
+    'assets/js/stats.js',
+    '  function incrementLocalCounter(value) {',
+    [
+      '  function incrementLocalCounter(value) {',
+      '    /* A comment containing `Number(digit)` is not executable. */'
+    ].join('\n')
+  );
+
+  const commentResult = validateRepository(commentRoot);
+
+  assert.ok(!commentResult.issues.includes(STATS_LOCAL_COUNT_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects lossy or delegated increments and crossed counter wiring', (t) => {
+  const numericMutations = [
+    {
+      name: 'Number',
+      body: "    return String(Number(value || '0') + 1);"
+    },
+    {
+      name: 'parseInt',
+      body: "    return String(parseInt(value || '0', 10) + 1);"
+    },
+    {
+      name: 'per-digit Number',
+      body: [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        "    var digits = value.split('');",
+        '    for (var i = digits.length - 1; i >= 0; i -= 1) {',
+        "      if (digits[i] !== '9') {",
+        '        digits[i] = String(Number(digits[i]) + 1);',
+        "        return digits.join('');",
+        '      }',
+        "      digits[i] = '0';",
+        '    }',
+        "    return '1' + digits.join('');"
+      ].join('\n')
+    },
+    {
+      name: 'per-digit parseInt',
+      body: [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        "    var digits = value.split('');",
+        '    for (var i = digits.length - 1; i >= 0; i -= 1) {',
+        "      if (digits[i] !== '9') {",
+        '        digits[i] = String(parseInt(digits[i], 10) + 1);',
+        "        return digits.join('');",
+        '      }',
+        "      digits[i] = '0';",
+        '    }',
+        "    return '1' + digits.join('');"
+      ].join('\n')
+    },
+    {
+      name: 'comment-separated Number',
+      body: [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        "    var digits = value.split('');",
+        '    for (var i = digits.length - 1; i >= 0; i -= 1) {',
+        "      if (digits[i] !== '9') {",
+        '        digits[i] = String(Number/* exact digit */(digits[i]) + 1);',
+        "        return digits.join('');",
+        '      }',
+        "      digits[i] = '0';",
+        '    }',
+        "    return '1' + digits.join('');"
+      ].join('\n')
+    },
+    {
+      name: 'template interpolation Number',
+      body: [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        "    var digits = value.split('');",
+        '    for (var i = digits.length - 1; i >= 0; i -= 1) {',
+        "      if (digits[i] !== '9') {",
+        '        digits[i] = `${Number(digits[i]) + 1}`;',
+        "        return digits.join('');",
+        '      }',
+        "      digits[i] = '0';",
+        '    }',
+        "    return '1' + digits.join('');"
+      ].join('\n')
+    },
+    {
+      name: 'parseInt alias',
+      body: [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        '    var toInteger = parseInt;',
+        "    var digits = value.split('');",
+        '    for (var i = digits.length - 1; i >= 0; i -= 1) {',
+        "      if (digits[i] !== '9') {",
+        '        digits[i] = String(toInteger(digits[i], 10) + 1);',
+        "        return digits.join('');",
+        '      }',
+        "      digits[i] = '0';",
+        '    }',
+        "    return '1' + digits.join('');"
+      ].join('\n')
+    },
+    {
+      name: 'per-digit parseFloat',
+      body: [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        "    var digits = value.split('');",
+        '    for (var i = digits.length - 1; i >= 0; i -= 1) {',
+        "      if (digits[i] !== '9') {",
+        '        digits[i] = String(parseFloat(digits[i]) + 1);',
+        "        return digits.join('');",
+        '      }',
+        "      digits[i] = '0';",
+        '    }',
+        "    return '1' + digits.join('');"
+      ].join('\n')
+    },
+    {
+      name: 'decimal BigInt literal',
+      body: [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        '    var zero = 0n;',
+        "    var digits = value.split('');",
+        '    for (var i = digits.length - 1; i >= 0; i -= 1) {',
+        "      if (digits[i] !== '9') {",
+        '        digits[i] = String.fromCharCode(digits[i].charCodeAt(0) + 1);',
+        "        return digits.join('');",
+        '      }',
+        "      digits[i] = '0';",
+        '    }',
+        "    return '1' + digits.join('');"
+      ].join('\n')
+    },
+    {
+      name: 'hexadecimal BigInt literal',
+      body: [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        '    var unused = 0x0n;',
+        "    var digits = value.split('');",
+        '    for (var i = digits.length - 1; i >= 0; i -= 1) {',
+        "      if (digits[i] !== '9') {",
+        '        digits[i] = String.fromCharCode(digits[i].charCodeAt(0) + 1);',
+        "        return digits.join('');",
+        '      }',
+        "      digits[i] = '0';",
+        '    }',
+        "    return '1' + digits.join('');"
+      ].join('\n')
+    },
+    {
+      name: 'separated BigInt literals',
+      body: [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        '    var unused = [0b1_0n, 0o1_0n, 1_0n];',
+        "    var digits = value.split('');",
+        '    for (var i = digits.length - 1; i >= 0; i -= 1) {',
+        "      if (digits[i] !== '9') {",
+        '        digits[i] = String.fromCharCode(digits[i].charCodeAt(0) + 1);',
+        "        return digits.join('');",
+        '      }',
+        "      digits[i] = '0';",
+        '    }',
+        "    return '1' + digits.join('');"
+      ].join('\n')
+    }
+  ];
+
+  for (const mutation of numericMutations) {
+    const rootDir = createRepositoryFixture(t);
+    assert.ok(
+      !validateRepository(rootDir).issues.includes(STATS_LOCAL_COUNT_CONTRACT_ISSUE),
+      `${mutation.name} fixture must begin compliant`
+    );
+    replaceMatching(
+      rootDir,
+      'assets/js/stats.js',
+      /  function incrementLocalCounter\(value\) \{[\s\S]*?\r?\n  \}/,
+      [
+        '  function incrementLocalCounter(value) {',
+        mutation.body,
+        '  }'
+      ].join('\n')
+    );
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(STATS_LOCAL_COUNT_CONTRACT_ISSUE), mutation.name);
+  }
+
+  const crossedWiringRoot = createRepositoryFixture(t);
+  replaceOnce(
+    crossedWiringRoot,
+    'assets/js/stats.js',
+    "      writeCounter('local-page', String(pageCount));",
+    "      writeCounter('local-page', String(total));"
+  );
+
+  const crossedWiringResult = validateRepository(crossedWiringRoot);
+
+  assert.ok(crossedWiringResult.issues.includes(STATS_LOCAL_COUNT_CONTRACT_ISSUE));
+
+  const crossedStateRoot = createRepositoryFixture(t);
+  replaceOnce(
+    crossedStateRoot,
+    'assets/js/stats.js',
+    '      var pageCount = incrementLocalCounter(storage.getItem(pageKey));',
+    '      var pageCount = total;'
+  );
+
+  const crossedStateResult = validateRepository(crossedStateRoot);
+
+  assert.ok(crossedStateResult.issues.includes(STATS_LOCAL_COUNT_CONTRACT_ISSUE));
+
+  const delegatedRoot = createRepositoryFixture(t);
+  replaceOnce(
+    delegatedRoot,
+    'assets/js/stats.js',
+    '  function incrementLocalCounter(value) {',
+    [
+      '  function nextDigit(value) {',
+      '    return String(Number(value) + 1);',
+      '  }',
+      '',
+      '  function incrementLocalCounter(value) {'
+    ].join('\n')
+  );
+  replaceOnce(
+    delegatedRoot,
+    'assets/js/stats.js',
+    '        digits[i] = String.fromCharCode(digits[i].charCodeAt(0) + 1);',
+    '        digits[i] = nextDigit(digits[i]);'
+  );
+
+  const delegatedResult = validateRepository(delegatedRoot);
+
+  assert.ok(delegatedResult.issues.includes(STATS_LOCAL_COUNT_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects loose canonical localStorage counter formats', (t) => {
+  const formatMutations = [
+    {
+      name: 'leading zero',
+      condition: "    if (typeof value !== 'string' || !/^[0-9]+$/.test(value)) return '1';",
+      digits: "    var digits = value.split('');"
+    },
+    {
+      name: 'trimmed whitespace',
+      condition: "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value.trim())) return '1';",
+      digits: "    var digits = value.trim().split('');"
+    },
+    {
+      name: 'optional plus',
+      condition: "    if (typeof value !== 'string' || !/^\\+?(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+      digits: "    var digits = value.replace(/^\\+/, '').split('');"
+    }
+  ];
+
+  for (const mutation of formatMutations) {
+    const rootDir = createRepositoryFixture(t);
+    assert.ok(
+      !validateRepository(rootDir).issues.includes(STATS_LOCAL_COUNT_CONTRACT_ISSUE),
+      `${mutation.name} fixture must begin compliant`
+    );
+    replaceOnce(
+      rootDir,
+      'assets/js/stats.js',
+      [
+        "    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';",
+        '',
+        "    var digits = value.split('');"
+      ].join('\n'),
+      [mutation.condition, '', mutation.digits].join('\n')
+    );
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(STATS_LOCAL_COUNT_CONTRACT_ISSUE), mutation.name);
+  }
 });
 
 test('validateRepository migrates valid legacy localStorage counters safely', (t) => {

@@ -214,6 +214,21 @@
     return y + '-' + m + '-' + d;
   }
 
+  function incrementLocalCounter(value) {
+    if (typeof value !== 'string' || !/^(?:0|[1-9][0-9]*)$/.test(value)) return '1';
+
+    var digits = value.split('');
+    for (var i = digits.length - 1; i >= 0; i -= 1) {
+      if (digits[i] !== '9') {
+        digits[i] = String.fromCharCode(digits[i].charCodeAt(0) + 1);
+        return digits.join('');
+      }
+      digits[i] = '0';
+    }
+
+    return '1' + digits.join('');
+  }
+
   function updateLocalCounters() {
     var storage = getStorage();
     if (!storage) return;
@@ -221,7 +236,7 @@
     migrateLegacyStorage(storage);
 
     try {
-      var total = parseInt(storage.getItem(STORAGE_KEYS.total) || '0', 10) + 1;
+      var total = incrementLocalCounter(storage.getItem(STORAGE_KEYS.total));
       storage.setItem(STORAGE_KEYS.total, String(total));
 
       var firstVisit = storage.getItem(STORAGE_KEYS.first);
@@ -245,7 +260,7 @@
 
       var path = window.location.pathname || '/';
       var pageKey = 'ysb-page:' + path;
-      var pageCount = parseInt(storage.getItem(pageKey) || '0', 10) + 1;
+      var pageCount = incrementLocalCounter(storage.getItem(pageKey));
       storage.setItem(pageKey, String(pageCount));
 
       writeCounter('local-total', String(total));
