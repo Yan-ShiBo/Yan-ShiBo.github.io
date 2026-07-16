@@ -206,12 +206,28 @@
     return y + '-' + m + '-' + d + ' ' + h + ':' + mm;
   }
 
-  function todayKey() {
-    var now = new Date();
+  function todayKey(now) {
+    now = now || new Date();
     var y = now.getFullYear();
     var m = String(now.getMonth() + 1).padStart(2, '0');
     var d = String(now.getDate()).padStart(2, '0');
     return y + '-' + m + '-' + d;
+  }
+
+  function normalizeVisitDays(value, today) {
+    var source = Array.isArray(value) ? value : [];
+    var seen = Object.create(null);
+    var normalized = [];
+
+    for (var i = 0; i < source.length; i += 1) {
+      var day = source[i];
+      if (!validLegacyDay(day) || day === today || seen[day]) continue;
+      seen[day] = true;
+      normalized.push(day);
+    }
+
+    normalized.push(today);
+    return normalized.slice(-365);
   }
 
   function incrementLocalCounter(value) {
@@ -239,24 +255,20 @@
       var total = incrementLocalCounter(storage.getItem(STORAGE_KEYS.total));
       storage.setItem(STORAGE_KEYS.total, String(total));
 
+      var now = new Date();
+      var nowIso = now.toISOString();
       var firstVisit = storage.getItem(STORAGE_KEYS.first);
-      if (!firstVisit) {
-        firstVisit = new Date().toISOString();
+      if (!validLegacyTimestamp(firstVisit)) {
+        firstVisit = nowIso;
         storage.setItem(STORAGE_KEYS.first, firstVisit);
       }
 
-      var lastVisit = new Date().toISOString();
+      var lastVisit = nowIso;
       storage.setItem(STORAGE_KEYS.last, lastVisit);
 
-      var visitDays = loadJSON(STORAGE_KEYS.days, []);
-      var today = todayKey();
-      if (visitDays.indexOf(today) === -1) {
-        visitDays.push(today);
-        if (visitDays.length > 365) {
-          visitDays = visitDays.slice(-365);
-        }
-        saveJSON(STORAGE_KEYS.days, visitDays);
-      }
+      var today = todayKey(now);
+      var visitDays = normalizeVisitDays(loadJSON(STORAGE_KEYS.days, []), today);
+      saveJSON(STORAGE_KEYS.days, visitDays);
 
       var path = window.location.pathname || '/';
       var pageKey = 'ysb-page:' + path;

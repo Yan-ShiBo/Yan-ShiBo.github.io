@@ -149,6 +149,8 @@ const STATS_UNAVAILABLE_CONTRACT_ISSUE =
   'invalid public counters must render -- and end in warn state';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'local visit dates must remain formatted text';
+const STATS_LOCAL_HISTORY_CONTRACT_ISSUE =
+  'canonical local visit history must share one current timestamp, use exact ISO values, unique real days ending today, a 365-day cap, and matching rendered values';
 const STATS_LOCAL_COUNT_CONTRACT_ISSUE =
   'canonical local visit counters must use exact non-negative ASCII decimals, lossless increment, and invalid-state recovery';
 const STATS_LOCAL_COUNTER_VM_TIMEOUT_MS = 100;
@@ -2459,8 +2461,29 @@ function runStatsScenario(source, options = {}) {
       return intervalCallbacks.length;
     }
   };
+  const NativeDate = Date;
+  const scenarioNowStart = options.now ? new NativeDate(options.now).getTime() : 0;
+  const scenarioNowStep = options.nowStepMs || 0;
+  let scenarioNowCalls = 0;
+  const nextScenarioNow = () => {
+    const value = scenarioNowStart + scenarioNowStep * scenarioNowCalls;
+    scenarioNowCalls += 1;
+    return value;
+  };
+  const ScenarioDate = options.now
+    ? class extends NativeDate {
+      constructor(...args) {
+        super(...(args.length > 0 ? args : [nextScenarioNow()]));
+      }
+
+      static now() {
+        return nextScenarioNow();
+      }
+    }
+    : NativeDate;
   const context = vm.createContext({
     BigInt: undefined,
+    Date: ScenarioDate,
     __documentEvents: documentEvents,
     __intervalCallbacks: intervalCallbacks,
     __windowEvents: windowEvents,
@@ -2599,6 +2622,132 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
     !datePattern.test(localScenario.readElement('local-last').text)
   ) {
     addIssue(issues, file, STATS_LOCAL_DATE_CONTRACT_ISSUE);
+  }
+
+  const localHistoryNow = '2024-02-29T04:05:06.789Z';
+  const localHistoryNowDate = new Date(localHistoryNow);
+  const localHistoryToday = [
+    localHistoryNowDate.getFullYear(),
+    String(localHistoryNowDate.getMonth() + 1).padStart(2, '0'),
+    String(localHistoryNowDate.getDate()).padStart(2, '0')
+  ].join('-');
+  const formatLocalHistoryDate = (value) => {
+    const date = new Date(value);
+    return [
+      [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+      ].join('-'),
+      [
+        String(date.getHours()).padStart(2, '0'),
+        String(date.getMinutes()).padStart(2, '0')
+      ].join(':')
+    ].join(' ');
+  };
+  const chronologicalDays = Array.from({ length: 369 }, (_, index) => (
+    new Date(Date.UTC(2022, 0, index + 1)).toISOString().slice(0, 10)
+  ));
+  const historicalDays = [
+    ...chronologicalDays.slice(0, 100),
+    '2020-02-29',
+    ...chronologicalDays.slice(100)
+  ];
+  const reorderedDay = historicalDays[200];
+  historicalDays[200] = historicalDays[201];
+  historicalDays[201] = reorderedDay;
+  const validFirstVisit = '2002-03-04T05:06:07.123Z';
+  const alreadyNormalizedDays = [historicalDays[369], localHistoryToday];
+  const messyDays = [
+    localHistoryToday,
+    historicalDays[0],
+    20240102,
+    historicalDays[0],
+    ...historicalDays.slice(1),
+    historicalDays[120],
+    null,
+    '2024-02-30',
+    localHistoryToday,
+    historicalDays[369],
+    '2024-1-02'
+  ];
+  const expectedMessyDays = [...historicalDays.slice(6), localHistoryToday];
+  const corruptFirstValues = [
+    'not-a-date',
+    '2001-02-03T04:05:06+00:00',
+    '2001-02-03',
+    '2001-02-30T04:05:06.000Z'
+  ];
+  const corruptDaysValues = ['{', 'null', '{}', '42'];
+  let localHistoryContractHolds = false;
+  try {
+    const normalizedScenario = runStatsScenario(source, {
+      now: localHistoryNow,
+      nowStepMs: 86400000,
+      storageSeed: {
+        'ysb-visit-first': validFirstVisit,
+        'ysb-visit-last': '1999-01-01T00:00:00.000Z',
+        'ysb-visit-days': JSON.stringify(messyDays),
+        ysb_first_visit: '1998-01-01T00:00:00.000Z',
+        ysb_visit_days: '["1998-01-01"]'
+      },
+      triggerDomContentLoaded: true
+    });
+    const persistedScenario = runStatsScenario(source, {
+      now: localHistoryNow,
+      nowStepMs: 86400000,
+      storageSeed: {
+        'ysb-visit-first': validFirstVisit,
+        'ysb-visit-days': JSON.stringify(alreadyNormalizedDays)
+      },
+      triggerDomContentLoaded: true
+    });
+    const corruptScenarios = corruptFirstValues.map((firstVisit, index) => (
+      runStatsScenario(source, {
+        now: localHistoryNow,
+        nowStepMs: 86400000,
+        storageSeed: {
+          'ysb-visit-first': firstVisit,
+          'ysb-visit-days': corruptDaysValues[index],
+          ysb_first_visit: '1997-01-02T03:04:05.000Z',
+          ysb_visit_days: '["1997-01-02"]'
+        },
+        triggerDomContentLoaded: true
+      })
+    ));
+    const normalizedDays = JSON.parse(normalizedScenario.storage['ysb-visit-days']);
+    const normalizedScenarioHolds =
+      normalizedScenario.storage['ysb-visit-first'] === validFirstVisit &&
+      normalizedScenario.storage['ysb-visit-last'] === localHistoryNow &&
+      JSON.stringify(normalizedDays) === JSON.stringify(expectedMessyDays) &&
+      normalizedDays.length === 365 &&
+      normalizedDays.filter((day) => day === localHistoryToday).length === 1 &&
+      normalizedDays.at(-1) === localHistoryToday &&
+      normalizedScenario.readElement('local-days').text === '365' &&
+      normalizedScenario.readElement('local-first').text === formatLocalHistoryDate(validFirstVisit) &&
+      normalizedScenario.readElement('local-last').text === formatLocalHistoryDate(localHistoryNow);
+    const persistedScenarioHolds =
+      persistedScenario.storage['ysb-visit-days'] === JSON.stringify(alreadyNormalizedDays) &&
+      persistedScenario.storageWrites.some((write) => (
+        write.key === 'ysb-visit-days' && write.value === JSON.stringify(alreadyNormalizedDays)
+      )) &&
+      persistedScenario.readElement('local-days').text === '2';
+    const corruptScenariosHold = corruptScenarios.every((scenario) => {
+      const days = JSON.parse(scenario.storage['ysb-visit-days']);
+      return scenario.storage['ysb-visit-first'] === localHistoryNow &&
+        scenario.storage['ysb-visit-last'] === localHistoryNow &&
+        JSON.stringify(days) === JSON.stringify([localHistoryToday]) &&
+        scenario.readElement('local-days').text === '1' &&
+        scenario.readElement('local-first').text === formatLocalHistoryDate(localHistoryNow) &&
+        scenario.readElement('local-last').text === formatLocalHistoryDate(localHistoryNow);
+    });
+    localHistoryContractHolds =
+      normalizedScenarioHolds && persistedScenarioHolds && corruptScenariosHold;
+  } catch (error) {
+    localHistoryContractHolds = false;
+  }
+  if (!localHistoryContractHolds) {
+    addIssue(issues, file, STATS_LOCAL_HISTORY_CONTRACT_ISSUE);
   }
 
   const localCountPathname = '/en/local-count-contract.html';
