@@ -127,6 +127,9 @@ const RESUME_OVERFLOW_CSS_ISSUE =
   'resume cards, contact values, and long actions must remain shrinkable on narrow viewports';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
+const HOME_QUOTE_INVENTORY_ISSUE =
+  'home quotation copies must include exactly one poem-note and one quote-text';
+const HOME_QUOTE_PARITY_ISSUE = 'home quotation copies must match';
 const PROVIDER_STATS_IDS = [
   'busuanzi_value_site_pv',
   'busuanzi_value_site_uv',
@@ -812,6 +815,52 @@ function normalizeStructuredText(value) {
 
 function normalizeHtmlText(value) {
   return normalizeStructuredText(decodeHtmlEntities(value));
+}
+
+function extractClassElementText(html, className) {
+  const source = removeHtmlComments(html);
+  const matches = [];
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    const tagStart = source.indexOf('<', cursor);
+    if (tagStart < 0) break;
+    const tag = readHtmlTag(source, tagStart);
+    if (!tag) {
+      cursor = tagStart + 1;
+      continue;
+    }
+    cursor = tag.end;
+    if (tag.isClosing || !hasClass(parseAttributes(tag.raw), className)) continue;
+
+    const closingTag = findHtmlClosingTag(source, tag.name, tag.end);
+    if (!closingTag) continue;
+    matches.push(normalizeHtmlText(
+      source
+        .slice(tag.end, closingTag.index)
+        .replace(/<br\b[^>]*>/gi, ' ')
+        .replace(/<[^>]*>/g, ' ')
+    ));
+    cursor = closingTag.end;
+  }
+
+  return matches;
+}
+
+function validateHomeQuotationCopies(rootDir, issues) {
+  for (const file of ['index.html', 'en/index.html']) {
+    const absolutePath = path.join(rootDir, file);
+    if (!fs.existsSync(absolutePath)) continue;
+    const html = fs.readFileSync(absolutePath, 'utf8');
+    const notes = extractClassElementText(html, 'poem-note');
+    const quotes = extractClassElementText(html, 'quote-text');
+
+    if (notes.length !== 1 || quotes.length !== 1 || !notes[0] || !quotes[0]) {
+      addIssue(issues, file, HOME_QUOTE_INVENTORY_ISSUE);
+      continue;
+    }
+    if (notes[0] !== quotes[0]) addIssue(issues, file, HOME_QUOTE_PARITY_ISSUE);
+  }
 }
 
 function getDocumentTitle(html) {
@@ -4645,6 +4694,7 @@ function validateRepository(rootDir) {
   }
 
   validateStructuredDataConsistency(structuredDataRecords, issues);
+  validateHomeQuotationCopies(absoluteRoot, issues);
 
   for (const page of NOT_FOUND_PAGES) {
     if (!existingHtml.has(page.file)) continue;

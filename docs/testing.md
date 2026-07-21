@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 241 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 包含 243 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -49,16 +49,22 @@ node --test --test-name-pattern="legacy localStorage" scripts/validate-site.test
 node --test --test-name-pattern="canonical local visit history" scripts/validate-site.test.js
 ```
 
+仅定位首页重复引文漂移时可以运行以下名称子集；它同样不能替代全量入口：
+
+```powershell
+node --test --test-name-pattern="home quotation" scripts/validate-site.test.js
+```
+
 当前成功输出应包含：
 
 ```text
-tests 241
-pass 241
+tests 243
+pass 243
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `44 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，规范本地访问历史子集汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `241 tests`、`79 pass`、`162 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `44 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，规范本地访问历史子集与首页引文子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `243 tests`、`79 pass`、`164 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -100,6 +106,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 存在唯一主内容区域和可用 skip link；
 - 图片具有 `alt`、`width` 和 `height`；
 - `target="_blank"` 外链包含安全 `rel`。
+- 中英文首页各自恰有一份 `.poem-note` 与 `.quote-text`，同页两处引文的可见文本规范化后完全一致，避免重复文案单边漂移。
 
 它不会模拟键盘操作，也不会证明视觉对比度、焦点顺序或屏幕阅读器体验正确。
 
@@ -392,6 +399,7 @@ http://127.0.0.1:8000/en/
 - Lightbox 关闭时清除关闭抽屉原有的 `inert`，或让仅因模态打开而设置的背景 `inert` 残留；
 - 把相同 `lastmod` 日期直接判为错误；
 - 文档继续引用已删除路径或重复维护同一合同；
+- 首页同一引文的卡片副本与页尾副本发生单边漂移；
 - 未授权个人材料或未发表研究材料进入公开仓库。
 
 ## 10. 测试结果记录
@@ -399,11 +407,12 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：241 passed / 0 failed
+自动测试：243 passed / 0 failed
 结构化数据子集：79 passed / 0 failed
 图标名称子集：44 passed / 0 failed
 历史 localStorage 子集：8 passed / 0 failed
 规范本地访问历史子集：2 passed / 0 failed
+首页引文子集：2 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
 人工检查：页面、主题、视口、键盘路径；涉及结构化数据时记录 12 路由矩阵

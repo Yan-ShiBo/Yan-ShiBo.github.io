@@ -31,6 +31,9 @@ const RESUME_OVERFLOW_CSS_ISSUE =
   'assets/css/site.css: resume cards, contact values, and long actions must remain shrinkable on narrow viewports';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
+const HOME_QUOTE_INVENTORY_ISSUE =
+  'index.html: home quotation copies must include exactly one poem-note and one quote-text';
+const HOME_QUOTE_PARITY_ISSUE = 'en/index.html: home quotation copies must match';
 const MODAL_INERT_RESTORE_ISSUE =
   'assets/js/site.js: modal background cleanup must restore each element\'s pre-existing inert state';
 const STATS_INTEGER_CONTRACT_ISSUE =
@@ -647,6 +650,29 @@ test('validateRepository accepts the checked-in site baseline', () => {
   assert.equal(result.summary.htmlFiles, 14);
   assert.equal(result.summary.indexablePages, 12);
   assert.equal(result.summary.sitemapUrls, 12);
+});
+
+test('home quotation rejects a missing duplicate slot', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(rootDir, 'index.html', 'class="quote-text"', 'class="quote-copy"');
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_QUOTE_INVENTORY_ISSUE));
+});
+
+test('home quotation rejects drift between duplicate English copies', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    '<p class="quote-text">',
+    '<p class="quote-text">Changed duplicate. '
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_QUOTE_PARITY_ISSUE));
 });
 
 test('validateRepository requires shared mobile breakpoint menu cleanup', (t) => {
