@@ -141,6 +141,8 @@ const PROOF_RAIL_CSS_ISSUE =
   'proof rails must use one card size and expose grab and dragging states';
 const PROOF_RAIL_DRAG_ISSUE =
   'proof rails must support mouse drag scrolling without opening evidence after a drag';
+const HOME_HERO_MOBILE_CSS_ISSUE =
+  'mobile home hero cards must use the unified full-width dossier rail and integrated inner groups';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
@@ -4364,6 +4366,142 @@ function hasProfileContactOverflowProtectionCss(rootDir) {
   ));
 }
 
+function hasPolishedMobileHomeHeroCss(rootDir) {
+  const file = 'assets/css/site.css';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return false;
+
+  const source = readUtf8(rootDir, file);
+  const codeMask = buildCssCodeMask(source);
+  const mediaPattern = /@media\s*\(\s*max-width\s*:\s*640px\s*\)\s*\{/;
+  const executableMobileCss = extractCssMediaBlocks(source, codeMask, mediaPattern)
+    .map((block) => maskedSource(block.source, block.codeMask))
+    .join('\n');
+  if (!executableMobileCss) return false;
+
+  const ruleEntries = collectCssRuleEntries(executableMobileCss);
+  const contracts = [
+    [
+      '.hero > .surface:nth-child(2)',
+      [['background-size', 'auto,48px 48px,48px 48px,auto']]
+    ],
+    [
+      '.hero .hero-side',
+      [
+        ['--hero-rail-card', 'calc(100vw - 32px)'],
+        ['--hero-rail-gutter', '16px'],
+        ['gap', '12px'],
+        ['padding-top', '24px'],
+        ['padding-bottom', '32px'],
+        ['scroll-padding-inline', 'var(--hero-rail-gutter)']
+      ]
+    ],
+    [
+      '.hero .hero-side > *',
+      [
+        ['height', '216px'],
+        ['min-height', '216px'],
+        ['max-height', '216px'],
+        ['border-radius', '14px'],
+        ['box-shadow', 'var(--shadow-soft)'],
+        ['scroll-snap-align', 'center']
+      ]
+    ],
+    [
+      '.hero-side .profile-card',
+      [
+        ['grid-template-columns', 'clamp(60px, 18vw, 72px) minmax(0, 1fr)'],
+        ['align-content', 'center'],
+        ['padding', '14px 16px']
+      ]
+    ],
+    [
+      '.hero-side .profile-card .inline-list .tag',
+      [
+        ['max-width', '100%'],
+        ['border', '0'],
+        ['background', 'transparent'],
+        ['white-space', 'normal'],
+        ['overflow-wrap', 'anywhere']
+      ]
+    ],
+    [
+      '.hero-side .meta-card .chip-list',
+      [
+        ['display', 'grid'],
+        ['gap', '0'],
+        ['overflow', 'hidden'],
+        ['border', '1px solid var(--hairline)'],
+        ['background', 'var(--surface-pearl)']
+      ]
+    ],
+    [
+      '.hero-side .meta-card .chip-list .tag',
+      [
+        ['min-height', '36px'],
+        ['border', '0'],
+        ['background', 'transparent'],
+        ['white-space', 'normal'],
+        ['overflow-wrap', 'anywhere']
+      ]
+    ],
+    [
+      '.hero-side .stats-grid.hero-stats',
+      [
+        ['gap', '0'],
+        ['overflow', 'hidden'],
+        ['border', '1px solid var(--hairline)'],
+        ['background', 'var(--surface-pearl)']
+      ]
+    ],
+    [
+      '.hero-side .compact-stat',
+      [
+        ['min-height', '76px'],
+        ['border', '0'],
+        ['background', 'transparent'],
+        ['box-shadow', 'none']
+      ]
+    ],
+    [
+      '.hero-side .compact-stat .stat-label',
+      [
+        ['min-height', '24px'],
+        ['justify-content', 'center'],
+        ['overflow', 'visible'],
+        ['text-align', 'center'],
+        ['white-space', 'normal']
+      ]
+    ],
+    ['.hero-side .compact-stat .stat-label::before', [['display', 'none']]],
+    [
+      '.hero-side .compact-stat .stat-value',
+      [
+        ['overflow', 'hidden'],
+        ['font-size', 'clamp(14px, 4.25vw, 20px)'],
+        ['letter-spacing', '-.02em'],
+        ['white-space', 'nowrap'],
+        ['text-align', 'center']
+      ]
+    ],
+    [
+      '.hero-stats + .status-note',
+      [['margin-top', '12px'], ['border', '0'], ['font-size', '12px'], ['text-align', 'center']]
+    ]
+  ];
+
+  return contracts.every(([selector, declarations]) => (
+    declarations.every(([property, expectedValue]) => (
+      effectiveDirectCssProperty(
+        executableMobileCss,
+        selector,
+        property,
+        ruleEntries
+      ) === expectedValue
+    ))
+  ));
+}
+
 const NOT_FOUND_VM_TIMEOUT_MS = 100;
 
 function preservesNotFoundPageBehavior(handler) {
@@ -4850,6 +4988,12 @@ function validateProfileContactCssContract(rootDir, issues) {
   }
 }
 
+function validateMobileHomeHeroCssContract(rootDir, issues) {
+  if (!hasPolishedMobileHomeHeroCss(rootDir)) {
+    addIssue(issues, 'assets/css/site.css', HOME_HERO_MOBILE_CSS_ISSUE);
+  }
+}
+
 function preservesProofRailDragBehavior(handler) {
   if (!handler) return false;
 
@@ -5214,6 +5358,7 @@ function validateRepository(rootDir) {
   validateResumeOverflowCssContract(absoluteRoot, issues);
   validateProfileContactCssContract(absoluteRoot, issues);
   validateProofRailCssContract(absoluteRoot, issues);
+  validateMobileHomeHeroCssContract(absoluteRoot, issues);
   validateSiteJavaScriptContracts(absoluteRoot, issues);
 
   return {

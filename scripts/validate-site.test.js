@@ -37,6 +37,8 @@ const PROOF_RAIL_CSS_ISSUE =
   'assets/css/site.css: proof rails must use one card size and expose grab and dragging states';
 const PROOF_RAIL_DRAG_ISSUE =
   'assets/js/site.js: proof rails must support mouse drag scrolling without opening evidence after a drag';
+const HOME_HERO_MOBILE_CSS_ISSUE =
+  'assets/css/site.css: mobile home hero cards must use the unified full-width dossier rail and integrated inner groups';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
@@ -841,6 +843,139 @@ test('validateRepository rejects proof rail drag click-through', (t) => {
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(PROOF_RAIL_DRAG_ISSUE));
+});
+
+test('mobile home hero accepts the unified dossier rail', () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile home hero rejects the old capped card width', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '--hero-rail-card:calc(100vw - 32px);',
+    '--hero-rail-card:min(86vw, 340px);'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile home hero rejects uneven card heights', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '    max-height:216px;',
+    '    max-height:none;'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile home hero rejects restored contact pills', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  .hero-side .profile-card .inline-list .tag{\n    width:max-content;\n    max-width:100%;\n    min-height:24px;\n    padding:0;\n    border:0;',
+    '  .hero-side .profile-card .inline-list .tag{\n    width:max-content;\n    max-width:100%;\n    min-height:24px;\n    padding:0;\n    border:1px solid var(--hairline);'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile home hero rejects separated keyword pills', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '    gap:0;\n    overflow:hidden;\n    border:1px solid var(--hairline);\n    border-radius:10px;\n    background:var(--surface-pearl);',
+    '    gap:8px;\n    overflow:hidden;\n    border:1px solid var(--hairline);\n    border-radius:10px;\n    background:var(--surface-pearl);'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile home hero rejects non-wrapping keyword cells', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '    justify-content:flex-start;\n    white-space:normal;\n    text-wrap:wrap;\n    overflow-wrap:anywhere;',
+    '    justify-content:flex-start;\n    white-space:nowrap;\n    text-wrap:nowrap;\n    overflow-wrap:normal;'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile home hero rejects nested stat card borders', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '    min-height:76px;\n    overflow:hidden;\n    padding:10px 6px;\n    border:0;',
+    '    min-height:76px;\n    overflow:hidden;\n    padding:10px 6px;\n    border:1px solid var(--hairline);'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile home hero rejects clipped counter labels', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '    white-space:normal;\n  }\n  .hero-side .compact-stat .stat-label::before{display:none}',
+    '    white-space:nowrap;\n  }\n  .hero-side .compact-stat .stat-label::before{display:none}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile home hero rejects overflowing counter values', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '    overflow:hidden;\n    text-overflow:clip;\n    font-size:clamp(14px, 4.25vw, 20px);',
+    '    overflow:visible;\n    text-overflow:clip;\n    font-size:clamp(18px, 5.2vw, 22px);'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile home hero rejects the old dense background grid', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '    background-size:auto,48px 48px,48px 48px,auto;',
+    '    background-size:auto,36px 36px,36px 36px,auto;'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
 });
 
 test('home quotation rejects a missing duplicate slot', (t) => {
