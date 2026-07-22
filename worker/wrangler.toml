@@ -1,0 +1,15 @@
+name = "yan-shibo-site-stats"
+main = "src/index.mjs"
+compatibility_date = "2026-07-22"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://yan-shibo.github.io,http://127.0.0.1:8000,http://localhost:8000"
+TRACKING_START_DATE = "2026-07-22"
+TIME_ZONE = "Asia/Shanghai"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yan-shibo-site-stats"
+database_id = "d6dc11fa-5593-4fd9-9933-3598ef550b6e"
+migrations_dir = "migrations"

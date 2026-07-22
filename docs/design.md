@@ -113,10 +113,10 @@ flowchart TB
 ### 3.7 统计组件
 
 - `.stat-card`、`.metric` 和状态说明使用明确标签，不只显示裸数字。
-- 公开 provider 节点与面向用户的展示节点职责分离。
+- 公开指标固定为站点访问、当前页面访问和“本月独立设备（估算）”；中英文都要明确它从 `2026-07-22` 开始统计。
 - 统计脚本仅服务中英文首页与统计页；其他页面不放置伪统计占位。
-- 第三方失败时显示稳定占位或状态说明，不隐藏主体内容。
-- `#stats-status` 使用单一礼貌播报区承载 `loading`、`partial`、`ok` 与 `warn`，状态含义由文字和 `data-state` 共同表达。
+- Worker 请求失败、超时或返回无效字段时，三项公开值统一显示 `--`，不隐藏主体或本地访问记录。
+- `#stats-status` 使用单一礼貌播报区承载 `loading`、`ok` 与 `warn`，状态含义由文字和 `data-state` 共同表达；不展示部分成功状态。
 
 ## 4. 交互状态
 
@@ -250,6 +250,6 @@ flowchart TB
 | Proof Grid | 证明图缩略图与原图入口网格 |
 | Brand Mark | 由 64×64 `assets/icons/brand-mark.png` 提供的 16×16 品牌图 |
 | Stats-enabled | 实际加载 `assets/js/stats.js` 的四个页面 |
-| Provider 节点 | 第三方统计脚本写入的隐藏 DOM，不直接承担展示 |
+| 本月独立设备（估算） | 按上海时区自然月对 Worker 内生成的 IP 与 User-Agent HMAC 摘要去重，不等同于独立访客或真人 |
 | `ysb-theme` | 浏览器中持久化主题选择的 localStorage 键 |
 | 语义一致 | 双语页面目的、事实和操作等价，不等于 DOM 完全相同 |

@@ -1735,15 +1735,6 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 :root[data-theme="dark"] .status-note[data-state="ok"]{color:var(--text);border-color:var(--hairline);background:var(--surface-soft)}
 :root[data-theme="dark"] .status-note[data-state="warn"]{color:var(--ink-muted-80);border-color:var(--hairline);background:var(--surface-soft)}
 
-.hidden-counter{
-  position:absolute;
-  width:0;
-  height:0;
-  overflow:hidden;
-  opacity:0;
-  pointer-events:none;
-}
-
 .note-list{margin:0;padding-left:1.1rem}
 .note-list li{margin:0 0 .7rem}
 

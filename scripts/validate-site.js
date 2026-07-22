@@ -1,4 +1,3 @@
-const childProcess = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -70,11 +69,15 @@ const STATS_PAGES = new Set([
   'en/analytics.html'
 ]);
 
+const STATS_API_ORIGIN = 'https://yan-shibo-site-stats.yan-shibo.workers.dev';
+const STATS_API_ENDPOINT = `${STATS_API_ORIGIN}/v1/visit`;
 const STATS_PRECONNECT_ORIGINS = new Set([
-  'https://busuanzi.icodeq.com',
-  'https://cdn.jsdelivr.net',
-  'https://events.vercount.one'
+  STATS_API_ORIGIN
 ]);
+const LEGACY_STATS_MARKERS = [
+  ['busu', 'anzi'].join(''),
+  ['ver', 'count'].join('')
+];
 
 const MANIFEST_CONTRACTS = [
   {
@@ -120,7 +123,12 @@ const MANIFEST_BY_LANGUAGE = new Map(
 
 const ANALYTICS_PAGES = new Set(['analytics.html', 'en/analytics.html']);
 
-const PUBLIC_STATS_IDS = ['site-pv', 'site-uv', 'page-pv', 'stats-status'];
+const PUBLIC_STATS_IDS = [
+  'site-pv',
+  'month-unique-devices',
+  'page-pv',
+  'stats-status'
+];
 const MOBILE_BREAKPOINT_PX = 833;
 const MOBILE_MENU_CLEANUP_ISSUE =
   `mobile menu cleanup must share the (max-width: ${MOBILE_BREAKPOINT_PX}px) breakpoint predicate`;
@@ -214,14 +222,6 @@ const LEGACY_ENGLISH_TERMINOLOGY = [
     preferred: 'probabilistic guarantee'
   }
 ];
-const PROVIDER_STATS_IDS = [
-  'busuanzi_value_site_pv',
-  'busuanzi_value_site_uv',
-  'busuanzi_value_page_pv',
-  'vercount_value_site_pv',
-  'vercount_value_site_uv',
-  'vercount_value_page_pv'
-];
 const LOCAL_STATS_IDS = [
   'local-total',
   'local-page',
@@ -230,14 +230,18 @@ const LOCAL_STATS_IDS = [
   'local-last'
 ];
 const STATS_INTEGER_CONTRACT_ISSUE =
-  'public counters must accept only non-negative ASCII decimal integer text and fall back from invalid provider values';
+  'Worker responses must expose non-negative ASCII decimal strings plus the approved period and start date';
 const STATS_ZERO_CONTRACT_ISSUE = 'zero must remain a valid public counter';
 const STATS_UNAVAILABLE_CONTRACT_ISSUE =
-  'invalid public counters must render -- and end in warn state';
+  'invalid or unavailable Worker responses must render -- and end in warn state';
 const STATS_STATUS_MARKUP_ISSUE =
   'stats status must start in loading state and expose a polite atomic status live region';
 const STATS_LOADING_CONTRACT_ISSUE =
-  'public counter loading must poll every 250 ms, settle within 8 seconds, and expose loading, partial, and final states';
+  'public statistics must make one JSON POST with a five-second abort deadline and loading, ok, and warn states';
+const STATS_ENDPOINT_MARKUP_ISSUE =
+  'stats pages must expose exactly one approved API endpoint meta and preconnect';
+const STATS_LEGACY_RUNTIME_ISSUE =
+  'legacy public-counter runtime references are forbidden';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'local visit dates must remain formatted text';
 const STATS_LOCAL_HISTORY_CONTRACT_ISSUE =
@@ -524,9 +528,7 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
 
   const expectedManifest = MANIFEST_BY_LANGUAGE.get(expectedLang).file;
   const activeHtml = html.replace(/<!--[\s\S]*?-->/g, '');
-  const headMatch = activeHtml.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
-  const headHtml = headMatch ? headMatch[1] : '';
-  const headLinks = extractTags(headHtml, 'link');
+  const headLinks = extractHeadTags(html, 'link');
   const manifestLinks = headLinks.filter((tag) => (
     String(tag.attributes.rel || '').toLowerCase().split(/\s+/).includes('manifest')
   ));
@@ -553,6 +555,21 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
   if (loadsStats !== STATS_PAGES.has(file)) {
     addIssue(issues, file, 'stats.js load scope does not match the four stats-enabled pages');
   }
+  const statsEndpointMetas = extractHeadTags(html, 'meta').filter((tag) => (
+    String(tag.attributes.name || '').toLowerCase() === 'stats-api-endpoint'
+  ));
+  const statsPreconnects = [];
+  for (const link of headLinks) {
+    const relValues = String(link.attributes.rel || '').toLowerCase().split(/\s+/);
+    if (!relValues.includes('preconnect')) continue;
+    let origin;
+    try {
+      origin = new URL(link.attributes.href, SITE_ORIGIN).origin;
+    } catch (_error) {
+      continue;
+    }
+    if (origin === STATS_API_ORIGIN) statsPreconnects.push(link);
+  }
   for (const link of links) {
     const relValues = String(link.attributes.rel || '').toLowerCase().split(/\s+/);
     if (!relValues.includes('preconnect')) continue;
@@ -570,11 +587,21 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
       );
     }
   }
+  const hasApprovedStatsMarkup =
+    statsEndpointMetas.length === 1 &&
+    statsEndpointMetas[0].attributes.content === STATS_API_ENDPOINT &&
+    statsPreconnects.length === 1;
+  if (STATS_PAGES.has(file) ? !hasApprovedStatsMarkup : statsEndpointMetas.length > 0) {
+    addIssue(issues, file, STATS_ENDPOINT_MARKUP_ISSUE);
+  }
+  const normalizedHtml = activeHtml.toLowerCase();
+  if (LEGACY_STATS_MARKERS.some((marker) => normalizedHtml.includes(marker))) {
+    addIssue(issues, file, STATS_LEGACY_RUNTIME_ISSUE);
+  }
   if (loadsStats) {
     const ids = collectIds(html);
     const requiredStatsIds = [
       ...PUBLIC_STATS_IDS,
-      ...PROVIDER_STATS_IDS,
       ...(ANALYTICS_PAGES.has(file) ? LOCAL_STATS_IDS : [])
     ];
     for (const id of requiredStatsIds) {
@@ -806,6 +833,70 @@ function readHtmlTag(source, startIndex) {
     name: match[2].toLowerCase(),
     raw: source.slice(startIndex, end)
   };
+}
+
+function extractHeadTags(html, expectedTagName) {
+  const source = String(html);
+  const targetName = String(expectedTagName).toLowerCase();
+  const tags = [];
+  let cursor = 0;
+  let headSeen = false;
+  let inHead = false;
+  let templateDepth = 0;
+
+  while (cursor < source.length) {
+    const tagStart = source.indexOf('<', cursor);
+    if (tagStart < 0) break;
+    if (source.startsWith('<!--', tagStart)) {
+      const commentEnd = source.indexOf('-->', tagStart + 4);
+      cursor = commentEnd < 0 ? source.length : commentEnd + 3;
+      continue;
+    }
+
+    const tag = readHtmlTag(source, tagStart);
+    if (!tag) {
+      cursor = tagStart + 1;
+      continue;
+    }
+
+    if (tag.isClosing) {
+      if (tag.name === 'template' && templateDepth > 0) {
+        templateDepth -= 1;
+      } else if (tag.name === 'head' && templateDepth === 0) {
+        inHead = false;
+      }
+      cursor = tag.end;
+      continue;
+    }
+
+    if (tag.name === 'head' && templateDepth === 0 && !headSeen) {
+      headSeen = true;
+      inHead = true;
+    } else if (tag.name === 'body' && templateDepth === 0) {
+      inHead = false;
+    }
+
+    if (inHead && templateDepth === 0 && tag.name === targetName) {
+      tags.push({
+        raw: tag.raw,
+        attributes: parseAttributes(tag.raw)
+      });
+    }
+
+    if (isScriptingEnabledRawTextElement(tag.name) || RCDATA_ELEMENT_NAMES.has(tag.name)) {
+      const closingTag = findHtmlClosingTag(source, tag.name, tag.end);
+      if (!closingTag) break;
+      cursor = closingTag.end;
+      continue;
+    }
+
+    if (tag.name === 'template' && !/\/\s*>$/.test(tag.raw)) {
+      templateDepth += 1;
+    }
+    cursor = tag.end;
+  }
+
+  return tags;
 }
 
 function findHtmlClosingTag(source, tagName, startIndex) {
@@ -2603,37 +2694,41 @@ function validateJavaScriptSyntax(rootDir, issues) {
     'assets/js/site.js',
     'assets/js/stats.js',
     'scripts/generate-sitemap.js',
-    'scripts/validate-site.js'
+    'scripts/validate-site.js',
+    'worker/src/index.mjs'
   ];
   for (const file of files) {
     if (!ensureFile(rootDir, file, issues)) continue;
-    const result = childProcess.spawnSync(
-      process.execPath,
-      ['--check', path.join(rootDir, file)],
-      { encoding: 'utf8' }
-    );
-    if (result.status !== 0) {
-      addIssue(issues, file, (result.stderr || result.stdout || 'syntax check failed').trim());
+    try {
+      let source = readUtf8(rootDir, file);
+      if (file.endsWith('.mjs')) {
+        const exportMatches = source.match(/\bexport\s+default\s+/g) || [];
+        if (exportMatches.length !== 1) {
+          throw new SyntaxError('expected exactly one default ESM export');
+        }
+        source = source.replace(/\bexport\s+default\s+/, 'const __defaultExport = ');
+      }
+      new vm.Script(source, { filename: file });
+    } catch (error) {
+      addIssue(issues, file, error.message || 'syntax check failed');
     }
   }
 }
 
 function runStatsScenario(source, options = {}) {
-  const providerValues = options.providerValues || {};
   const storageSeed = options.storageSeed || {};
   const storageGetFailures = new Set(
     (options.storageGetFailures || []).map((key) => String(key))
   );
   const elementIds = [
     ...PUBLIC_STATS_IDS,
-    ...PROVIDER_STATS_IDS,
     ...LOCAL_STATS_IDS
   ];
   const elements = new Map();
   for (const id of elementIds) {
     const element = {
       attributes: {},
-      textContent: Object.hasOwn(providerValues, id) ? providerValues[id] : ''
+      textContent: ''
     };
     element.setAttribute = function (name, value) {
       element.attributes[name] = String(value);
@@ -2646,9 +2741,11 @@ function runStatsScenario(source, options = {}) {
   );
   const documentEvents = {};
   const windowEvents = {};
-  const intervalCallbacks = [];
-  const intervalDelays = [];
-  let clearedIntervals = 0;
+  const timeoutCallbacks = [];
+  const timeoutDelays = [];
+  const fetchCalls = [];
+  let clearedTimeouts = 0;
+  let abortCalls = 0;
   const storageWrites = [];
   const storageRemovals = [];
   let storageClearCount = 0;
@@ -2676,13 +2773,24 @@ function runStatsScenario(source, options = {}) {
     }
   };
   const document = {
-    documentElement: { lang: 'en' },
+    documentElement: { lang: options.lang || 'en' },
     head: { appendChild() {} },
     addEventListener(type, callback) {
       documentEvents[type] = callback;
     },
     createElement() {
       return {};
+    },
+    querySelector(selector) {
+      if (selector !== 'meta[name="stats-api-endpoint"]') return null;
+      if (options.endpoint === null) return null;
+      return {
+        getAttribute(name) {
+          return name === 'content'
+            ? (options.endpoint || STATS_API_ENDPOINT)
+            : null;
+        }
+      };
     },
     getElementById(id) {
       return elements.get(id) || null;
@@ -2695,15 +2803,72 @@ function runStatsScenario(source, options = {}) {
     addEventListener(type, callback) {
       windowEvents[type] = callback;
     },
-    clearInterval() {
-      clearedIntervals += 1;
+    clearTimeout() {
+      clearedTimeouts += 1;
     },
-    setInterval(callback, delay) {
-      intervalCallbacks.push(callback);
-      intervalDelays.push(delay);
-      return intervalCallbacks.length;
+    setTimeout(callback, delay) {
+      timeoutCallbacks.push(callback);
+      timeoutDelays.push(delay);
+      return timeoutCallbacks.length;
     }
   };
+  function settled(state, value) {
+    return {
+      then(onFulfilled, onRejected) {
+        const callback = state === 'fulfilled' ? onFulfilled : onRejected;
+        if (typeof callback !== 'function') return settled(state, value);
+        try {
+          const result = callback(value);
+          return result && typeof result.then === 'function'
+            ? result
+            : settled('fulfilled', result);
+        } catch (error) {
+          return settled('rejected', error);
+        }
+      },
+      catch(onRejected) {
+        return this.then(undefined, onRejected);
+      },
+      finally(callback) {
+        callback();
+        return this;
+      }
+    };
+  }
+  class TestAbortController {
+    constructor() {
+      this.signal = {};
+    }
+
+    abort() {
+      abortCalls += 1;
+    }
+  }
+  function fetch(url, requestOptions) {
+    fetchCalls.push({
+      body: requestOptions && requestOptions.body,
+      cache: requestOptions && requestOptions.cache,
+      credentials: requestOptions && requestOptions.credentials,
+      headers: requestOptions && requestOptions.headers,
+      method: requestOptions && requestOptions.method,
+      url: String(url)
+    });
+    if (options.fetchError) {
+      return settled('rejected', new Error('simulated stats request failure'));
+    }
+    return settled('fulfilled', {
+      ok: options.responseOk !== false,
+      json() {
+        return settled('fulfilled', options.publicPayload || {
+          siteViews: '42',
+          monthUniqueDevices: '7',
+          pageViews: '11',
+          period: '2026-07',
+          trackingSince: '2026-07-22'
+        });
+      }
+    });
+  }
   const NativeDate = Date;
   const scenarioNowStart = options.now ? new NativeDate(options.now).getTime() : 0;
   const scenarioNowStep = options.nowStepMs || 0;
@@ -2725,12 +2890,14 @@ function runStatsScenario(source, options = {}) {
     }
     : NativeDate;
   const context = vm.createContext({
+    AbortController: TestAbortController,
     BigInt: undefined,
     Date: ScenarioDate,
     __documentEvents: documentEvents,
-    __intervalCallbacks: intervalCallbacks,
+    __timeoutCallbacks: timeoutCallbacks,
     __windowEvents: windowEvents,
     document,
+    fetch,
     window
   });
   const script = new vm.Script(source, { filename: 'assets/js/stats.js' });
@@ -2742,8 +2909,8 @@ function runStatsScenario(source, options = {}) {
   if (options.triggerLoad) {
     vm.runInContext('__windowEvents.load()', context, { timeout: 1000 });
   }
-  for (let tick = 0; tick < (options.intervalTicks || 0); tick += 1) {
-    vm.runInContext('__intervalCallbacks[0]()', context, { timeout: 1000 });
+  for (let tick = 0; tick < (options.timeoutTicks || 0); tick += 1) {
+    vm.runInContext('__timeoutCallbacks[0]()', context, { timeout: 1000 });
   }
 
   function readElement(id) {
@@ -2760,8 +2927,10 @@ function runStatsScenario(source, options = {}) {
     storageWrites: Object.freeze(storageWrites.slice()),
     storageRemovals: Object.freeze(storageRemovals.slice()),
     storageClearCount,
-    intervalDelays: Object.freeze(intervalDelays.slice()),
-    clearedIntervals
+    fetchCalls: Object.freeze(fetchCalls.slice()),
+    timeoutDelays: Object.freeze(timeoutDelays.slice()),
+    clearedTimeouts,
+    abortCalls
   };
 }
 
@@ -2771,73 +2940,74 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
   if (!fs.existsSync(absolutePath)) return;
 
   let source;
-  let fallbackScenario;
+  let validScenario;
   let zeroScenario;
-  let loadingScenario;
-  let partialScenario;
+  let invalidCounterScenario;
+  let invalidPeriodScenario;
+  let invalidStartScenario;
   let unavailableScenario;
+  let missingEndpointScenario;
   let localScenario;
   try {
     source = readUtf8(rootDir, file);
-    fallbackScenario = runStatsScenario(source, {
-      providerValues: {
-        busuanzi_value_site_pv: '-1',
-        vercount_value_site_pv: '900719925474099312345',
-        busuanzi_value_site_uv: '1.5',
-        vercount_value_site_uv: '43',
-        busuanzi_value_page_pv: '１２',
-        vercount_value_page_pv: '44'
+    validScenario = runStatsScenario(source, {
+      pathname: '/en/analytics.html',
+      publicPayload: {
+        siteViews: '900719925474099312345',
+        monthUniqueDevices: '43',
+        pageViews: '44',
+        period: '2026-07',
+        trackingSince: '2026-07-22'
       },
-      triggerLoad: true,
-      intervalTicks: 1
+      triggerLoad: true
     });
     zeroScenario = runStatsScenario(source, {
-      providerValues: {
-        busuanzi_value_site_pv: ' 0 ',
-        vercount_value_site_pv: '42',
-        busuanzi_value_site_uv: '0007',
-        vercount_value_site_uv: '43',
-        busuanzi_value_page_pv: '00123',
-        vercount_value_page_pv: '44'
+      publicPayload: {
+        siteViews: '0',
+        monthUniqueDevices: '0',
+        pageViews: '0',
+        period: '2026-07',
+        trackingSince: '2026-07-22'
       },
-      triggerLoad: true,
-      intervalTicks: 1
+      triggerLoad: true
     });
-    loadingScenario = runStatsScenario(source, {
-      providerValues: {
-        busuanzi_value_site_pv: '-1',
-        vercount_value_site_pv: '+1',
-        busuanzi_value_site_uv: '1.5',
-        vercount_value_site_uv: '1e3',
-        busuanzi_value_page_pv: '1,000',
-        vercount_value_page_pv: 'broken'
+    invalidCounterScenario = runStatsScenario(source, {
+      publicPayload: {
+        siteViews: 42,
+        monthUniqueDevices: '7',
+        pageViews: '11',
+        period: '2026-07',
+        trackingSince: '2026-07-22'
       },
-      triggerLoad: true,
-      intervalTicks: 31
+      triggerLoad: true
     });
-    partialScenario = runStatsScenario(source, {
-      providerValues: {
-        busuanzi_value_site_pv: '42',
-        vercount_value_site_pv: '--',
-        busuanzi_value_site_uv: '--',
-        vercount_value_site_uv: '--',
-        busuanzi_value_page_pv: '--',
-        vercount_value_page_pv: '--'
+    invalidPeriodScenario = runStatsScenario(source, {
+      publicPayload: {
+        siteViews: '42',
+        monthUniqueDevices: '7',
+        pageViews: '11',
+        period: '2026-13',
+        trackingSince: '2026-07-22'
       },
-      triggerLoad: true,
-      intervalTicks: 1
+      triggerLoad: true
+    });
+    invalidStartScenario = runStatsScenario(source, {
+      publicPayload: {
+        siteViews: '42',
+        monthUniqueDevices: '7',
+        pageViews: '11',
+        period: '2026-07',
+        trackingSince: '2026-07-21'
+      },
+      triggerLoad: true
     });
     unavailableScenario = runStatsScenario(source, {
-      providerValues: {
-        busuanzi_value_site_pv: '-1',
-        vercount_value_site_pv: '+1',
-        busuanzi_value_site_uv: '1.5',
-        vercount_value_site_uv: '1e3',
-        busuanzi_value_page_pv: '1,000',
-        vercount_value_page_pv: 'broken'
-      },
-      triggerLoad: true,
-      intervalTicks: 32
+      fetchError: true,
+      triggerLoad: true
+    });
+    missingEndpointScenario = runStatsScenario(source, {
+      endpoint: null,
+      triggerLoad: true
     });
     localScenario = runStatsScenario(source, {
       storageSeed: {
@@ -2857,52 +3027,81 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
     return;
   }
 
-  const fallbackValues = ['site-pv', 'site-uv', 'page-pv'].map(
-    (id) => fallbackScenario.readElement(id).text
+  const publicIds = ['site-pv', 'month-unique-devices', 'page-pv'];
+  const validValues = publicIds.map(
+    (id) => validScenario.readElement(id).text
   );
   if (
-    fallbackValues.join(' ') !== '900719925474099312345 43 44' ||
-    fallbackScenario.readElement('stats-status').state !== 'ok'
+    validValues.join(' ') !== '900719925474099312345 43 44' ||
+    validScenario.readElement('stats-status').state !== 'ok' ||
+    !validScenario.readElement('stats-status').text.includes('July 22, 2026') ||
+    ![invalidCounterScenario, invalidPeriodScenario, invalidStartScenario].every(
+      (scenario) => (
+        publicIds.every((id) => scenario.readElement(id).text === '--') &&
+        scenario.readElement('stats-status').state === 'warn'
+      )
+    )
   ) {
     addIssue(issues, file, STATS_INTEGER_CONTRACT_ISSUE);
   }
 
-  const zeroValues = ['site-pv', 'site-uv', 'page-pv'].map(
+  const zeroValues = publicIds.map(
     (id) => zeroScenario.readElement(id).text
   );
   if (
-    zeroValues.join(' ') !== '0 0007 00123' ||
+    zeroValues.join(' ') !== '0 0 0' ||
     zeroScenario.readElement('stats-status').state !== 'ok'
   ) {
     addIssue(issues, file, STATS_ZERO_CONTRACT_ISSUE);
   }
 
-  const unavailableValues = ['site-pv', 'site-uv', 'page-pv'].map(
-    (id) => unavailableScenario.readElement(id).text
-  );
+  const failureScenarios = [
+    invalidCounterScenario,
+    invalidPeriodScenario,
+    invalidStartScenario,
+    unavailableScenario,
+    missingEndpointScenario
+  ];
   if (
-    unavailableValues.some((value) => value !== '--') ||
-    unavailableScenario.readElement('stats-status').state !== 'warn'
+    !failureScenarios.every((scenario) => (
+      publicIds.every((id) => scenario.readElement(id).text === '--') &&
+      scenario.readElement('stats-status').state === 'warn' &&
+      scenario.readElement('stats-status').text.includes('local records remain available')
+    ))
   ) {
     addIssue(issues, file, STATS_UNAVAILABLE_CONTRACT_ISSUE);
   }
 
-  const loadingStatus = loadingScenario.readElement('stats-status');
-  const partialStatus = partialScenario.readElement('stats-status');
-  const unavailableStatus = unavailableScenario.readElement('stats-status');
+  let requestBody = null;
+  try {
+    requestBody = JSON.parse(validScenario.fetchCalls[0].body);
+  } catch (error) {
+    requestBody = null;
+  }
+  const validCall = validScenario.fetchCalls[0] || {};
   if (
-    loadingStatus.state !== 'loading' ||
-    loadingStatus.text !== 'Loading public counters (Busuanzi / Vercount)…' ||
-    partialStatus.state !== 'partial' ||
-    partialStatus.text !== 'Public counters loaded. Current values come from whichever services are available.' ||
-    unavailableStatus.state !== 'warn' ||
-    loadingScenario.intervalDelays.length !== 1 ||
-    loadingScenario.intervalDelays[0] !== 250 ||
-    loadingScenario.clearedIntervals !== 0 ||
-    fallbackScenario.clearedIntervals !== 1 ||
-    unavailableScenario.clearedIntervals !== 1
+    validScenario.fetchCalls.length !== 1 ||
+    validCall.url !== STATS_API_ENDPOINT ||
+    validCall.method !== 'POST' ||
+    validCall.cache !== 'no-store' ||
+    validCall.credentials !== 'omit' ||
+    !validCall.headers ||
+    validCall.headers['Content-Type'] !== 'application/json' ||
+    JSON.stringify(requestBody) !== JSON.stringify({ path: '/en/analytics.html' }) ||
+    validScenario.timeoutDelays.length !== 1 ||
+    validScenario.timeoutDelays[0] !== 5000 ||
+    validScenario.clearedTimeouts !== 1 ||
+    missingEndpointScenario.fetchCalls.length !== 0
   ) {
     addIssue(issues, file, STATS_LOADING_CONTRACT_ISSUE);
+  }
+  const normalizedSource = source.toLowerCase();
+  if (
+    LEGACY_STATS_MARKERS.some((marker) => normalizedSource.includes(marker)) ||
+    /\bsetInterval\s*\(/.test(source) ||
+    /createElement\s*\(\s*['"]script['"]\s*\)/.test(source)
+  ) {
+    addIssue(issues, file, STATS_LEGACY_RUNTIME_ISSUE);
   }
 
   const datePattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
@@ -5371,26 +5570,29 @@ function validateRepository(rootDir) {
   };
 }
 
-function runCli() {
-  const rootDir = path.resolve(__dirname, '..');
+function runCli(
+  rootDir = path.resolve(__dirname, '..'),
+  output = { error: console.error, log: console.log }
+) {
   const result = validateRepository(rootDir);
   if (result.issues.length > 0) {
-    console.error(`Site validation failed with ${result.issues.length} issue(s):`);
-    for (const issue of result.issues) console.error(`- ${issue}`);
-    process.exitCode = 1;
-    return;
+    output.error(`Site validation failed with ${result.issues.length} issue(s):`);
+    for (const issue of result.issues) output.error(`- ${issue}`);
+    return 1;
   }
-  console.log(
+  output.log(
     `Site validation passed: ${result.summary.htmlFiles} HTML files, ` +
     `${result.summary.indexablePages} indexable pages, ` +
     `${result.summary.sitemapUrls} sitemap URLs.`
   );
+  return 0;
 }
 
-if (require.main === module) runCli();
+if (require.main === module) process.exitCode = runCli();
 
 module.exports = {
   resolveLocalReference,
+  runCli,
   stripUrlDecorations,
   validateRepository
 };

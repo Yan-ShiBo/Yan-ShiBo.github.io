@@ -1,11 +1,6 @@
 (function () {
-  var PUBLIC_SCRIPT_CANDIDATES = [
-    'https://busuanzi.icodeq.com/busuanzi.pure.mini.js',
-    'https://cdn.jsdelivr.net/gh/sukkaw/busuanzi@2.3/bsz.pure.mini.js',
-    'https://cdn.jsdelivr.net/npm/busuanzi@2.3.0'
-  ];
-  var PUBLIC_COUNTER_POLL_MS = 250;
-  var PUBLIC_COUNTER_MAX_TRIES = 32;
+  var PUBLIC_REQUEST_TIMEOUT_MS = 5000;
+  var TRACKING_START_DATE = '2026-07-22';
 
   var STORAGE_KEYS = {
     total: 'ysb-visit-total',
@@ -85,16 +80,14 @@
 
   var i18n = {
     zh: {
-      loading: '正在获取公开访问统计（Busuanzi / Vercount）…',
-      ok: '公开访问统计已成功载入',
-      partial: '公开访问统计已载入，当前显示的是可用来源中的有效结果。',
-      unavailable: '公开访问统计暂不可用，你的本机记录仍可正常显示。'
+      loading: '正在加载访问统计（统计始于 2026-07-22）…',
+      ok: '统计已更新；统计始于 2026-07-22，本月独立设备为估算值。',
+      unavailable: '访问统计暂不可用；统计始于 2026-07-22，本机记录仍可正常显示。'
     },
     en: {
-      loading: 'Loading public counters (Busuanzi / Vercount)…',
-      ok: 'Public counters loaded successfully',
-      partial: 'Public counters loaded. Current values come from whichever services are available.',
-      unavailable: 'Public counters are unavailable right now. Local visit records remain available.'
+      loading: 'Loading visit statistics (tracking since July 22, 2026)…',
+      ok: 'Statistics updated. Tracking since July 22, 2026; monthly device counts are estimates.',
+      unavailable: 'Visit statistics are unavailable. Tracking since July 22, 2026; local records remain available.'
     }
   };
 
@@ -109,14 +102,8 @@
     el.setAttribute('data-state', state);
   }
 
-  function readCounter(id) {
-    var el = document.getElementById(id);
-    if (!el) return '';
-    return (el.textContent || '').trim();
-  }
-
   function validCounter(value) {
-    return /^[0-9]+$/.test(value);
+    return typeof value === 'string' && /^[0-9]+$/.test(value);
   }
 
   function writeCounter(id, value) {
@@ -129,49 +116,71 @@
     if (el) el.textContent = value || '--';
   }
 
-  function pickCounter(ids) {
-    for (var i = 0; i < ids.length; i += 1) {
-      var value = readCounter(ids[i]);
-      if (validCounter(value)) return value;
+  function statsEndpoint() {
+    var meta = document.querySelector('meta[name="stats-api-endpoint"]');
+    return meta ? (meta.getAttribute('content') || '').trim() : '';
+  }
+
+  function validPublicPayload(payload) {
+    return payload &&
+      typeof payload === 'object' &&
+      validCounter(payload.siteViews) &&
+      validCounter(payload.monthUniqueDevices) &&
+      validCounter(payload.pageViews) &&
+      typeof payload.period === 'string' &&
+      /^[0-9]{4}-(?:0[1-9]|1[0-2])$/.test(payload.period) &&
+      payload.trackingSince === TRACKING_START_DATE;
+  }
+
+  function renderUnavailable() {
+    writeCounter('site-pv', '--');
+    writeCounter('month-unique-devices', '--');
+    writeCounter('page-pv', '--');
+    setStatus(text('unavailable'), 'warn');
+  }
+
+  function loadPublicCounters() {
+    var endpoint = statsEndpoint();
+    if (!endpoint) {
+      renderUnavailable();
+      return;
     }
-    return '--';
-  }
+    if (typeof fetch !== 'function' || typeof AbortController !== 'function') {
+      renderUnavailable();
+      return;
+    }
 
-  function loadPublicScript(index) {
-    if (index >= PUBLIC_SCRIPT_CANDIDATES.length) return;
-    var script = document.createElement('script');
-    script.async = true;
-    script.src = PUBLIC_SCRIPT_CANDIDATES[index];
-    script.onerror = function () {
-      loadPublicScript(index + 1);
+    var controller = new AbortController();
+    var timer = window.setTimeout(function () {
+      controller.abort();
+    }, PUBLIC_REQUEST_TIMEOUT_MS);
+    var requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: window.location.pathname || '/' }),
+      cache: 'no-store',
+      credentials: 'omit',
+      signal: controller.signal
     };
-    document.head.appendChild(script);
-  }
 
-  function syncPublicCounters() {
-    var sitePv = pickCounter([
-      'busuanzi_value_site_pv',
-      'vercount_value_site_pv'
-    ]);
-    var siteUv = pickCounter([
-      'busuanzi_value_site_uv',
-      'vercount_value_site_uv'
-    ]);
-    var pagePv = pickCounter([
-      'busuanzi_value_page_pv',
-      'vercount_value_page_pv'
-    ]);
-
-    var validCount = 0;
-    if (validCounter(sitePv)) validCount += 1;
-    if (validCounter(siteUv)) validCount += 1;
-    if (validCounter(pagePv)) validCount += 1;
-
-    writeCounter('site-pv', sitePv);
-    writeCounter('site-uv', siteUv);
-    writeCounter('page-pv', pagePv);
-
-    return validCount;
+    fetch(endpoint, requestOptions)
+      .then(function (response) {
+        if (!response.ok) throw new Error('stats request failed');
+        return response.json();
+      })
+      .then(function (payload) {
+        if (!validPublicPayload(payload)) throw new Error('invalid stats response');
+        writeCounter('site-pv', payload.siteViews);
+        writeCounter('month-unique-devices', payload.monthUniqueDevices);
+        writeCounter('page-pv', payload.pageViews);
+        setStatus(text('ok'), 'ok');
+      })
+      .catch(function () {
+        renderUnavailable();
+      })
+      .finally(function () {
+        window.clearTimeout(timer);
+      });
   }
 
   function loadJSON(key, defaultValue) {
@@ -283,7 +292,7 @@
       writeText('local-first', formatDate(firstVisit));
       writeText('local-last', formatDate(lastVisit));
     } catch (err) {
-      /* local counters are optional; public counters should still load */
+      /* local counters are optional; public statistics should still load */
     }
   }
 
@@ -293,35 +302,6 @@
 
   window.addEventListener('load', function () {
     setStatus(text('loading'), 'loading');
-
-    // Inject Vercount script dynamically AFTER load to avoid blocking spinner
-    var vercountScript = document.createElement('script');
-    vercountScript.src = 'https://events.vercount.one/js';
-    vercountScript.async = true;
-    document.head.appendChild(vercountScript);
-
-    loadPublicScript(0);
-
-    var tries = 0;
-    var timer = window.setInterval(function () {
-      tries += 1;
-      var validCount = syncPublicCounters();
-      if (validCount === 3) {
-        setStatus(text('ok'), 'ok');
-        window.clearInterval(timer);
-        return;
-      }
-      if (validCount > 0) {
-        setStatus(text('partial'), 'partial');
-      }
-      if (tries >= PUBLIC_COUNTER_MAX_TRIES) {
-        if (validCount > 0) {
-          setStatus(text('partial'), 'partial');
-        } else {
-          setStatus(text('unavailable'), 'warn');
-        }
-        window.clearInterval(timer);
-      }
-    }, PUBLIC_COUNTER_POLL_MS);
+    loadPublicCounters();
   });
 })();

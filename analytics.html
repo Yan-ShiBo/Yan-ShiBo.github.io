@@ -5,7 +5,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>访问统计 · 闫士博</title>
-  <meta name="description" content="闫士博个人主页的访问统计页，展示公开计数与当前浏览器本地记录。"/>
+  <meta name="description" content="闫士博个人主页的访问统计页，展示自 2026-07-22 起的站点访问、本月独立设备估算、当前页访问与浏览器本地记录。"/>
   <meta name="theme-color" content="#ececee"/>
   <meta name="color-scheme" content="light dark"/>
   <link rel="icon" type="image/x-icon" href="./assets/icons/site.ico"/>
@@ -16,19 +16,18 @@
   <link rel="alternate" hreflang="x-default" href="https://yan-shibo.github.io/analytics.html"/>
   <meta property="og:type" content="website"/>
   <meta property="og:title" content="访问统计 · 闫士博"/>
-  <meta property="og:description" content="闫士博个人主页的访问统计页，展示公开计数与当前浏览器本地记录。"/>
+  <meta property="og:description" content="闫士博个人主页的访问统计页，展示自 2026-07-22 起的站点访问、本月独立设备估算、当前页访问与浏览器本地记录。"/>
   <meta property="og:url" content="https://yan-shibo.github.io/analytics.html"/>
   <meta property="og:site_name" content="ShiBo Yan"/>
   <meta property="og:locale" content="zh_CN"/>
   <meta property="og:image" content="https://yan-shibo.github.io/assets/profile/photo.jpg"/>
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="访问统计 · 闫士博"/>
-  <meta name="twitter:description" content="闫士博个人主页的访问统计页，展示公开计数与当前浏览器本地记录。"/>
+  <meta name="twitter:description" content="闫士博个人主页的访问统计页，展示自 2026-07-22 起的站点访问、本月独立设备估算、当前页访问与浏览器本地记录。"/>
   <meta name="twitter:image" content="https://yan-shibo.github.io/assets/profile/photo.jpg"/>
-  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://yan-shibo.github.io/analytics.html#webpage","url":"https://yan-shibo.github.io/analytics.html","name":"访问统计 · 闫士博","description":"闫士博个人主页的访问统计页，展示公开计数与当前浏览器本地记录。","inLanguage":"zh-CN","isPartOf":{"@id":"https://yan-shibo.github.io/#website"},"about":{"@id":"https://yan-shibo.github.io/#website"}},{"@type":"WebSite","@id":"https://yan-shibo.github.io/#website","url":"https://yan-shibo.github.io/","name":"闫士博","inLanguage":["zh-CN","en"],"creator":{"@id":"https://yan-shibo.github.io/#person"}},{"@type":"Person","@id":"https://yan-shibo.github.io/#person","name":"闫士博","alternateName":"ShiBo Yan","url":"https://yan-shibo.github.io/","image":"https://yan-shibo.github.io/assets/profile/photo.jpg","email":"mailto:y423314860@163.com","alumniOf":{"@type":"CollegeOrUniversity","name":"Southwest University"},"homeLocation":{"@type":"Place","name":"Chongqing, China"}}]}</script>
-  <link href="https://busuanzi.icodeq.com" rel="preconnect"/>
-  <link href="https://cdn.jsdelivr.net" rel="preconnect"/>
-  <link href="https://events.vercount.one" rel="preconnect"/>
+  <meta name="stats-api-endpoint" content="https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit"/>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://yan-shibo.github.io/analytics.html#webpage","url":"https://yan-shibo.github.io/analytics.html","name":"访问统计 · 闫士博","description":"闫士博个人主页的访问统计页，展示自 2026-07-22 起的站点访问、本月独立设备估算、当前页访问与浏览器本地记录。","inLanguage":"zh-CN","isPartOf":{"@id":"https://yan-shibo.github.io/#website"},"about":{"@id":"https://yan-shibo.github.io/#website"}},{"@type":"WebSite","@id":"https://yan-shibo.github.io/#website","url":"https://yan-shibo.github.io/","name":"闫士博","inLanguage":["zh-CN","en"],"creator":{"@id":"https://yan-shibo.github.io/#person"}},{"@type":"Person","@id":"https://yan-shibo.github.io/#person","name":"闫士博","alternateName":"ShiBo Yan","url":"https://yan-shibo.github.io/","image":"https://yan-shibo.github.io/assets/profile/photo.jpg","email":"mailto:y423314860@163.com","alumniOf":{"@type":"CollegeOrUniversity","name":"Southwest University"},"homeLocation":{"@type":"Place","name":"Chongqing, China"}}]}</script>
+  <link href="https://yan-shibo-site-stats.yan-shibo.workers.dev" rel="preconnect"/>
   <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
   <link href="./assets/css/site.css" rel="stylesheet"/>
   <script defer="" src="./assets/js/site.js"></script>
@@ -91,11 +90,10 @@
 </div>
 </aside>
 <main class="main-shell" id="main-content">
-<section class="surface page-hero" data-reveal=""><div class="section-title-wrap"><span class="kicker">Stats</span><h1>访问统计</h1><p class="lead">展示公开访问量、独立访客估计值、当前页访问量，以及当前浏览器中的本地记录。公开计数被拦截时，本地记录仍会正常显示。</p></div></section>
-<section class="section-block" data-reveal=""><div aria-atomic="true" aria-live="polite" class="status-note" data-state="loading" id="stats-status" role="status">正在获取公开访问统计（Busuanzi / Vercount）…</div><div class="stats-grid"><article class="stat-card"><div class="stat-label">全站访问</div><div class="stat-value" id="site-pv">--</div><div class="stat-tip">公开计数器返回的站点总访问量。</div></article><article class="stat-card"><div class="stat-label">独立访客</div><div class="stat-value" id="site-uv">--</div><div class="stat-tip">公开计数器返回的独立访客估计值。</div></article><article class="stat-card"><div class="stat-label">当前页访问</div><div class="stat-value" id="page-pv">--</div><div class="stat-tip">当前页面对应的公开访问量。</div></article></div></section>
+<section class="surface page-hero" data-reveal=""><div class="section-title-wrap"><span class="kicker">Stats</span><h1>访问统计</h1><p class="lead">展示站点访问、本月独立设备估算、当前页访问，以及当前浏览器中的本地记录。公开统计始于 2026-07-22；接口暂不可用时，本地记录仍会正常显示。</p></div></section>
+<section class="section-block" data-reveal=""><div aria-atomic="true" aria-live="polite" class="status-note" data-state="loading" id="stats-status" role="status">正在加载访问统计（统计始于 2026-07-22）…</div><div class="stats-grid"><article class="stat-card"><div class="stat-label">站点访问</div><div class="stat-value" id="site-pv">--</div><div class="stat-tip">自 2026-07-22 起累计的受统计页面加载次数。</div></article><article class="stat-card"><div class="stat-label">本月独立设备（估算）</div><div class="stat-value" id="month-unique-devices">--</div><div class="stat-tip">按上海时区逐月估算，不等同于精确人数。</div></article><article class="stat-card"><div class="stat-label">当前页访问</div><div class="stat-value" id="page-pv">--</div><div class="stat-tip">自 2026-07-22 起当前页面累计加载次数。</div></article></div></section>
 <section class="section-block" data-reveal=""><div class="section-header"><div class="section-title-wrap"><span class="kicker">Local record</span><h2>当前浏览器里的本地记录</h2><p>这些数据只保存在当前浏览器。更换设备、清理缓存或使用无痕模式都会重新计数。</p></div></div><div class="stats-grid two"><article class="stat-card"><div class="stat-label">本机累计访问</div><div class="stat-value" id="local-total">--</div></article><article class="stat-card"><div class="stat-label">当前页本机访问</div><div class="stat-value" id="local-page">--</div></article><article class="stat-card"><div class="stat-label">活跃天数</div><div class="stat-value" id="local-days">--</div></article><article class="stat-card"><div class="stat-label">首次本机访问</div><div class="stat-value small-value" id="local-first">--</div></article><article class="stat-card"><div class="stat-label">最近一次本机访问</div><div class="stat-value small-value" id="local-last">--</div></article></div></section>
-<section class="section-block" data-reveal=""><div class="section-header"><div class="section-title-wrap"><span class="kicker">Notes</span><h2>数据说明</h2></div></div><ul class="note-list"><li>公开统计依赖第三方脚本，可能受浏览器扩展、网络环境或隐私设置影响。</li><li>系统会同时读取 Busuanzi 与 Vercount 的结果，并优先显示可用来源中的有效值。</li><li>首页使用同一套公开计数逻辑，便于保持口径一致。</li></ul></section>
-<div aria-hidden="true" class="hidden-counter"><span id="busuanzi_value_site_pv">--</span><span id="busuanzi_value_site_uv">--</span><span id="busuanzi_value_page_pv">--</span></div><div aria-hidden="true" class="hidden-counter"><span id="vercount_value_site_pv">--</span><span id="vercount_value_site_uv">--</span><span id="vercount_value_page_pv">--</span></div>
+<section class="section-block" data-reveal=""><div class="section-header"><div class="section-title-wrap"><span class="kicker">Notes</span><h2>数据说明</h2></div></div><ul class="note-list"><li>公开统计由本站自管接口提供，从 2026-07-22 重新计数，不导入旧数据；只记录中英文首页和统计页。</li><li>独立设备按上海时区逐月估算；服务器只使用当月 HMAC 摘要计算该值，并在跨月后的首个有效访问时删除旧月摘要，不保存原始网络地址或浏览器标识。</li><li>共享网络、浏览器标识变化等可能造成合并或重复，因此该值不等同于精确人数。</li><li>接口错误或超时时显示“--”；当前浏览器中的本地记录不受影响。</li></ul></section>
 </main>
 <footer class="footer-shell">
 <div class="footer-card">

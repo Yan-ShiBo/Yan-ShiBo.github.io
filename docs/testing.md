@@ -10,17 +10,21 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 276 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 包含 279 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/stats-client.test.js` 包含 6 个浏览器客户端合同用例；
+- `worker/src/index.test.mjs` 包含 26 个 Worker、D1 迁移和隐私合同用例；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
 
 ## 2. 最小验证入口
 
-在仓库根目录依次运行：
+本地验证要求 Node.js 24 或更高版本：Worker 测试使用内置 `node:sqlite`，测试入口使用 `--test-isolation=none`。在仓库根目录依次运行：
 
 ```powershell
-node --test scripts/validate-site.test.js
+node --test --test-isolation=none scripts/validate-site.test.js
+node --test --test-isolation=none scripts/stats-client.test.js
+node --test --test-isolation=none worker/src/index.test.mjs
 node scripts/validate-site.js
 git diff --check
 ```
@@ -28,61 +32,63 @@ git diff --check
 仅定位结构化数据回归时可以运行以下名称子集；它不能替代上面的全量入口：
 
 ```powershell
-node --test --test-name-pattern="structured data" scripts/validate-site.test.js
+node --test --test-isolation=none --test-name-pattern="structured data" scripts/validate-site.test.js
 ```
 
 仅定位 manifest、安装 PNG 或 favicon 回归时可以运行图标名称子集；它同样不能替代全量入口：
 
 ```powershell
-node --test --test-name-pattern="manifest|install icon|PNG|favicon|ICO" scripts/validate-site.test.js
+node --test --test-isolation=none --test-name-pattern="manifest|install icon|PNG|favicon|ICO" scripts/validate-site.test.js
 ```
 
 仅定位历史 localStorage 键迁移时可以运行以下名称子集；它同样不能替代全量入口：
 
 ```powershell
-node --test --test-name-pattern="legacy localStorage" scripts/validate-site.test.js
+node --test --test-isolation=none --test-name-pattern="legacy localStorage" scripts/validate-site.test.js
 ```
 
 仅定位规范本地访问历史归一化时可以运行以下名称子集；它同样不能替代全量入口：
 
 ```powershell
-node --test --test-name-pattern="canonical local visit history" scripts/validate-site.test.js
+node --test --test-isolation=none --test-name-pattern="canonical local visit history" scripts/validate-site.test.js
 ```
 
 仅定位首页重复引文漂移时可以运行以下名称子集；它同样不能替代全量入口：
 
 ```powershell
-node --test --test-name-pattern="home quotation" scripts/validate-site.test.js
+node --test --test-isolation=none --test-name-pattern="home quotation" scripts/validate-site.test.js
 ```
 
 仅定位英文术语回归时可以运行以下名称子集；它同样不能替代全量入口：
 
 ```powershell
-node --test --test-name-pattern="English terminology" scripts/validate-site.test.js
+node --test --test-isolation=none --test-name-pattern="English terminology" scripts/validate-site.test.js
 ```
 
 仅定位档案联系方式与证明滑轨回归时可以运行以下名称子集；它同样不能替代全量入口：
 
 ```powershell
-node --test --test-name-pattern="profile|proof" scripts/validate-site.test.js
+node --test --test-isolation=none --test-name-pattern="profile|proof" scripts/validate-site.test.js
 ```
 
 仅定位首页移动卡片回归时可以运行以下名称子集；它同样不能替代全量入口：
 
 ```powershell
-node --test --test-name-pattern="mobile home hero" scripts/validate-site.test.js
+node --test --test-isolation=none --test-name-pattern="mobile home hero" scripts/validate-site.test.js
 ```
 
 当前成功输出应包含：
 
 ```text
-tests 276
-pass 276
+tests 279
+pass 279
 fail 0
+stats client: 6 passed / 0 failed
+Worker and D1: 26 passed / 0 failed
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `47 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，档案与证明滑轨子集汇总为 `13 passed / 0 failed`，首页移动卡片子集汇总为 `10 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `276 tests`、`79 pass`、`197 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `47 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，档案与证明滑轨子集汇总为 `13 passed / 0 failed`，首页移动卡片子集汇总为 `10 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `279 tests`、`79 pass`、`200 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -137,12 +143,13 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 验证器检查：
 
 - `stats.js` 只加载在中英文首页与中英文统计页；
-- 四页包含需要的公开计数、provider 和本地计数 DOM；
+- 四页包含站点访问、本月独立设备估算、当前页面访问与本地计数 DOM；
 - 四页的 `#stats-status` 初始为 `loading`，并提供 `role="status"`、礼貌实时播报与原子更新；
+- 四页各自恰有一个批准的 Worker endpoint meta 和对应源 preconnect；
 - 其他页面不误加载统计脚本；
-- Busuanzi、jsDelivr 与 Vercount 的统计专用 preconnect 只出现在这四页。
+- HTML 与统计脚本不含旧公开计数运行时、隐藏计数节点或动态脚本注入。
 
-它不会访问第三方计数服务，因此不能证明线上值真实或递增；验证器会在隔离沙箱中执行实际 `stats.js`，核对 250 毫秒轮询、32 次/8 秒上限、完整成功提前结束，以及 `loading`、`partial`、`ok`、`warn` 的状态转换。它同时核对非负 ASCII 十进制整数格式、`0` 与前导零、全角数字等异常主来源回退、超长数字不丢失、全部异常降级，以及本地日期文本不受计数校验影响。对规范累计与页面计数，沙箱还核对彼此不同的 `0`、普通值、局部连续进位、安全整数边界两侧和任意长度连续进位能在各自存储与页面节点中精确加一，并以一边有效、一边损坏的场景阻止交叉接线；缺失、空值、负数、小数、科学计数法、前导零、正号、首尾空白、全角数字及普通文本必须在当前访问恢复为 `1`。计数 helper 的可执行代码不得引用 `Number`、`parseInt`、`parseFloat` 或 `BigInt`，不得使用十进制、十六进制、二进制、八进制或带数字分隔符的 BigInt 字面量，也不得使用模板字面量；注释和普通字符串中的同形文本不计。验证器还会把该 helper 单独放入不提供上述数值能力或同文件外部函数的 VM，逐例限时复跑相同矩阵，以证明它自包含且不通过委托绕过合同。它还执行[架构文档](architecture.md#6-访问统计)定义的历史 localStorage 兼容处理：验证历史累计值的安全整数边界、精确 ISO 时间戳与唯一真实日期数组的严格形状，有效累计、首次访问和日期旧值逐字段延续，单个历史键读取异常不阻断合法兄弟字段，现有规范键始终优先，损坏旧值不被激活，旧键从未被删除或瞬时覆盖，旧 `last` 不产生冗余迁移写入，以及页面计数不存在历史键映射或瞬时迁入。
+验证器不访问线上 Worker，因此不能单独证明线上值真实或递增。它会在隔离沙箱中执行实际 `stats.js`，核对一次 JSON `POST`、当前 pathname、`no-store`、省略凭据、5 秒中止期限与定时器清理，以及 `loading`、`ok`、`warn` 的状态转换。成功响应必须同时提供三个非负 ASCII 十进制字符串、合法年月和精确起始日期；`0` 与超长十进制串有效，任一字段无效、响应非 2xx、JSON 失败、网络异常、超时或缺少 endpoint 时三项统一降级为 `--`，本地日期文本不受计数校验影响。对规范累计与页面计数，沙箱还核对彼此不同的 `0`、普通值、局部连续进位、安全整数边界两侧和任意长度连续进位能在各自存储与页面节点中精确加一，并以一边有效、一边损坏的场景阻止交叉接线；缺失、空值、负数、小数、科学计数法、前导零、正号、首尾空白、全角数字及普通文本必须在当前访问恢复为 `1`。计数 helper 的可执行代码不得引用 `Number`、`parseInt`、`parseFloat` 或 `BigInt`，不得使用十进制、十六进制、二进制、八进制或带数字分隔符的 BigInt 字面量，也不得使用模板字面量；注释和普通字符串中的同形文本不计。验证器还会把该 helper 单独放入不提供上述数值能力或同文件外部函数的 VM，逐例限时复跑相同矩阵，以证明它自包含且不通过委托绕过合同。它还执行[架构文档](architecture.md#6-访问统计)定义的历史 localStorage 兼容处理：验证历史累计值的安全整数边界、精确 ISO 时间戳与唯一真实日期数组的严格形状，有效累计、首次访问和日期旧值逐字段延续，单个历史键读取异常不阻断合法兄弟字段，现有规范键始终优先，损坏旧值不被激活，旧键从未被删除或瞬时覆盖，旧 `last` 不产生冗余迁移写入，以及页面计数不存在历史键映射或瞬时迁入。
 
 对规范访问历史，沙箱从带非零毫秒的固定起点注入逐次前进的受控时钟并同时核对存储与渲染结果：带非零毫秒的有效首次访问保持不变，迁移后仍缺失或非精确 ISO 的值使用当前时间重建，最近访问与它共享唯一一次时间采样；只有严格缺失的规范键能接收合法历史值，已经存在的损坏规范值不会激活合法历史值。日期矩阵覆盖无效 JSON、非数组、混合类型、错误日历日期、非今日合法闰日、重复项、显式乱序、今天位于中间或重复出现，以及超过 365 项的数据；期望结果按原顺序稳定去重、让今天唯一位于末尾、截取最后 365 项，并通过写入轨迹证明即使数组已经规范也会在每次加载时持久化。
 
@@ -189,14 +196,15 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 
 ### 3.7 JavaScript 语法
 
-验证器调用 Node.js 语法检查覆盖：
+验证器使用 Node.js `vm.Script` 做只读语法解析，覆盖：
 
 - `assets/js/site.js`；
 - `assets/js/stats.js`；
 - `scripts/generate-sitemap.js`；
-- `scripts/validate-site.js`。
+- `scripts/validate-site.js`；
+- `worker/src/index.mjs`。
 
-语法通过不等于浏览器行为通过；抽屉、Lightbox、主题、真实第三方统计接入和浏览器呈现仍需人工检查。
+语法通过不等于浏览器行为通过；抽屉、Lightbox、主题、真实 Worker 接入和浏览器呈现仍需人工检查。
 
 ### 3.8 共享交互结构合同
 
@@ -242,8 +250,8 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - 大小写错误路径；
 - robots 全站禁止与 user-agent 作用域；
 - 未登记的嵌套 HTML；
-- 非统计页误加统计服务 preconnect；
-- `stats.js` 的 250 毫秒轮询、8 秒上限、可访问加载状态、完整/部分/失败状态转换，非负 ASCII 整数格式、`0`、前导零、全角数字等异常主来源回退、超长数字原样保留、全部异常降级、本地日期文本不受计数校验影响，规范累计/页面计数的严格形状、损坏值恢复、独立接线、局部与任意长度进位，并拒绝 `Number`、`parseInt`、`parseFloat`、`BigInt`、BigInt 字面量和宽松格式实现，以及历史 localStorage 逐字段安全迁移、规范键优先、旧 `last` 直接刷新、损坏值隔离、旧键保留和伪造旧页面键忽略；
+- Worker endpoint/preconnect 缺失、漂移或扩大到非统计页，以及旧公开计数运行时回归；
+- `stats.js` 的单次 POST、5 秒中止期限、可访问加载/成功/失败状态、响应字段与起始日期严格校验、`0` 和超长数字、统一失败降级、本地日期文本隔离，规范累计/页面计数的严格形状、损坏值恢复、独立接线、局部与任意长度进位，并拒绝 `Number`、`parseInt`、`parseFloat`、`BigInt`、BigInt 字面量和宽松格式实现，以及历史 localStorage 逐字段安全迁移、规范键优先、旧 `last` 直接刷新、损坏值隔离、旧键保留和伪造旧页面键忽略；
 - 规范本地访问历史的精确 ISO 首次/最近时间、同一当前时间快照、损坏规范值隔离，以及严格真实日期、稳定去重、今天唯一末尾、365 项上限、每次持久化和存储/页面一致性；
 - 移动菜单共享 `(max-width: 833px)` 谓词的退出清理合同，以及 CSS 断点漂移、导航规则跨媒体块、外层 `@supports` 包裹目标媒体块、媒体块内部嵌套 `@supports` 条件组、注释/字符串/普通或嵌套块型自定义属性伪实现、同一规则/后续直接规则/后续同谓词媒体块覆盖 `display`、旧 `(min-width: 834px)` 间隙实现、错误查询、遗漏/反向/嵌套使用 `event.matches`、退出门晚于清理、缺少可见焦点回退、关闭逻辑落在无关函数、关键实现被注释掉或只出现在字符串中的变异用例；
 - 简历文档卡片、联系方式、关键词标签和长小按钮的全局收缩合同，以及注释/字符串、等价空白、选择器列表、条件覆盖、非 `!important` 高特异性覆盖、`:nth-child(... of selector)` 特异性、较短的 `!important` 覆盖、实际 `.subtle` 动作变体、祖先/通配符否定、复杂函数选择器、嵌套状态否定、陈旧错误声明后续修复、错误值和后续覆盖变异；另有无关条件属性、最终 subject 的类型/ID/类单 compound `:not(...)`、简单与复合伪元素及 `!important` 正确优先级的正向用例，防止验证器在已建模范围内过度拒绝或误算层叠；
@@ -255,6 +263,8 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - CLI 在无效仓库上返回非零状态。
 
 修改验证器时，新增用例应先证明旧实现会漏报或崩溃，再实现最小修复。测试夹具不得改动真实仓库。
+
+`scripts/stats-client.test.js` 独立执行浏览器客户端，覆盖成功、合法零值、无效或不可用响应、pending 请求在 5 秒中止后统一降级、缺少 endpoint，以及缺少 fetch/AbortController 能力时的无请求降级。`worker/src/index.test.mjs` 使用 Node 内置 SQLite 依次执行真实 D1 迁移，再覆盖首访、月内去重、上海时区跨月与旧月并发单调性、路径与来源白名单、拒绝来源不写库、预检允许/拒绝、配置漂移、稳定错误、D1/身份失败、健康检查，以及最终月度表只含月份和 HMAC 摘要的隐私合同。该 SQLite 适配器不等同于完整 Cloudflare 运行时；发布前仍要用 Wrangler 验证迁移、部署和线上健康端点。
 
 ## 5. 自动验证明确不覆盖的事项
 
@@ -268,7 +278,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - PNG chunk CRC、像素数据完整解码与实际渲染质量；结构校验通过不等于图像可完整解码；
 - 浏览器实际展示的安装 UI，以及安装后是否按语言入口启动；
 - 搜索引擎是否收录、如何展示或是否改变排名；
-- 第三方统计、外链和线上缓存；
+- 线上 Worker/D1 的持续可用性、恶意请求防刷、外链和线上缓存；
 - 个人内容是否准确、获授权且适合公开。
 
 自动验证通过时，报告应写“结构验证通过”，不能扩大为“所有页面体验和内容均正确”。
@@ -368,15 +378,13 @@ http://127.0.0.1:8000/en/
 
 分别验证：
 
-- 第三方完整返回；
-- 只返回部分计数；
-- `0`、前导零和普通非负整数；
-- 负数、小数、科学计数法、逗号分组、全角数字和普通文本；
-- 主来源无效但备用来源有效；
-- 所有来源无效时显示 `--` 和警告状态；
+- 四个统计页面各只向批准 endpoint 发出一次 JSON `POST`，请求 path 与当前页面一致，响应带 `no-store`；
+- 线上 Worker 完整返回三个计数字符串、上海时区月份与精确 `2026-07-22` 起始日期；站点/页面次数递增，同一浏览器指纹在同月内不重复增加设备估算；
+- 使用本地假响应分别验证 `0`、前导零、普通值和超长非负整数；
+- 任一字段缺失，或计数为负数、小数、科学计数法、分组数字、全角数字、普通文本，或年月/起始日期不匹配时，三项统一显示 `--` 和警告状态；
+- HTTP 4xx/5xx、无效 JSON、网络阻断和超过 5 秒的请求均进入 `warn`，不保留部分或陈旧公开值；
 - 本地首次与最近访问日期仍正常显示；
-- 第三方超时或被拦截；
-- 加载状态由礼貌实时区播报，部分来源使用 `partial`，全部来源失败时最迟 8 秒进入 `warn`；
+- 加载、成功和失败状态由同一个礼貌实时区播报；
 - 规范累计与页面计数在 `0`、普通值、跨越 `Number.MAX_SAFE_INTEGER` 和超长连续进位时精确加一；
 - 规范计数缺失、为空、为负数、小数、科学计数法、前导零、带正号、含首尾空白、使用全角数字或文本时，本次恢复为 `1`；
 - 规范首次访问为精确 ISO 时保持不变；规范键严格缺失且合法历史键存在时先迁移；迁移后仍缺失时以当前时间重建，已经存在的空值、非规范时区偏移、仅日期、不可解析值或自动修正的无效日期同样重建且不回退历史键；
@@ -386,7 +394,7 @@ http://127.0.0.1:8000/en/
 - 仅存在历史下划线键、历史与规范键冲突、部分历史字段损坏，以及伪造历史页面键；
 - 刷新与中英文页面切换。
 
-无论第三方状态如何，页面主体、本地计数和明确的降级文案都不应崩溃。不要把四页本地累计写成 14 页全站累计。
+无论 Worker 状态如何，页面主体、本地计数和明确的降级文案都不应崩溃。不要把四页本地累计写成 14 页全站累计，也不要把月度设备估算写成真人独立访客。
 
 ### 7.7 404
 
@@ -399,20 +407,21 @@ http://127.0.0.1:8000/en/
 - 在 375、833、834、1440px 检查导航/抽屉边界、链接语言和页面级横向溢出；
 - `<head>` 保持 `noindex` 且没有 canonical/hreflang/活动 JSON-LD；
 - 不出现在 sitemap；
-- 404 页面在跳转前不请求外网或 PDF，除主文档预期 404 外没有资源 4xx、脚本异常或新增控制台错误。到达首页后由统计页发起的既有第三方请求另行计账，不能误归因于 404。
+- 404 页面在跳转前不请求外网或 PDF，除主文档预期 404 外没有资源 4xx、脚本异常或新增控制台错误。到达首页后由统计页发起的 Worker 请求另行计账，不能误归因于 404。
 
 ## 8. 变更类型与最低验收
 
 | 变更类型 | 自动验证 | 必要人工检查 |
 | --- | --- | --- |
-| 项目文档 | 三条最小验证、内部路径扫描 | 文档职责、事实源、隐私与重复 |
-| 单页文案 | 三条最小验证 | 双语对应、标题层级、内容授权 |
-| 图片或下载材料 | 三条最小验证 | 文件内容、尺寸、alt、公开权限、按钮 |
-| CSS | 三条最小验证 | 双主题、419/640/833/834/1068/1069/1440 |
-| `site.js` | 三条最小验证 | 主题、抽屉、Lightbox、键盘与降级 |
-| `stats.js` | 三条最小验证 | 成功、部分、失败、异常值、备用源回退、localStorage 与四页范围 |
+| 项目文档 | 最小验证入口、内部路径扫描 | 文档职责、事实源、隐私与重复 |
+| 单页文案 | 最小验证入口 | 双语对应、标题层级、内容授权 |
+| 图片或下载材料 | 最小验证入口 | 文件内容、尺寸、alt、公开权限、按钮 |
+| CSS | 最小验证入口 | 双主题、419/640/833/834/1068/1069/1440 |
+| `site.js` | 最小验证入口 | 主题、抽屉、Lightbox、键盘与降级 |
+| `stats.js` | 最小验证入口 | Worker 成功/失败/超时、严格响应、localStorage 与四页范围 |
+| `worker/` | 最小验证入口、Wrangler 本地迁移与 dry-run | API、D1、CORS、上海月界、隐私、健康端点与线上归零 |
 | 页面/SEO（含 JSON-LD） | 重新生成 sitemap、运行全量测试与站点验证器 | canonical、hreflang、404、线上 URL 与 12 路由结构化数据矩阵 |
-| manifest/图标 | 三条最小验证、两份 manifest 静态合同 | 各尺寸视觉质量、浏览器安装 UI 与实际启动入口 |
+| manifest/图标 | 最小验证入口、两份 manifest 静态合同 | 各尺寸视觉质量、浏览器安装 UI 与实际启动入口 |
 
 ## 9. 回归清单
 
@@ -426,6 +435,7 @@ http://127.0.0.1:8000/en/
 - 统计页结构化数据暴露计数、本地访问、访客或浏览器信息；
 - `833px < width < 834px` 的小数 CSS 视口仍残留移动导航状态，或 834px 仍启用移动导航；
 - 非统计页加载 `stats.js` 或统计专用依赖；
+- 四页 endpoint 漂移、旧公开计数运行时或隐藏计数节点重新出现；
 - 英文页面重新指向中文 manifest，或任一页面出现重复/正文内 manifest 链接；
 - manifest 重新使用 `site.ico`、缺少 192/512 安装 PNG、增加未经声明的 maskable 用途，或 favicon 尺寸/嵌入 PNG 漂移；
 - 16×16 导航品牌重新引用超大 PNG，或品牌图尺寸/结构超过固定资源预算；
@@ -433,7 +443,8 @@ http://127.0.0.1:8000/en/
 - 重命名本地统计键却没有逐字段兼容迁移，或用历史值覆盖任何已存在的规范键；
 - 本地规范累计或页面计数因数值转换而丢失精度、停止递增、写成指数或 `NaN`，或继续接受损坏值和前导零；
 - 本地规范首次/最近时间接受非精确 ISO 表示，或访问日期保留无效/重复值、让今天不在末尾、绕过 365 项上限、只在新增今天时才持久化；
-- 异常 provider 文本被展示为计数、无效主来源遮蔽有效备用来源，或计数校验误伤本地日期文本；
+- Worker 响应缺字段、年月或起始日期错误时仍展示部分计数，失败后保留陈旧值，或计数校验误伤本地日期文本；
+- 把月度设备估算写成真人独立访客，导入部署日前计数，或在 D1 保存原始 IP、User-Agent、首次出现时间等额外身份数据；
 - Lightbox 关闭时清除关闭抽屉原有的 `inert`，或让仅因模态打开而设置的背景 `inert` 残留；
 - 把相同 `lastmod` 日期直接判为错误；
 - 文档继续引用已删除路径或重复维护同一合同；
@@ -447,7 +458,10 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：276 passed / 0 failed
+站点验证器测试：279 passed / 0 failed
+统计客户端测试：6 passed / 0 failed
+Worker 与 D1 测试：26 passed / 0 failed
+Wrangler：本地 migration、dry-run、远程 migration/deploy 与 health 的实际结果
 结构化数据子集：79 passed / 0 failed
 图标名称子集：47 passed / 0 failed
 历史 localStorage 子集：8 passed / 0 failed
@@ -457,7 +471,7 @@ http://127.0.0.1:8000/en/
 首页移动卡片子集：10 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
-人工检查：页面、主题、视口、键盘路径；涉及结构化数据时记录 12 路由矩阵
+人工检查：页面、主题、视口、键盘路径与统计 Network/Console；涉及结构化数据时记录 12 路由矩阵
 未运行项：名称与原因
 已知偏差：maintenance.md 条目编号
 ```

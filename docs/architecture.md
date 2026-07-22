@@ -9,22 +9,24 @@
 1. 14 个实际 HTML 页面；
 2. `assets/css/site.css`；
 3. `assets/js/site.js` 与 `assets/js/stats.js`；
-4. `manifest.webmanifest`、`manifest.en.webmanifest`、`robots.txt`、`sitemap.xml`；
-5. `scripts/generate-sitemap.js`、`scripts/validate-site.js` 及其测试；
-6. 本文及其他项目文档。
+4. `worker/wrangler.toml`、`worker/src/`、`worker/migrations/` 及其测试；
+5. `manifest.webmanifest`、`manifest.en.webmanifest`、`robots.txt`、`sitemap.xml`；
+6. `scripts/generate-sitemap.js`、`scripts/validate-site.js` 及其测试；
+7. 本文及其他项目文档。
 
-这是一个无构建步骤的双语静态站点。浏览器直接加载 HTML、CSS、JavaScript、图片、字体和公开下载材料；仓库的 `main` 分支由 GitHub Pages 发布。项目没有后端、数据库、服务端模板或包管理构建链。
+前端是无构建步骤的双语静态站点：浏览器直接加载 HTML、CSS、JavaScript、图片、字体和公开下载材料，仓库 `main` 由 GitHub Pages 发布。访问统计另有一个 Cloudflare Worker API 和 D1 数据库；项目仍没有服务端模板或前端包管理构建链。
 
 系统边界包含：
 
 - 中文与英文页面；
 - 全站共享样式与交互；
 - 仅部分页面加载的访问统计；
+- 统计 Worker、D1 migration、聚合计数与月度 HMAC 摘要；
 - favicon、品牌图、图片、字体和公开下载材料；
 - SEO 元数据、站点清单、爬虫规则和 sitemap；
 - 站点验证器与 sitemap 生成器。
 
-系统边界不包含个人研究源文件、未发表研究材料、私有证明材料和服务端数据。凡进入 Git 仓库并由 Pages 发布的内容都应按公开信息处理。
+系统边界不包含个人研究源文件、未发表研究材料、私有证明材料和未批准的服务端数据。D1 只允许保存本架构第 6 节定义的聚合计数与月度 HMAC 摘要。凡进入 Git 仓库并由 Pages 发布的内容都应按公开信息处理。
 
 ## 2. 系统目标
 
@@ -41,7 +43,8 @@ flowchart LR
     Maintainer["维护者"] --> Repo["GitHub 仓库 main"]
     Repo --> Pages
     Pages --> Assets["本地 CSS / JS / 图片 / 字体 / 下载材料"]
-    Pages --> Counter["第三方访问统计服务"]
+    Pages -. "四个统计页面" .-> StatsAPI["Cloudflare Worker 统计 API"]
+    StatsAPI --> D1["Cloudflare D1"]
     Maintainer --> Tools["生成器与只读验证器"]
     Tools --> Repo
 ```
@@ -57,7 +60,7 @@ flowchart LR
 | 研究 | `research.html` | `en/research.html` | 一般研究方向与方法说明 | 是 |
 | 项目 | `projects.html` | `en/projects.html` | 项目与仓库入口 | 是 |
 | 简历 | `resume.html` | `en/resume.html` | 网页简历与公开下载入口 | 是 |
-| 统计 | `analytics.html` | `en/analytics.html` | 公开计数和本地计数 | 是 |
+| 统计 | `analytics.html` | `en/analytics.html` | 站点计数、月度设备估算和本地计数 | 是 |
 | 404 | `404.html` | `en/404.html` | Pages 回退、按路径原地本地化与语言对应跳转 | 否 |
 
 双语页面共享视觉和交互合同，但当前档案页并非逐节点镜像：中文档案有独立的 `#gap-year` 阶段，英文将相同经历并入研究生阶段；两种语言的项目卡片数量也不同。维护文档应记录这一现状，不能声称 DOM 结构完全对称。内容是否需要重组属于单独的页面任务。
@@ -81,7 +84,8 @@ flowchart TB
     HTML -. "中英文首页与统计页" .-> StatsJS
     SiteJS <--> Storage
     StatsJS <--> Storage
-    StatsJS --> Providers["Busuanzi / Vercount"]
+    StatsJS --> Worker["Cloudflare Worker"]
+    Worker --> D1["D1 统计数据库"]
     HTML --> LocalAssets["图片 / 图标 / 字体 / PDF"]
 ```
 
@@ -172,17 +176,24 @@ sequenceDiagram
     participant Page as 统计页面
     participant Stats as stats.js
     participant Local as localStorage
-    participant Remote as 第三方计数服务
+    participant Worker as Cloudflare Worker
+    participant D1 as D1
     Page->>Stats: DOMContentLoaded
     Stats->>Local: 读取并更新本地计数
-    Stats->>Remote: 等待公开计数节点
-    Remote-->>Stats: 返回、部分返回或超时
-    Stats-->>Page: 填充有效值或降级占位
+    Stats->>Worker: POST /v1/visit { path }
+    Worker->>D1: 原子更新站点、页面与月度摘要
+    D1-->>Worker: 当前聚合值
+    Worker-->>Stats: JSON 计数、月份与起始日期
+    Stats-->>Page: 完整填充或统一降级为 --
 ```
 
-公开计数通过隐藏 provider 节点接入，展示节点与 provider 节点不能混用。去除首尾空白后，只有完全由 ASCII 十进制数字组成的字符串才是有效计数；`0` 与前导零合法，负数、小数、科学计数法、分组符号和任意文本无效。每项计数按 provider 顺序选择首个有效值，无效主来源不得阻断有效备用来源；没有有效来源时显示 `--`，且状态节点必须进入 `data-state="warn"`。本地首次与最近访问日期走独立文本写入路径，不应用计数格式校验。第三方服务失败时，本地计数和页面主体仍应工作。
+四页在 `<head>` 中通过唯一的 `stats-api-endpoint` meta 指向 `https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit`，并且只有这四页可以预连接该 Worker 源。客户端在 `window.load` 后发起一次 JSON `POST /v1/visit`，请求体只有当前 `pathname`；Worker 只接受 `/`、`/index.html`、`/en/`、`/en/index.html`、`/analytics.html` 与 `/en/analytics.html`，并把首页别名归一化到 `/` 或 `/en/`。`GET /v1/stats?path=...` 提供不递增的公开读取，`GET /health` 检查固定配置、D1 连接、精确表结构和站点总计种子。所有响应使用 `no-store`；浏览器跨域只允许 `https://yan-shibo.github.io`、`http://127.0.0.1:8000` 与 `http://localhost:8000` 这一完整且不可扩展的来源集合。
 
-第三方脚本继续在 `window.load` 后异步注入，不阻塞正文和首屏资源。公开计数每 250 毫秒同步一次，最多等待 32 次，总等待上限为 8 秒；三项全部有效时提前结束，只有部分有效时使用 `data-state="partial"`，全部无效且达到上限时使用 `data-state="warn"`。加载中的 `data-state="loading"`、完整成功的 `data-state="ok"`、部分成功和失败都必须写入同一个 `#stats-status`；该节点是 `role="status"`、`aria-live="polite"`、`aria-atomic="true"` 的实时状态区，状态变化不能只通过颜色表达。
+成功响应必须同时包含 `siteViews`、`monthUniqueDevices`、`pageViews`、`period` 和 `trackingSince`。三个计数必须是非负 ASCII 十进制字符串，`period` 必须是合法 `YYYY-MM`，`trackingSince` 必须精确等于 `2026-07-22`；任一字段或整次请求无效时，三项公开值统一显示 `--`，状态进入 `warn`，不展示部分或陈旧结果。客户端使用 5 秒中止期限；缺少 endpoint、`fetch` 或 `AbortController` 时立即按同一规则降级。`loading`、`ok` 与 `warn` 都写入同一个具备 `role="status"`、`aria-live="polite"`、`aria-atomic="true"` 的 `#stats-status`。本地首次/最近日期走独立文本路径，Worker 或网络失败不能阻断本地计数与页面主体。
+
+公开统计从部署日 `2026-07-22` 由零开始，不导入旧计数。`siteViews` 是四个统计页面自该日起的成功记录次数；`pageViews` 是规范化后当前页面的成功记录次数；“本月独立设备（估算）”不是独立访客或真人数量，而是按 `Asia/Shanghai` 自然月对换行分隔的 `period + "\n" + IP + "\n" + User-Agent` 计算 `HMAC-SHA-256` 后去重的设备/浏览器近似值。IP 与 User-Agent 只在 Worker 请求内用于生成摘要，不写入 D1；`monthly_devices` 最终只保留月份和 64 位十六进制 HMAC 摘要，不保留首次出现时间。跨月后的首个有效访问只删除早于当前月份的摘要；迟到的旧月份请求不能删除或替换已存在的新月份摘要。D1 另外只保存站点总次数和按规范路径聚合的页面次数。
+
+摘要密钥只作为 Worker secret 存在，不进入仓库或响应；月中轮换会让同一设备在新旧密钥下形成不同摘要，因此只在安全事件或有明确维护计划时轮换。CORS 是浏览器访问边界，不是身份认证或防刷机制；伪造请求、共享出口 IP、UA 变化、隐私代理与多设备都会让估算偏离真人数量。部署、迁移、归零、密钥和故障操作只在[运维指南](operations.md)维护。
 
 ## 7. 资源模型
 
@@ -194,6 +205,7 @@ sequenceDiagram
 - `assets/icons/`：品牌标识、manifest 安装 PNG 与 HTML favicon；
 - `assets/images/`：项目、档案与证明图；
 - `assets/profile/`：头像；
+- `worker/`：统计 Worker 源码、Wrangler 配置、D1 迁移与后端测试；
 - `assets/vendor/`：本地 Font Awesome 样式与字体；
 - `docs/`：项目文档以及明确允许公开的简历、成绩单材料。
 
@@ -317,17 +329,21 @@ flowchart LR
     Edit["本地编辑"] --> Validate["只读验证与人工检查"]
     Validate --> Commit["提交到 main"]
     Commit --> Pages["GitHub Pages 发布"]
-    Pages --> CDN["GitHub Pages / CDN 缓存"]
-    CDN --> Browser["浏览器与搜索引擎"]
+    Pages --> Browser["浏览器与搜索引擎"]
+    Validate --> WorkerDeploy["Wrangler 部署"]
+    WorkerDeploy --> Worker["Cloudflare Worker"]
+    Worker --> D1["Cloudflare D1"]
+    Browser -. "四个统计页面" .-> Worker
 ```
 
-站点没有独立构建产物；提交的文件就是发布输入。文档改名不要求重建 sitemap，只有可索引 HTML 路由或 mtime 需要发布时才运行生成器。发布、缓存和回滚步骤由[运维指南](operations.md)维护。
+静态站点没有独立构建产物；提交的文件就是 GitHub Pages 发布输入。统计后端是单独部署的 Worker，D1 迁移先于依赖新表结构的 Worker，Worker 健康后才发布引用它的静态页面。文档改名不要求重建 sitemap，只有可索引 HTML 路由或 mtime 需要发布时才运行生成器。发布、缓存和回滚步骤由[运维指南](operations.md)维护。
 
 ## 11. 隐私与公开合同
 
 - 仓库、Pages、Markdown、图片和下载文件都按公开内容处理；“未在导航中出现”不等于私有。
 - 未发表研究材料、源数据、审稿材料和其他未授权文件不得进入仓库。
 - 个人页面和证明材料的内容修改必须获得所有者明确确认。
+- 统计后端不得持久化原始 IP、User-Agent 或其他浏览器身份；月度设备表只保留月份与不可逆 HMAC 摘要。
 - 删除公开敏感文件时，需要同时检查当前树、Git 历史、公开 URL、文档引用和缓存边界。
 - 自动验证只证明结构合同，不证明内容适合公开；发布前仍需人工隐私审查。
 
@@ -338,7 +354,7 @@ flowchart LR
 | 渲染模型 | 原生静态 HTML | 无构建依赖，Pages 可直接发布 |
 | 双语模型 | 两套独立 HTML | 文案与 SEO 可独立控制 |
 | 样式与交互 | 全站共享 CSS/JS | 降低重复并保持体验一致 |
-| 统计加载 | 仅四个需要统计的页面 | 控制第三方依赖范围 |
+| 统计系统 | 四页自管 Worker + D1，部署日重新计数 | 明确口径、隐私和故障边界 |
 | 字体与图标 | 本地资源优先 | 避免核心视觉依赖外部 CDN |
 | 证明图 | 缩略图链接原图 | 兼顾加载性能与可核查性 |
 | 页面验证 | 零依赖 Node.js 脚本 | 与无构建站点保持一致 |

@@ -4,15 +4,18 @@
 
 ## 1. 运行与发布模型
 
-项目没有构建步骤。仓库 `main` 中的 HTML、CSS、JavaScript 和资源就是 GitHub Pages 的发布输入：
+项目有两个独立发布面：仓库 `main` 中的 HTML、CSS、JavaScript 和资源由 GitHub Pages 直接发布；`worker/` 中的访问统计 API 由 Wrangler 发布到 Cloudflare Worker，并使用 D1 保存聚合值：
 
 ```mermaid
 flowchart LR
     Local["本地工作区"] --> Verify["验证与人工检查"]
     Verify --> Main["GitHub main"]
     Main --> Pages["GitHub Pages"]
-    Pages --> CDN["Pages / CDN 缓存"]
-    CDN --> User["浏览器与搜索引擎"]
+    Pages --> User["浏览器与搜索引擎"]
+    Verify --> Wrangler["Wrangler"]
+    Wrangler --> Worker["Cloudflare Worker"]
+    Worker --> D1["Cloudflare D1"]
+    User -. "四个统计页面" .-> Worker
 ```
 
 文档、资源和 Markdown 位于公开仓库时都应视为公开，即使站内导航没有链接。
@@ -65,6 +68,15 @@ $serverCode | python -
 
 该 handler 对存在文件保持普通 200，对缺失 GET/HEAD 返回根 404 正文和 HTTP 404，不发送 `Location`。结束方式与普通预览相同；浏览器断言按[测试规范的 404 矩阵](testing.md#77-404)执行。
 
+需要本地验证统计后端时，先在被 `.gitignore` 排除的 `worker/.dev.vars` 中设置一次至少 32 字节的随机 `VISITOR_HASH_SECRET`，不得把值写入命令记录、文档、测试输出或仓库。随后从仓库根目录依次运行：
+
+```powershell
+npx.cmd --yes wrangler@latest d1 migrations apply DB --local --config worker/wrangler.toml
+npx.cmd --yes wrangler@latest dev --config worker/wrangler.toml
+```
+
+本地 Worker 默认不替换四页中已提交的生产 endpoint；可直接请求本地 URL，或在一次性浏览器测试环境中覆盖请求目标，不要为本地预览提交 endpoint 改动。真实 D1 迁移、线上 Worker 与静态页面联调属于发布检查。
+
 ## 3. Sitemap
 
 ### 3.1 何时生成
@@ -98,19 +110,38 @@ node scripts/generate-sitemap.js
 4. 进行人工隐私检查：所有新增文本、图片和下载材料都已获授权公开。
 5. 页面路由、canonical/语言映射或需发布的 HTML 元数据/JSON-LD 发生变化时生成 sitemap。
 6. 执行[测试规范](testing.md)中的自动和适用人工检查。
-7. 只暂存本次确认的文件，再审查 staged diff。
+7. 涉及统计后端时，确认 migration 按编号前进、Worker dry-run 通过、secret 已设置且没有进入 diff。
+8. 只暂存本次确认的文件，再审查 staged diff。
 
 禁止使用会丢失工作区改动的清理命令。共享工作区存在其他改动时，先隔离或请求确认。
 
 ## 5. 发布
 
-项目采用普通 Git 提交流程：
+只修改普通静态页面时采用普通 Git 提交流程：
 
 1. 明确暂存文件；
 2. 创建描述单一目的的提交；
 3. 推送当前已确认分支；
 4. 等待 GitHub Pages 完成部署；
 5. 按本节线上清单核验。
+
+新增或修改统计后端、D1 结构或四页 endpoint 时，按以下顺序发布，避免静态页面先连接到尚未就绪的 API：
+
+1. 首次部署通过 `npx.cmd --yes wrangler@latest secret put VISITOR_HASH_SECRET --config worker/wrangler.toml` 交互式设置随机 secret；后续普通部署不重复设置。
+2. 完成本地 migration、Worker dry-run、自动测试和浏览器检查，明确暂存并创建本地提交，但暂不推送引用新 endpoint 的静态页面。
+3. 执行 `npx.cmd --yes wrangler@latest d1 migrations apply DB --remote --config worker/wrangler.toml`，审查实际应用的 migration。
+4. 执行 `npx.cmd --yes wrangler@latest deploy --config worker/wrangler.toml`，从已经提交且验证的源部署 Worker。
+5. 请求 `https://yan-shibo-site-stats.yan-shibo.workers.dev/health`，必须得到 HTTP 200、`status: ok` 和精确起始日期；确需验证一次真实写入时在归零前完成。
+6. 首次公开上线前删除所有部署测试计数并确认三个公开值均为 `0`；归零后不要再发测试 `POST`，从而保证“统计始于 2026-07-22”从公开部署日干净起算。
+7. 推送本地提交，等待 Pages 部署，再做不增加计数的线上资源与 `GET /v1/stats` 检查。
+
+首次归零只用于清除上线前测试数据，命令中的三条语句必须作为同一次明确维护执行：
+
+```powershell
+npx.cmd --yes wrangler@latest d1 execute DB --remote --config worker/wrangler.toml --command "UPDATE counter_totals SET value = 0 WHERE key = 'site_views'; DELETE FROM page_views; DELETE FROM monthly_devices;"
+```
+
+随后对 `GET /v1/stats?path=/` 发送生产 Origin，确认 `siteViews`、`monthUniqueDevices` 与 `pageViews` 都是字符串 `"0"`。常规发布不得再次执行这条归零命令。
 
 常规发布不得重写历史或强制推送。只有用户明确授权且普通提交无法满足目标时，才进入历史重写流程。
 
@@ -126,6 +157,7 @@ node scripts/generate-sitemap.js
 - 结构化数据变更没有改变页面可见内容、布局或交互；
 - 缺失中文与 `/en/...` 深层路径均返回真实 HTTP 404 且倒计时前保留原 URL；根 404 的语言、导航、manifest 和 5 秒跳转目标对应，且不进 sitemap；
 - `robots.txt` 与 `sitemap.xml` 可访问；
+- Worker `/health` 返回 200；四个统计页面只向批准 endpoint 发出一次 POST，响应起始日期正确，失败时显示 `--` 而本地记录仍可用；
 - 浏览器控制台没有由本次变更引入的错误；
 - 强制刷新后仍显示新版本。
 
@@ -163,6 +195,12 @@ Pages 部署成功但浏览器仍显示旧内容时，按以下顺序判断：
 
 先让当前公开入口失效，再评估是否需要历史重写。不得因为追求完整流程而延迟当前版本删除。
 
+### 8.4 统计 Worker 或 D1
+
+静态站点与统计后端独立回滚。Worker 代码故障时重新部署最后一个已验证提交中的 Worker 源；D1 migration 只向前修复，不通过删除数据库或改写已应用 migration 回滚。前端在后端不可用时会降级为 `--`，因此无需为了统计故障回滚无关页面。
+
+secret 不做例行月中轮换：同一设备在新旧 secret 下会产生不同摘要并抬高当月估算。若发生泄露或安全事件，立即轮换优先于统计连续性，并明确记录当月口径中断；是否清空当月摘要属于破坏性维护，需要单独确认。任何日志和故障说明都不得输出 secret、原始 IP 或 User-Agent。
+
 ## 9. 故障处理
 
 ### 9.1 页面 404
@@ -189,9 +227,11 @@ Pages 部署成功但浏览器仍显示旧内容时，按以下顺序判断：
 
 先确认普通图片链接与原图有效，再检查 `data-lightbox`、caption、覆盖层 DOM 和焦点恢复。脚本错误不能阻断原图访问。
 
-### 9.5 统计为空或部分为空
+### 9.5 统计为空
 
-区分第三方服务、网络拦截、provider DOM、展示 DOM 与 localStorage。排查时同时读取隐藏 provider 节点的原始文本与最终展示值；无效来源应被跳过并尝试备用来源，全部无效时应显示 `--` 且状态节点应为 `data-state="warn"`，而不是透传异常文本。值格式合同见[架构文档](architecture.md#6-访问统计)。统计失败不是全站故障；主体内容必须保持可用。只有四个 stats-enabled 页面应加载统计脚本。
+先确认页面 `<head>` 的 endpoint meta 和 Worker preconnect 精确匹配批准地址，再在 Network 检查是否只有一次 `POST /v1/visit`、请求 JSON path 是否正确，以及响应状态和五个字段。`403` 通常表示 Origin 未获批准，`400` 表示请求体或 path 不在四页白名单，`503` 表示 Worker 配置、身份输入或 D1 不可用；先读 `/health` 区分后端健康与单次请求问题。不得为了排障记录 secret、原始 IP 或 User-Agent。
+
+客户端只接受完整有效响应；任何失败都应让三项公开值显示 `--` 且状态为 `warn`，不能显示部分或异常文本。localStorage 本地记录应继续更新，页面主体也应保持可用。需要只读检查聚合值时使用 `GET /v1/stats?path=/` 并带生产 Origin；需要检查数据结构时用 Wrangler 只读查询，确认月度表最终只有 `period` 与 `device_hash`。CORS 不能防止伪造请求，数值异常增长应作为防刷或流量质量问题单独记录。精确值与隐私合同见[架构文档](architecture.md#6-访问统计)。
 
 ### 9.6 Sitemap 不一致
 
@@ -247,7 +287,7 @@ Pages 部署成功但浏览器仍显示旧内容时，按以下顺序判断：
 
 - 按 14 页影响面处理；
 - 检查双主题、全部关键断点与键盘交互；
-- 保留无脚本或第三方失败时的基本可用性；
+- 保留无脚本或统计 API 失败时的基本可用性；
 - 不在单页复制共享逻辑。
 
 ### 新增、删除或改名页面

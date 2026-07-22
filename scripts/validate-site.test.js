@@ -1,5 +1,4 @@
 const assert = require('node:assert/strict');
-const childProcess = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -8,6 +7,7 @@ const test = require('node:test');
 
 const {
   resolveLocalReference,
+  runCli,
   stripUrlDecorations,
   validateRepository
 } = require('./validate-site');
@@ -17,8 +17,11 @@ const COPIED_FIXTURE_EXTENSIONS = new Set([
   '.html',
   '.ico',
   '.js',
+  '.mjs',
   '.png',
+  '.sql',
   '.txt',
+  '.toml',
   '.webmanifest',
   '.xml'
 ]);
@@ -49,15 +52,19 @@ const ENGLISH_TERMINOLOGY_ISSUE =
 const MODAL_INERT_RESTORE_ISSUE =
   'assets/js/site.js: modal background cleanup must restore each element\'s pre-existing inert state';
 const STATS_INTEGER_CONTRACT_ISSUE =
-  'assets/js/stats.js: public counters must accept only non-negative ASCII decimal integer text and fall back from invalid provider values';
+  'assets/js/stats.js: Worker responses must expose non-negative ASCII decimal strings plus the approved period and start date';
 const STATS_ZERO_CONTRACT_ISSUE =
   'assets/js/stats.js: zero must remain a valid public counter';
 const STATS_UNAVAILABLE_CONTRACT_ISSUE =
-  'assets/js/stats.js: invalid public counters must render -- and end in warn state';
+  'assets/js/stats.js: invalid or unavailable Worker responses must render -- and end in warn state';
 const STATS_STATUS_MARKUP_ISSUE =
   'stats status must start in loading state and expose a polite atomic status live region';
 const STATS_LOADING_CONTRACT_ISSUE =
-  'assets/js/stats.js: public counter loading must poll every 250 ms, settle within 8 seconds, and expose loading, partial, and final states';
+  'assets/js/stats.js: public statistics must make one JSON POST with a five-second abort deadline and loading, ok, and warn states';
+const STATS_ENDPOINT_MARKUP_ISSUE =
+  'stats pages must expose exactly one approved API endpoint meta and preconnect';
+const STATS_LEGACY_RUNTIME_ISSUE =
+  'legacy public-counter runtime references are forbidden';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'assets/js/stats.js: local visit dates must remain formatted text';
 const STATS_LOCAL_HISTORY_CONTRACT_ISSUE =
@@ -1908,28 +1915,79 @@ test('validateRepository reports missing analytics local-counter nodes', (t) => 
   assert.ok(result.issues.includes('analytics.html: stats.js requires #local-total'));
 });
 
-test('validateRepository rejects stats-service preconnects on non-stats pages', (t) => {
+test('validateRepository requires the approved Worker endpoint on all stats pages', (t) => {
+  const mutations = [
+    {
+      pattern: '<meta name="stats-api-endpoint" content="https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit"/>',
+      replacement: '<meta name="stats-api-endpoint" content="https://example.invalid/v1/visit"/>'
+    },
+    {
+      pattern: '<link href="https://yan-shibo-site-stats.yan-shibo.workers.dev" rel="preconnect"/>',
+      replacement: '<link href="https://example.invalid" rel="preconnect"/>'
+    }
+  ];
+
+  for (const mutation of mutations) {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(rootDir, 'index.html', mutation.pattern, mutation.replacement);
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(`index.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
+  }
+});
+
+test('validateRepository requires the stats Worker preconnect inside head', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  const preconnect = '  <link href="https://yan-shibo-site-stats.yan-shibo.workers.dev" rel="preconnect"/>\n';
+  replaceOnce(rootDir, 'index.html', preconnect, '');
+  replaceOnce(rootDir, 'index.html', '</body>', `${preconnect}</body>`);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
+});
+
+test('validateRepository limits the stats Worker preconnect to the four stats pages', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(
     rootDir,
     'projects.html',
     '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>',
-    '  <link href="//cdn.jsdelivr.net/npm/example" rel="dns-prefetch PRECONNECT"/>\n' +
-      '  <link href="https://busuanzi.icodeq.com/api/site_pv?site=example" rel="preconnect"/>\n' +
-      '  <link href="https://events.vercount.one/path" rel="PRECONNECT"/>\n' +
+    '  <link href="https://yan-shibo-site-stats.yan-shibo.workers.dev" rel="preconnect"/>\n' +
       '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>'
   );
 
   const result = validateRepository(rootDir);
 
-  assert.deepEqual(
-    result.issues.filter((issue) => issue.includes('stats-service preconnect')),
-    [
-      'projects.html: stats-service preconnect https://cdn.jsdelivr.net is limited to the four stats-enabled pages',
-      'projects.html: stats-service preconnect https://busuanzi.icodeq.com is limited to the four stats-enabled pages',
-      'projects.html: stats-service preconnect https://events.vercount.one is limited to the four stats-enabled pages'
-    ]
+  assert.ok(result.issues.includes(
+    'projects.html: stats-service preconnect https://yan-shibo-site-stats.yan-shibo.workers.dev is limited to the four stats-enabled pages'
+  ));
+});
+
+test('validateRepository rejects legacy public-counter runtime references', (t) => {
+  const legacyClient = ['ver', 'count'].join('');
+  const htmlRoot = createRepositoryFixture(t);
+  replaceOnce(
+    htmlRoot,
+    'index.html',
+    '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>',
+    `  <script src="https://events.${legacyClient}.one/js"></script>\n` +
+      '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>'
   );
+  const scriptRoot = createRepositoryFixture(t);
+  replaceOnce(
+    scriptRoot,
+    'assets/js/stats.js',
+    '(function () {',
+    `(function () {\n  var legacyClient = '${legacyClient}';`
+  );
+
+  const htmlResult = validateRepository(htmlRoot);
+  const scriptResult = validateRepository(scriptRoot);
+
+  assert.ok(htmlResult.issues.includes(`index.html: ${STATS_LEGACY_RUNTIME_ISSUE}`));
+  assert.ok(scriptResult.issues.includes(`assets/js/stats.js: ${STATS_LEGACY_RUNTIME_ISSUE}`));
 });
 
 test('validateRepository accepts accessible public stats status regions', (t) => {
@@ -1952,7 +2010,7 @@ test('validateRepository rejects an inaccessible public stats status region', (t
   assert.ok(result.issues.includes(`index.html: ${STATS_STATUS_MARKUP_ISSUE}`));
 });
 
-test('validateRepository accepts the bounded public stats loading state machine', (t) => {
+test('validateRepository accepts the bounded Worker request state machine', (t) => {
   const rootDir = createRepositoryFixture(t);
 
   const result = validateRepository(rootDir);
@@ -1960,19 +2018,35 @@ test('validateRepository accepts the bounded public stats loading state machine'
   assert.ok(!result.issues.includes(STATS_LOADING_CONTRACT_ISSUE));
 });
 
-test('validateRepository rejects slow or collapsed public stats loading states', (t) => {
+test('validateRepository rejects weakened Worker request boundaries', (t) => {
   const mutations = [
     {
-      pattern: '  var PUBLIC_COUNTER_POLL_MS = 250;',
-      replacement: '  var PUBLIC_COUNTER_POLL_MS = 1000;'
+      pattern: '  var PUBLIC_REQUEST_TIMEOUT_MS = 5000;',
+      replacement: '  var PUBLIC_REQUEST_TIMEOUT_MS = 5001;'
     },
     {
-      pattern: '  var PUBLIC_COUNTER_MAX_TRIES = 32;',
-      replacement: '  var PUBLIC_COUNTER_MAX_TRIES = 96;'
+      pattern: "      method: 'POST',",
+      replacement: "      method: 'GET',"
     },
     {
-      pattern: "        setStatus(text('partial'), 'partial');",
-      replacement: "        setStatus(text('partial'), 'ok');"
+      pattern: "      headers: { 'Content-Type': 'application/json' },",
+      replacement: "      headers: { 'Content-Type': 'text/plain' },"
+    },
+    {
+      pattern: "      body: JSON.stringify({ path: window.location.pathname || '/' }),",
+      replacement: "      body: JSON.stringify({ path: '/' }),"
+    },
+    {
+      pattern: "      cache: 'no-store',",
+      replacement: "      cache: 'default',"
+    },
+    {
+      pattern: "      credentials: 'omit'",
+      replacement: "      credentials: 'include'"
+    },
+    {
+      pattern: '        window.clearTimeout(timer);',
+      replacement: '        /* timeout cleanup removed */'
     }
   ];
 
@@ -1991,22 +2065,38 @@ test('validateRepository rejects slow or collapsed public stats loading states',
   }
 });
 
-test('validateRepository rejects non-ASCII public counter digits', (t) => {
-  const rootDir = createRepositoryFixture(t);
-  replaceMatching(
-    rootDir,
-    'assets/js/stats.js',
-    /  function validCounter\(value\) \{[\s\S]*?\r?\n  \}/,
-    [
-      '  function validCounter(value) {',
-      '    return /^\\p{Nd}+$/u.test(value);',
-      '  }'
-    ].join('\n')
-  );
+test('validateRepository rejects weakened Worker response validation', (t) => {
+  const mutations = [
+    {
+      pattern: /  function validCounter\(value\) \{[\s\S]*?\r?\n  \}/,
+      replacement: [
+        '  function validCounter(value) {',
+        '    return /^\\p{Nd}+$/u.test(value);',
+        '  }'
+      ].join('\n')
+    },
+    {
+      pattern: '/^[0-9]{4}-(?:0[1-9]|1[0-2])$/.test(payload.period)',
+      replacement: '/^[0-9]{4}-[0-9]{2}$/.test(payload.period)'
+    },
+    {
+      pattern: 'payload.trackingSince === TRACKING_START_DATE',
+      replacement: "typeof payload.trackingSince === 'string'"
+    }
+  ];
 
-  const result = validateRepository(rootDir);
+  for (const mutation of mutations) {
+    const rootDir = createRepositoryFixture(t);
+    if (typeof mutation.pattern === 'string') {
+      replaceOnce(rootDir, 'assets/js/stats.js', mutation.pattern, mutation.replacement);
+    } else {
+      replaceMatching(rootDir, 'assets/js/stats.js', mutation.pattern, mutation.replacement);
+    }
 
-  assert.ok(result.issues.includes(STATS_INTEGER_CONTRACT_ISSUE));
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(STATS_INTEGER_CONTRACT_ISSUE));
+  }
 });
 
 test('validateRepository treats zero as a valid public counter', (t) => {
@@ -2017,7 +2107,7 @@ test('validateRepository treats zero as a valid public counter', (t) => {
     /  function validCounter\(value\) \{[\s\S]*?\r?\n  \}/,
     [
       '  function validCounter(value) {',
-      '    return /^[0-9]+$/.test(value) && /[1-9]/.test(value);',
+      "    return typeof value === 'string' && /^[0-9]+$/.test(value) && /[1-9]/.test(value);",
       '  }'
     ].join('\n')
   );
@@ -2027,16 +2117,16 @@ test('validateRepository treats zero as a valid public counter', (t) => {
   assert.ok(result.issues.includes(STATS_ZERO_CONTRACT_ISSUE));
 });
 
-test('validateRepository requires invalid counters to degrade to warn', (t) => {
+test('validateRepository requires failed Worker requests to degrade to warn', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceMatching(
     rootDir,
     'assets/js/stats.js',
-    /  function validCounter\(value\) \{[\s\S]*?\r?\n  \}/,
+    /      \.catch\(function \(\) \{\r?\n        renderUnavailable\(\);\r?\n      \}\)/,
     [
-      '  function validCounter(value) {',
-      '    return !!value;',
-      '  }'
+      '      .catch(function () {',
+      "        setStatus(text('ok'), 'ok');",
+      '      })'
     ].join('\n')
   );
 
@@ -3434,15 +3524,17 @@ test('validateRepository does not modify the repository it checks', (t) => {
 test('the validator CLI exits with status 1 for an invalid repository', (t) => {
   const rootDir = createRepositoryFixture(t);
   fs.writeFileSync(path.join(rootDir, 'manifest.webmanifest'), 'null\n');
+  const errors = [];
 
-  const result = childProcess.spawnSync(
-    process.execPath,
-    [path.join(rootDir, 'scripts', 'validate-site.js')],
-    { cwd: os.tmpdir(), encoding: 'utf8' }
-  );
+  const status = runCli(rootDir, {
+    error(message) {
+      errors.push(message);
+    },
+    log() {}
+  });
 
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /manifest root must be an object/);
+  assert.equal(status, 1);
+  assert.match(errors.join('\n'), /manifest root must be an object/);
 });
 
 const structuredExtractionCases = [

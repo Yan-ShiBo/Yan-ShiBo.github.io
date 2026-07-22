@@ -30,10 +30,10 @@
 - 全站交互 `assets/js/site.js`；
 - 四个统计页面使用 `assets/js/stats.js`；
 - 本地字体、Font Awesome、品牌图和 favicon；
-- GitHub Pages 静态部署；
-- 零依赖 Node.js sitemap 生成器、站点验证器和单元测试。
+- GitHub Pages 静态部署，以及 Cloudflare Worker + D1 访问统计后端；
+- Node.js 24+ 下运行的零外部依赖 sitemap 生成器、站点验证器和单元测试。
 
-网站支持浅色/深色主题、移动导航、键盘焦点管理、证明图 Lightbox、双语 SEO 和第三方统计失败降级。
+网站支持浅色/深色主题、移动导航、键盘焦点管理、证明图 Lightbox、双语 SEO，以及统计 API 失败时的明确降级。
 
 ## 本地预览
 
@@ -88,8 +88,10 @@ http://127.0.0.1:8000/en/
 │   └── Shibo-Yan-Undergraduate-Transcript.pdf
 ├── scripts/
 │   ├── generate-sitemap.js
+│   ├── stats-client.test.js
 │   ├── validate-site.js
 │   └── validate-site.test.js
+├── worker/                       # 统计 Worker、D1 迁移与测试
 ├── manifest.webmanifest          # 中文安装入口
 ├── manifest.en.webmanifest       # 英文安装入口
 ├── robots.txt

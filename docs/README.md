@@ -1,6 +1,6 @@
 # 项目文档
 
-本目录面向网站维护者，按任务路由到唯一事实源。项目是由 GitHub Pages 直接发布的双语静态站点，没有构建步骤和服务端运行时。
+本目录面向网站维护者，按任务路由到唯一事实源。前端是由 GitHub Pages 直接发布、没有构建步骤的双语静态站点；访问统计使用单独部署的 Cloudflare Worker + D1。
 
 ## 1. 从哪里开始
 
@@ -39,9 +39,11 @@ docs/maintenance.md    当前偏差、修复队列、事故根因与防回归
 共享样式：assets/css/site.css
 共享交互：assets/js/site.js
 统计脚本：assets/js/stats.js（仅四页）
+统计后端：worker/src/index.mjs + worker/wrangler.toml
+D1 迁移：worker/migrations/
 生成器：scripts/generate-sitemap.js
 验证器：scripts/validate-site.js
-测试：scripts/validate-site.test.js
+测试：scripts/validate-site.test.js + scripts/stats-client.test.js + worker/src/index.test.mjs
 ```
 
 页面总数为 14；其中 12 个普通页面可索引，2 个 404 不进入 sitemap。
