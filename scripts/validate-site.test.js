@@ -2629,6 +2629,47 @@ test('validateRepository reports a non-string manifest icon src without throwing
   ));
 });
 
+test('validateRepository accepts the compact brand mark PNG asset', (t) => {
+  const rootDir = createRepositoryFixture(t);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.some((issue) => (
+    issue.startsWith('assets/icons/brand-mark.png:')
+  )));
+});
+
+test('validateRepository rejects brand mark PNG dimension drift', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  mutateBinaryFile(rootDir, 'assets/icons/brand-mark.png', (png) => {
+    png.writeUInt32BE(63, 16);
+  });
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.some((issue) => (
+    issue.startsWith(
+      'assets/icons/brand-mark.png: expected 64x64 but PNG IHDR declares '
+    )
+  )));
+});
+
+test('validateRepository rejects an oversized brand mark PNG asset', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/icons/brand-mark.png'),
+    Buffer.alloc(16 * 1024 + 1)
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.some((issue) => (
+    issue.startsWith(
+      'assets/icons/brand-mark.png: must not exceed 16384 bytes; found '
+    )
+  )));
+});
+
 test('validateRepository rejects a corrupt install PNG signature', (t) => {
   const rootDir = createRepositoryFixture(t);
   mutateBinaryFile(rootDir, 'assets/icons/app-icon-192.png', (png) => {

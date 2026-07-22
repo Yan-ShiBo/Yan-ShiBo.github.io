@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 250 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 包含 253 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -64,13 +64,13 @@ node --test --test-name-pattern="English terminology" scripts/validate-site.test
 当前成功输出应包含：
 
 ```text
-tests 250
-pass 250
+tests 253
+pass 253
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `44 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `250 tests`、`79 pass`、`171 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `47 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `253 tests`、`79 pass`、`174 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -98,6 +98,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 每页 `<head>` 恰有一个 manifest 链接，中文 7 页和英文 7 页分别指向对应文件；
 - 两份 manifest 的 `start_url`、`scope` 和 `lang` 符合语言合同；
 - 两份 manifest 的 icon 数组按 `src` 无序比较，且精确包含 192×192 与 512×512 两张 `image/png`、`purpose: any` 安装图标；缺失、重复、额外条目或任一字段漂移都会失败；
+- 导航品牌 PNG 必须是 64×64、结构边界有效且不超过 16 KiB，防止 16×16 显示重新加载未经缩放的设计母版；
 - 两张安装 PNG 的签名、首块 IHDR、固定 13 字节 IHDR 长度、非零宽高、各块文件边界与声明尺寸一致；
 - `assets/icons/site.ico` 作为独立 favicon 固定资产，不从 manifest 推导：目录必须精确包含且不重复 16×16、32×32、48×48、256×256，所有 entry 偏移和长度均在边界内且互不重叠；每个 entry 的嵌入 PNG 都检查签名、IHDR、块边界，并要求 ICO 目录尺寸与 IHDR 一致。
 
@@ -217,7 +218,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - 正文证据排除 `template`、启用脚本语义下的 `noscript`、`hidden`、`inert`、`aria-hidden="true"`，并正确处理属性引号内的 `>`；
 - sitemap alternate、XML 外壳和额外根元素；
 - 分语言 manifest 基线、唯一 `<head>` 链接、正文/HTML 注释误满足、入口/范围/语言字段，无序精确安装图标清单及其缺失、重复、额外、`src` / `type` / `purpose` / `sizes` / 字段库存漂移；
-- 独立 PNG 的短文件、签名、IHDR 首块/长度/非零宽高、块边界与声明尺寸，以及 favicon ICO 的精确非重复尺寸、目录和 entry 边界、每个嵌入 PNG、非首 entry 损坏与目录/IHDR 尺寸漂移；
+- 导航品牌 PNG 的 64×64 尺寸与 16 KiB 上限；独立 PNG 的短文件、签名、IHDR 首块/长度/非零宽高、块边界与声明尺寸，以及 favicon ICO 的精确非重复尺寸、目录和 entry 边界、每个嵌入 PNG、非首 entry 损坏与目录/IHDR 尺寸漂移；
 - 大小写错误路径；
 - robots 全站禁止与 user-agent 作用域；
 - 未登记的嵌套 HTML；
@@ -401,6 +402,7 @@ http://127.0.0.1:8000/en/
 - 非统计页加载 `stats.js` 或统计专用依赖；
 - 英文页面重新指向中文 manifest，或任一页面出现重复/正文内 manifest 链接；
 - manifest 重新使用 `site.ico`、缺少 192/512 安装 PNG、增加未经声明的 maskable 用途，或 favicon 尺寸/嵌入 PNG 漂移；
+- 16×16 导航品牌重新引用超大 PNG，或品牌图尺寸/结构超过固定资源预算；
 - 把本地四页累计描述为 14 页全站累计；
 - 重命名本地统计键却没有逐字段兼容迁移，或用历史值覆盖任何已存在的规范键；
 - 本地规范累计或页面计数因数值转换而丢失精度、停止递增、写成指数或 `NaN`，或继续接受损坏值和前导零；
@@ -418,9 +420,9 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：250 passed / 0 failed
+自动测试：253 passed / 0 failed
 结构化数据子集：79 passed / 0 failed
-图标名称子集：44 passed / 0 failed
+图标名称子集：47 passed / 0 failed
 历史 localStorage 子集：8 passed / 0 failed
 规范本地访问历史子集：2 passed / 0 failed
 首页引文子集：2 passed / 0 failed

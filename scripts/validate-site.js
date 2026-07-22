@@ -108,6 +108,9 @@ const MANIFEST_ICON_KEYS = ['purpose', 'sizes', 'src', 'type'];
 const MANIFEST_ICON_INVENTORY_ISSUE =
   'icons must exactly match the install icon inventory by src';
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+const BRAND_MARK_FILE = 'assets/icons/brand-mark.png';
+const BRAND_MARK_SIZE = '64x64';
+const BRAND_MARK_MAX_BYTES = 16 * 1024;
 const FAVICON_FILE = 'assets/icons/site.ico';
 const FAVICON_SIZES = ['16x16', '32x32', '48x48', '256x256'];
 
@@ -2282,6 +2285,37 @@ function validateInstallIconAssets(rootDir, issues) {
           `${dimensions.width}x${dimensions.height}`
       );
     }
+  }
+}
+
+function validateBrandMarkAsset(rootDir, issues) {
+  if (!ensureFile(rootDir, BRAND_MARK_FILE, issues)) return;
+
+  const data = fs.readFileSync(path.join(rootDir, BRAND_MARK_FILE));
+  if (data.length > BRAND_MARK_MAX_BYTES) {
+    addIssue(
+      issues,
+      BRAND_MARK_FILE,
+      `must not exceed ${BRAND_MARK_MAX_BYTES} bytes; found ${data.length}`
+    );
+  }
+
+  let dimensions;
+  try {
+    dimensions = readPngDimensions(data);
+  } catch (error) {
+    addIssue(issues, BRAND_MARK_FILE, `invalid PNG: ${error.message}`);
+    return;
+  }
+
+  const [expectedWidth, expectedHeight] = BRAND_MARK_SIZE.split('x').map(Number);
+  if (dimensions.width !== expectedWidth || dimensions.height !== expectedHeight) {
+    addIssue(
+      issues,
+      BRAND_MARK_FILE,
+      `expected ${BRAND_MARK_SIZE} but PNG IHDR declares ` +
+        `${dimensions.width}x${dimensions.height}`
+    );
   }
 }
 
@@ -4874,6 +4908,7 @@ function validateRepository(rootDir) {
   for (const contract of MANIFEST_CONTRACTS) {
     validateManifest(absoluteRoot, contract, issues, anchorCache);
   }
+  validateBrandMarkAsset(absoluteRoot, issues);
   validateInstallIconAssets(absoluteRoot, issues);
   validateFavicon(absoluteRoot, issues);
   const sitemapUrls = validateSitemap(absoluteRoot, issues);

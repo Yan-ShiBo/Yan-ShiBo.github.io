@@ -115,7 +115,7 @@ CSS 中的媒体查询按实际级联需要分布在多个位置，并非严格�
 
 ### 4.4 品牌与图标
 
-导航品牌标识是空的 `.brand-mark` 元素，通过 CSS 背景图加载 `assets/icons/brand-mark.png`。它不是 Font Awesome terminal 字形。两份 manifest 的安装图标清单按 `src` 无序比较，必须精确包含 `app-icon-192.png` 与 `app-icon-512.png`：尺寸分别为 192×192 和 512×512，类型均为 `image/png`，用途均为 `any`，不声明 `maskable`。`assets/icons/site.ico` 独立承担 HTML favicon，内含不重复的 16×16、32×32、48×48、256×256 四个图层，不进入 manifest。Font Awesome 仅承担普通功能图标。
+导航品牌标识是空的 `.brand-mark` 元素，通过 CSS 背景图加载 `assets/icons/brand-mark.png`。它不是 Font Awesome terminal 字形；页面以 16×16 显示该图，源 PNG 固定为 64×64 且不超过 16 KiB，为高像素密度屏幕保留四倍采样，同时避免加载未经缩放的设计母版。两份 manifest 的安装图标清单按 `src` 无序比较，必须精确包含 `app-icon-192.png` 与 `app-icon-512.png`：尺寸分别为 192×192 和 512×512，类型均为 `image/png`，用途均为 `any`，不声明 `maskable`。`assets/icons/site.ico` 独立承担 HTML favicon，内含不重复的 16×16、32×32、48×48、256×256 四个图层，不进入 manifest。Font Awesome 仅承担普通功能图标。
 
 ## 5. 状态模型
 

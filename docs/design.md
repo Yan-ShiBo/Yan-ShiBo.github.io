@@ -59,7 +59,7 @@ flowchart TB
 ### 3.1 页头与导航
 
 - `.header-shell` 组织品牌、桌面导航和操作区。
-- `.brand-mark` 是 16×16 的 PNG CSS 背景图 `assets/icons/brand-mark.png`，不是 Font Awesome 字形。
+- `.brand-mark` 以 16×16 显示 64×64 的 PNG CSS 背景图 `assets/icons/brand-mark.png`，为高像素密度屏幕保留四倍采样；它不是 Font Awesome 字形。
 - 当前页面用 `aria-current="page"` 标识；404 没有当前导航项。
 - 语言切换保持中文、英文对应页可达。
 - 主题按钮和菜单按钮必须有可理解的可访问名称。
@@ -202,7 +202,7 @@ flowchart TB
 
 ## 7. 资源与图标
 
-- 导航品牌图继续使用 `assets/icons/brand-mark.png`；192×192 与 512×512 安装 PNG 由该方形源图使用 Lanczos 机械缩放，不重新设计。
+- 导航品牌图继续使用 64×64 的 `assets/icons/brand-mark.png`；192×192 与 512×512 安装 PNG 是独立发布资产。需要重新生成时从已批准的高分辨率方形母版或 512×512 安装图机械缩放，不反向放大导航小图，也不重新设计。
 - 安装 PNG 只承担 manifest 的 `purpose: any` 图标；`assets/icons/site.ico` 只承担 HTML favicon。精确清单与元数据由[架构合同](architecture.md#44-品牌与图标)维护。
 - 品牌图、安装图标、favicon、字体和核心图片均使用本地资源。
 - Font Awesome 仅用于功能图标；图标旁保留可见文字或可访问名称。
@@ -240,7 +240,7 @@ flowchart TB
 | Page Hero | 内页顶部的标题、说明和主要操作区 |
 | Anchor Bar | 长页面的章节锚点导航 |
 | Proof Grid | 证明图缩略图与原图入口网格 |
-| Brand Mark | `assets/icons/brand-mark.png` 提供的 16×16 品牌图 |
+| Brand Mark | 由 64×64 `assets/icons/brand-mark.png` 提供的 16×16 品牌图 |
 | Stats-enabled | 实际加载 `assets/js/stats.js` 的四个页面 |
 | Provider 节点 | 第三方统计脚本写入的隐藏 DOM，不直接承担展示 |
 | `ysb-theme` | 浏览器中持久化主题选择的 localStorage 键 |
