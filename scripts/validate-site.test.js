@@ -29,6 +29,14 @@ const MOBILE_CSS_BREAKPOINT_ISSUE =
   'assets/css/site.css: mobile navigation rules must share one (max-width: 833px) media block';
 const RESUME_OVERFLOW_CSS_ISSUE =
   'assets/css/site.css: resume cards, contact values, keyword tags, and long actions must remain shrinkable on narrow viewports';
+const PROFILE_CONTACTS_ISSUE =
+  'profile contact panel must list both approved email links and exclude phone and WeChat details';
+const PROFILE_CONTACT_CSS_ISSUE =
+  'assets/css/site.css: profile email links and summary tags must remain shrinkable and wrappable on narrow viewports';
+const PROOF_RAIL_CSS_ISSUE =
+  'assets/css/site.css: proof rails must use one card size and expose grab and dragging states';
+const PROOF_RAIL_DRAG_ISSUE =
+  'assets/js/site.js: proof rails must support mouse drag scrolling without opening evidence after a drag';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
@@ -656,6 +664,183 @@ test('validateRepository accepts the checked-in site baseline', () => {
   assert.equal(result.summary.htmlFiles, 14);
   assert.equal(result.summary.indexablePages, 12);
   assert.equal(result.summary.sitemapUrls, 12);
+});
+
+test('validateRepository accepts approved profile contacts and proof rail interaction', () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const result = validateRepository(rootDir);
+
+  for (const file of ['profile.html', 'en/profile.html']) {
+    assert.ok(!result.issues.includes(`${file}: ${PROFILE_CONTACTS_ISSUE}`));
+  }
+  assert.ok(!result.issues.includes(PROFILE_CONTACT_CSS_ISSUE));
+  assert.ok(!result.issues.includes(PROOF_RAIL_CSS_ISSUE));
+  assert.ok(!result.issues.includes(PROOF_RAIL_DRAG_ISSUE));
+});
+
+test('validateRepository rejects a missing campus email in either profile language', (t) => {
+  const campusEmail = '<a class="tag" href="mailto:yan3425@email.swu.edu.cn"><i aria-hidden="true" class="fa fa-envelope-o"></i> yan3425@email.swu.edu.cn</a>';
+  for (const file of ['profile.html', 'en/profile.html']) {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(rootDir, file, campusEmail, '');
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(`${file}: ${PROFILE_CONTACTS_ISSUE}`));
+  }
+});
+
+test('validateRepository rejects legacy phone details in either profile language', (t) => {
+  const campusEmail = '<a class="tag" href="mailto:yan3425@email.swu.edu.cn"><i aria-hidden="true" class="fa fa-envelope-o"></i> yan3425@email.swu.edu.cn</a>';
+  for (const file of ['profile.html', 'en/profile.html']) {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(
+      rootDir,
+      file,
+      campusEmail,
+      `${campusEmail}<span class="tag"><i aria-hidden="true" class="fa fa-phone"></i> 15603111769</span>`
+    );
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(`${file}: ${PROFILE_CONTACTS_ISSUE}`));
+  }
+});
+
+test('validateRepository rejects legacy WeChat details in either profile language', (t) => {
+  const campusEmail = '<a class="tag" href="mailto:yan3425@email.swu.edu.cn"><i aria-hidden="true" class="fa fa-envelope-o"></i> yan3425@email.swu.edu.cn</a>';
+  for (const file of ['profile.html', 'en/profile.html']) {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(
+      rootDir,
+      file,
+      campusEmail,
+      `${campusEmail}<span class="tag"><i aria-hidden="true" class="fa fa-weixin"></i> royal-y-3425</span>`
+    );
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(`${file}: ${PROFILE_CONTACTS_ISSUE}`));
+  }
+});
+
+test('validateRepository rejects non-wrapping profile email links', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '#overview .profile-body .inline-list .tag{\n  min-width:0;\n  max-width:100%;\n  white-space:normal;\n  overflow-wrap:anywhere;\n}',
+    '#overview .profile-body .inline-list .tag{\n  min-width:0;\n  max-width:100%;\n  white-space:normal;\n  overflow-wrap:normal;\n}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(PROFILE_CONTACT_CSS_ISSUE));
+});
+
+test('validateRepository rejects non-wrapping profile summary tags', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '.summary-row .tag{\n  min-width:0;\n  max-width:100%;\n  white-space:normal;\n  overflow-wrap:anywhere;\n}',
+    '.summary-row .tag{\n  min-width:0;\n  max-width:100%;\n  white-space:nowrap;\n  overflow-wrap:anywhere;\n}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(PROFILE_CONTACT_CSS_ISSUE));
+});
+
+test('validateRepository rejects proof card width drift', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    'flex:0 0 min(78vw, 280px);',
+    'flex:0 0 280px;'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(PROOF_RAIL_CSS_ISSUE));
+});
+
+test('validateRepository rejects proof card height drift', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  height:366px;',
+    '  min-height:366px;'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(PROOF_RAIL_CSS_ISSUE));
+});
+
+test('validateRepository rejects proof size variants that override the shared card', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n.proof-grid-wide .proof-item{flex:0 0 320px}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(PROOF_RAIL_CSS_ISSUE));
+});
+
+test('validateRepository rejects missing proof rail grab feedback', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '.proof-grid.is-drag-scroll{cursor:grab}',
+    '.proof-grid.is-drag-scroll{cursor:pointer}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(PROOF_RAIL_CSS_ISSUE));
+});
+
+test('validateRepository rejects missing proof rail initialization', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(rootDir, 'assets/js/site.js', '    initProofRails();\n', '');
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(PROOF_RAIL_DRAG_ISSUE));
+});
+
+test('validateRepository rejects reversed proof rail drag movement', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/js/site.js',
+    '      rail.scrollLeft = startScrollLeft - distance;',
+    '      rail.scrollLeft = startScrollLeft + distance;'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(PROOF_RAIL_DRAG_ISSUE));
+});
+
+test('validateRepository rejects proof rail drag click-through', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/js/site.js',
+    '      event.stopImmediatePropagation();',
+    '      event.stopPropagation();'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(PROOF_RAIL_DRAG_ISSUE));
 });
 
 test('home quotation rejects a missing duplicate slot', (t) => {

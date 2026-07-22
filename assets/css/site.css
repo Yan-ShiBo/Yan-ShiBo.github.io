@@ -1011,6 +1011,8 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
   display:block;
 }
 
+.profile-body{min-width:0}
+
 .profile-body h2{
   margin:0 0 8px;
   color:var(--text);
@@ -1058,6 +1060,20 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 }
 
 .inline-list{margin-top:14px}
+
+#overview .profile-body .inline-list .tag{
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
+.summary-row .tag{
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
 
 .tag,
 .stat-pill,
@@ -1894,11 +1910,20 @@ html.reveal-ready [data-reveal].is-visible{opacity:1;transform:none}
 .proof-grid::-webkit-scrollbar{height:6px}
 .proof-grid::-webkit-scrollbar-track{background:transparent}
 .proof-grid::-webkit-scrollbar-thumb{background:var(--ink-muted-48);border-radius:3px}
+.proof-grid.is-drag-scroll{cursor:grab}
+.proof-grid.is-drag-scroll.is-dragging{
+  cursor:grabbing;
+  scroll-snap-type:none;
+  scroll-behavior:auto;
+  user-select:none;
+}
 .proof-item{
   flex:0 0 min(78vw, 280px);
+  height:366px;
   scroll-snap-align:start;
   scroll-snap-stop:always;
-  display:block;
+  display:flex;
+  flex-direction:column;
   overflow:hidden;
   padding:0;
   text-decoration:none;
@@ -1907,11 +1932,9 @@ html.reveal-ready [data-reveal].is-visible{opacity:1;transform:none}
 }
 .proof-item:hover{transform:translateY(-2px);border-color:var(--primary);text-decoration:none;box-shadow:var(--shadow-soft)}
 .proof-item:active{transform:scale(.98)}
-.proof-grid-wide .proof-item{flex:0 0 min(82vw, 320px)}
-.proof-grid-compact .proof-item{flex:0 0 min(72vw, 240px)}
 .proof-grid-project{margin-top:18px}
-.proof-item img{display:block;width:100%;aspect-ratio:4 / 3;object-fit:cover;background:var(--canvas-parchment)}
-.proof-caption{padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px}
+.proof-item img{display:block;width:100%;aspect-ratio:4 / 3;object-fit:cover;background:var(--canvas-parchment);user-select:none;-webkit-user-drag:none}
+.proof-caption{flex:1;padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px}
 .proof-caption strong,
 .media-card figcaption strong{
   display:inline-flex;

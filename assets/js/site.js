@@ -428,6 +428,72 @@
     nodes.forEach(function (node) { observer.observe(node); });
   }
 
+  function initProofRails() {
+    var rails = document.querySelectorAll('.proof-grid');
+    if (!rails.length || !('PointerEvent' in window)) return;
+
+    var dragThreshold = 6;
+
+    rails.forEach(function (rail) {
+      var pointerId = null;
+      var startX = 0;
+      var startScrollLeft = 0;
+      var moved = false;
+      var suppressClick = false;
+
+      rail.classList.add('is-drag-scroll');
+
+      rail.addEventListener('pointerdown', function (event) {
+        if (event.pointerType !== 'mouse' || event.button !== 0) return;
+        pointerId = event.pointerId;
+        startX = event.clientX;
+        startScrollLeft = rail.scrollLeft;
+        moved = false;
+        suppressClick = false;
+      });
+
+      rail.addEventListener('pointermove', function (event) {
+        if (event.pointerId !== pointerId || (event.buttons & 1) !== 1) return;
+        var distance = event.clientX - startX;
+        if (!moved) {
+          if (Math.abs(distance) < dragThreshold) return;
+          moved = true;
+          suppressClick = true;
+          rail.classList.add('is-dragging');
+          if (rail.setPointerCapture) rail.setPointerCapture(pointerId);
+        }
+        event.preventDefault();
+        rail.scrollLeft = startScrollLeft - distance;
+      });
+
+      function finishDrag(event) {
+        if (event.pointerId !== pointerId) return;
+        if (rail.hasPointerCapture && rail.hasPointerCapture(pointerId)) {
+          rail.releasePointerCapture(pointerId);
+        }
+        pointerId = null;
+        rail.classList.remove('is-dragging');
+        if (moved) {
+          window.setTimeout(function () {
+            suppressClick = false;
+          }, 0);
+        }
+      }
+
+      rail.addEventListener('pointerup', finishDrag);
+      rail.addEventListener('pointercancel', finishDrag);
+      rail.addEventListener('lostpointercapture', finishDrag);
+      rail.addEventListener('click', function (event) {
+        if (!suppressClick) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+      rail.addEventListener('dragstart', function (event) {
+        event.preventDefault();
+      });
+    });
+  }
+
   function initLightbox() {
     var triggers = document.querySelectorAll('[data-lightbox]');
     if (!triggers.length) return;
@@ -583,6 +649,7 @@
     initBackToTop();
     initAnchorNav();
     initReveal();
+    initProofRails();
     initLightbox();
     initYear();
   });

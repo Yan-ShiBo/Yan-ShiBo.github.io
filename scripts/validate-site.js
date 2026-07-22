@@ -128,6 +128,19 @@ const MOBILE_CSS_BREAKPOINT_ISSUE =
   `mobile navigation rules must share one (max-width: ${MOBILE_BREAKPOINT_PX}px) media block`;
 const RESUME_OVERFLOW_CSS_ISSUE =
   'resume cards, contact values, keyword tags, and long actions must remain shrinkable on narrow viewports';
+const PROFILE_CONTACT_FILES = ['profile.html', 'en/profile.html'];
+const PROFILE_CONTACT_EMAILS = [
+  'y423314860@163.com',
+  'yan3425@email.swu.edu.cn'
+];
+const PROFILE_CONTACTS_ISSUE =
+  'profile contact panel must list both approved email links and exclude phone and WeChat details';
+const PROFILE_CONTACT_CSS_ISSUE =
+  'profile email links and summary tags must remain shrinkable and wrappable on narrow viewports';
+const PROOF_RAIL_CSS_ISSUE =
+  'proof rails must use one card size and expose grab and dragging states';
+const PROOF_RAIL_DRAG_ISSUE =
+  'proof rails must support mouse drag scrolling without opening evidence after a drag';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
@@ -969,6 +982,39 @@ function validateEnglishTerminology(rootDir, issues) {
         file,
         `English copy uses legacy terminology; replace "${term.legacy}" with "${term.preferred}"`
       );
+    }
+  }
+}
+
+function validateProfileContacts(rootDir, issues) {
+  const expectedMailtos = PROFILE_CONTACT_EMAILS
+    .map((email) => `mailto:${email}`)
+    .sort();
+
+  for (const file of PROFILE_CONTACT_FILES) {
+    const absolutePath = path.join(rootDir, file);
+    if (!fs.existsSync(absolutePath)) continue;
+    const activeHtml = removeHtmlComments(fs.readFileSync(absolutePath, 'utf8'));
+    const tagTexts = new Set(extractClassElementText(activeHtml, 'tag'));
+    const mailtoTags = extractTags(activeHtml, 'a')
+      .filter((tag) => (
+        hasClass(tag.attributes, 'tag') &&
+        /^mailto:/i.test(String(tag.attributes.href || ''))
+      ))
+      .map((tag) => tag.attributes.href)
+      .sort();
+    const hasApprovedEmails =
+      stableCanonicalJson(mailtoTags) === stableCanonicalJson(expectedMailtos) &&
+      PROFILE_CONTACT_EMAILS.every((email) => tagTexts.has(email));
+    const hasLegacyPrivateContact = [
+      '15603111769',
+      'royal-y-3425',
+      'fa-phone',
+      'fa-weixin'
+    ].some((value) => activeHtml.includes(value));
+
+    if (!hasApprovedEmails || hasLegacyPrivateContact) {
+      addIssue(issues, file, PROFILE_CONTACTS_ISSUE);
     }
   }
 }
@@ -4224,6 +4270,100 @@ function hasResumeOverflowProtectionCss(rootDir) {
   ));
 }
 
+function hasUniformProofRailCss(rootDir) {
+  const file = 'assets/css/site.css';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return false;
+
+  const source = readUtf8(rootDir, file);
+  const executableSource = maskedSource(source, buildCssCodeMask(source));
+  const ruleEntries = collectCssRuleEntries(executableSource);
+  const contracts = [
+    [
+      '.proof-grid',
+      [['display', 'flex'], ['overflow-x', 'auto'], ['scroll-snap-type', 'x mandatory']]
+    ],
+    [
+      '.proof-item',
+      [
+        ['flex', '0 0 min(78vw, 280px)'],
+        ['height', '366px'],
+        ['display', 'flex'],
+        ['flex-direction', 'column']
+      ]
+    ],
+    ['.proof-caption', [['flex', '1']]],
+    ['.proof-grid.is-drag-scroll', [['cursor', 'grab']]],
+    [
+      '.proof-grid.is-drag-scroll.is-dragging',
+      [['cursor', 'grabbing'], ['scroll-snap-type', 'none'], ['user-select', 'none']]
+    ]
+  ];
+
+  if (!contracts.every(([selector, declarations]) => (
+    declarations.every(([property, expectedValue]) => (
+      effectiveDirectCssProperty(
+        executableSource,
+        selector,
+        property,
+        ruleEntries
+      ) === expectedValue
+    ))
+  ))) {
+    return false;
+  }
+
+  return !hasConflictingCssPropertyRule(
+    executableSource,
+    '.proof-item',
+    [['flex', '0 0 min(78vw, 280px)']],
+    ruleEntries,
+    '#main-content .proof-grid a.proof-item'
+  );
+}
+
+function hasProfileContactOverflowProtectionCss(rootDir) {
+  const file = 'assets/css/site.css';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return false;
+
+  const source = readUtf8(rootDir, file);
+  const executableSource = maskedSource(source, buildCssCodeMask(source));
+  const ruleEntries = collectCssRuleEntries(executableSource);
+  const contracts = [
+    ['.profile-body', [['min-width', '0']]],
+    [
+      '#overview .profile-body .inline-list .tag',
+      [
+        ['min-width', '0'],
+        ['max-width', '100%'],
+        ['white-space', 'normal'],
+        ['overflow-wrap', 'anywhere']
+      ]
+    ],
+    [
+      '.summary-row .tag',
+      [
+        ['min-width', '0'],
+        ['max-width', '100%'],
+        ['white-space', 'normal'],
+        ['overflow-wrap', 'anywhere']
+      ]
+    ]
+  ];
+
+  return contracts.every(([selector, declarations]) => (
+    declarations.every(([property, expectedValue]) => (
+      effectiveDirectCssProperty(
+        executableSource,
+        selector,
+        property,
+        ruleEntries
+      ) === expectedValue
+    ))
+  ));
+}
+
 const NOT_FOUND_VM_TIMEOUT_MS = 100;
 
 function preservesNotFoundPageBehavior(handler) {
@@ -4698,6 +4838,145 @@ function validateResumeOverflowCssContract(rootDir, issues) {
   }
 }
 
+function validateProofRailCssContract(rootDir, issues) {
+  if (!hasUniformProofRailCss(rootDir)) {
+    addIssue(issues, 'assets/css/site.css', PROOF_RAIL_CSS_ISSUE);
+  }
+}
+
+function validateProfileContactCssContract(rootDir, issues) {
+  if (!hasProfileContactOverflowProtectionCss(rootDir)) {
+    addIssue(issues, 'assets/css/site.css', PROFILE_CONTACT_CSS_ISSUE);
+  }
+}
+
+function preservesProofRailDragBehavior(handler) {
+  if (!handler) return false;
+
+  const listeners = new Map();
+  const classes = new Set();
+  const timers = [];
+  let capturedPointer = null;
+  let releasedPointer = null;
+  const rail = {
+    scrollLeft: 120,
+    classList: {
+      add(value) { classes.add(value); },
+      remove(value) { classes.delete(value); },
+      contains(value) { return classes.has(value); }
+    },
+    addEventListener(type, callback) {
+      if (!listeners.has(type)) listeners.set(type, []);
+      listeners.get(type).push(callback);
+    },
+    setPointerCapture(pointerId) {
+      capturedPointer = pointerId;
+    },
+    hasPointerCapture(pointerId) {
+      return capturedPointer === pointerId;
+    },
+    releasePointerCapture(pointerId) {
+      if (capturedPointer === pointerId) capturedPointer = null;
+      releasedPointer = pointerId;
+    }
+  };
+  const context = vm.createContext({
+    document: {
+      querySelectorAll(selector) {
+        return selector === '.proof-grid' ? [rail] : [];
+      }
+    },
+    window: {
+      PointerEvent: function PointerEvent() {},
+      setTimeout(callback) {
+        timers.push(callback);
+        return timers.length;
+      }
+    }
+  }, {
+    codeGeneration: { strings: false, wasm: false },
+    microtaskMode: 'afterEvaluate'
+  });
+  const source = `'use strict';\n(function () {\n${handler.source}\n})()`;
+
+  function event(overrides = {}) {
+    return {
+      button: 0,
+      buttons: 1,
+      pointerType: 'mouse',
+      pointerId: 7,
+      clientX: 200,
+      defaultPrevented: false,
+      immediatePropagationStopped: false,
+      preventDefault() { this.defaultPrevented = true; },
+      stopImmediatePropagation() { this.immediatePropagationStopped = true; },
+      ...overrides
+    };
+  }
+
+  function dispatch(type, value) {
+    for (const callback of listeners.get(type) || []) callback(value);
+  }
+
+  try {
+    new vm.Script(source, {
+      filename: 'assets/js/site.js#initProofRails'
+    }).runInContext(context, { timeout: 100 });
+
+    if (!classes.has('is-drag-scroll')) return false;
+
+    dispatch('pointerdown', event({ pointerType: 'touch', pointerId: 2 }));
+    if (capturedPointer !== null || classes.has('is-dragging')) return false;
+
+    dispatch('pointerdown', event());
+    if (capturedPointer !== null || classes.has('is-dragging')) return false;
+
+    const smallMove = event({ clientX: 197 });
+    dispatch('pointermove', smallMove);
+    if (smallMove.defaultPrevented || rail.scrollLeft !== 120) return false;
+
+    const dragMove = event({ clientX: 150 });
+    dispatch('pointermove', dragMove);
+    if (
+      !dragMove.defaultPrevented ||
+      rail.scrollLeft !== 170 ||
+      capturedPointer !== 7 ||
+      !classes.has('is-dragging')
+    ) {
+      return false;
+    }
+
+    dispatch('pointerup', event({ clientX: 150 }));
+    if (classes.has('is-dragging') || capturedPointer !== null || releasedPointer !== 7) {
+      return false;
+    }
+
+    const suppressedClick = event();
+    dispatch('click', suppressedClick);
+    if (!suppressedClick.defaultPrevented || !suppressedClick.immediatePropagationStopped) {
+      return false;
+    }
+
+    for (const callback of timers.splice(0)) callback();
+    const laterClick = event();
+    dispatch('click', laterClick);
+    if (laterClick.defaultPrevented || laterClick.immediatePropagationStopped) return false;
+
+    const simpleDown = event({ pointerId: 8, clientX: 90 });
+    dispatch('pointerdown', simpleDown);
+    dispatch('pointerup', event({ pointerId: 8, clientX: 90 }));
+    const simpleClick = event({ pointerId: 8, clientX: 90 });
+    dispatch('click', simpleClick);
+    if (simpleClick.defaultPrevented || simpleClick.immediatePropagationStopped) return false;
+
+    const nativeDrag = event();
+    dispatch('dragstart', nativeDrag);
+    return nativeDrag.defaultPrevented;
+  } catch {
+    return false;
+  }
+}
+
 function validateSiteJavaScriptContracts(rootDir, issues) {
   const file = 'assets/js/site.js';
   const absolutePath = path.join(rootDir, file);
@@ -4734,6 +5013,12 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     'initNotFoundPage',
     true
   );
+  const proofRailHandler = extractNamedFunctionBody(
+    source,
+    codeMask,
+    'initProofRails',
+    true
+  );
   const hasMobileMenuQuery = hasExecutableMatch(
     source,
     codeMask,
@@ -4744,6 +5029,11 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     )
   );
   const hasMenuBreakpointHandler = handler !== null;
+  const initializesProofRails = hasExecutableMatch(
+    source,
+    codeMask,
+    /^[\t ]*initProofRails\(\)\s*;/m
+  );
   const hasMobileMenuListener = hasExecutableMatch(
     source,
     codeMask,
@@ -4860,6 +5150,10 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
       'modal background cleanup must restore each element\'s pre-existing inert state'
     );
   }
+
+  if (!initializesProofRails || !preservesProofRailDragBehavior(proofRailHandler)) {
+    addIssue(issues, file, PROOF_RAIL_DRAG_ISSUE);
+  }
 }
 
 function validateRepository(rootDir) {
@@ -4893,6 +5187,7 @@ function validateRepository(rootDir) {
   validateStructuredDataConsistency(structuredDataRecords, issues);
   validateHomeQuotationCopies(absoluteRoot, issues);
   validateEnglishTerminology(absoluteRoot, issues);
+  validateProfileContacts(absoluteRoot, issues);
 
   for (const page of NOT_FOUND_PAGES) {
     if (!existingHtml.has(page.file)) continue;
@@ -4917,6 +5212,8 @@ function validateRepository(rootDir) {
   validateStatsJavaScriptContracts(absoluteRoot, issues);
   validateMobileNavigationCssContract(absoluteRoot, issues);
   validateResumeOverflowCssContract(absoluteRoot, issues);
+  validateProfileContactCssContract(absoluteRoot, issues);
+  validateProofRailCssContract(absoluteRoot, issues);
   validateSiteJavaScriptContracts(absoluteRoot, issues);
 
   return {
