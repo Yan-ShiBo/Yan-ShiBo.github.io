@@ -44,6 +44,10 @@ const STATS_ZERO_CONTRACT_ISSUE =
   'assets/js/stats.js: zero must remain a valid public counter';
 const STATS_UNAVAILABLE_CONTRACT_ISSUE =
   'assets/js/stats.js: invalid public counters must render -- and end in warn state';
+const STATS_STATUS_MARKUP_ISSUE =
+  'stats status must start in loading state and expose a polite atomic status live region';
+const STATS_LOADING_CONTRACT_ISSUE =
+  'assets/js/stats.js: public counter loading must poll every 250 ms, settle within 8 seconds, and expose loading, partial, and final states';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'assets/js/stats.js: local visit dates must remain formatted text';
 const STATS_LOCAL_HISTORY_CONTRACT_ISSUE =
@@ -1606,6 +1610,65 @@ test('validateRepository rejects stats-service preconnects on non-stats pages', 
       'projects.html: stats-service preconnect https://events.vercount.one is limited to the four stats-enabled pages'
     ]
   );
+});
+
+test('validateRepository accepts accessible public stats status regions', (t) => {
+  const rootDir = createRepositoryFixture(t);
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(
+    result.issues.filter((issue) => issue.endsWith(STATS_STATUS_MARKUP_ISSUE)),
+    []
+  );
+});
+
+test('validateRepository rejects an inaccessible public stats status region', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(rootDir, 'index.html', ' aria-live="polite"', '');
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${STATS_STATUS_MARKUP_ISSUE}`));
+});
+
+test('validateRepository accepts the bounded public stats loading state machine', (t) => {
+  const rootDir = createRepositoryFixture(t);
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.includes(STATS_LOADING_CONTRACT_ISSUE));
+});
+
+test('validateRepository rejects slow or collapsed public stats loading states', (t) => {
+  const mutations = [
+    {
+      pattern: '  var PUBLIC_COUNTER_POLL_MS = 250;',
+      replacement: '  var PUBLIC_COUNTER_POLL_MS = 1000;'
+    },
+    {
+      pattern: '  var PUBLIC_COUNTER_MAX_TRIES = 32;',
+      replacement: '  var PUBLIC_COUNTER_MAX_TRIES = 96;'
+    },
+    {
+      pattern: "        setStatus(text('partial'), 'partial');",
+      replacement: "        setStatus(text('partial'), 'ok');"
+    }
+  ];
+
+  for (const mutation of mutations) {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(
+      rootDir,
+      'assets/js/stats.js',
+      mutation.pattern,
+      mutation.replacement
+    );
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(result.issues.includes(STATS_LOADING_CONTRACT_ISSUE));
+  }
 });
 
 test('validateRepository rejects non-ASCII public counter digits', (t) => {

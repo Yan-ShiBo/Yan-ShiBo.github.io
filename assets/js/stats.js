@@ -4,6 +4,8 @@
     'https://cdn.jsdelivr.net/gh/sukkaw/busuanzi@2.3/bsz.pure.mini.js',
     'https://cdn.jsdelivr.net/npm/busuanzi@2.3.0'
   ];
+  var PUBLIC_COUNTER_POLL_MS = 250;
+  var PUBLIC_COUNTER_MAX_TRIES = 32;
 
   var STORAGE_KEYS = {
     total: 'ysb-visit-total',
@@ -290,6 +292,8 @@
   });
 
   window.addEventListener('load', function () {
+    setStatus(text('loading'), 'loading');
+
     // Inject Vercount script dynamically AFTER load to avoid blocking spinner
     var vercountScript = document.createElement('script');
     vercountScript.src = 'https://events.vercount.one/js';
@@ -308,16 +312,16 @@
         return;
       }
       if (validCount > 0) {
-        setStatus(text('partial'), 'ok');
+        setStatus(text('partial'), 'partial');
       }
-      if (tries >= 24) {
+      if (tries >= PUBLIC_COUNTER_MAX_TRIES) {
         if (validCount > 0) {
-          setStatus(text('partial'), 'ok');
+          setStatus(text('partial'), 'partial');
         } else {
           setStatus(text('unavailable'), 'warn');
         }
         window.clearInterval(timer);
       }
-    }, 1000);
+    }, PUBLIC_COUNTER_POLL_MS);
   });
 })();

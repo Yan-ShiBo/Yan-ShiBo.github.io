@@ -216,6 +216,10 @@ const STATS_INTEGER_CONTRACT_ISSUE =
 const STATS_ZERO_CONTRACT_ISSUE = 'zero must remain a valid public counter';
 const STATS_UNAVAILABLE_CONTRACT_ISSUE =
   'invalid public counters must render -- and end in warn state';
+const STATS_STATUS_MARKUP_ISSUE =
+  'stats status must start in loading state and expose a polite atomic status live region';
+const STATS_LOADING_CONTRACT_ISSUE =
+  'public counter loading must poll every 250 ms, settle within 8 seconds, and expose loading, partial, and final states';
 const STATS_LOCAL_DATE_CONTRACT_ISSUE =
   'local visit dates must remain formatted text';
 const STATS_LOCAL_HISTORY_CONTRACT_ISSUE =
@@ -557,6 +561,20 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
     ];
     for (const id of requiredStatsIds) {
       if (!ids.has(id)) addIssue(issues, file, `stats.js requires #${id}`);
+    }
+
+    const statusTags = extractTags(activeHtml, 'div').filter((tag) => (
+      tag.attributes.id === 'stats-status'
+    ));
+    const statusAttributes = statusTags.length === 1 ? statusTags[0].attributes : {};
+    if (
+      statusTags.length !== 1 ||
+      statusAttributes['data-state'] !== 'loading' ||
+      String(statusAttributes.role || '').toLowerCase() !== 'status' ||
+      String(statusAttributes['aria-live'] || '').toLowerCase() !== 'polite' ||
+      String(statusAttributes['aria-atomic'] || '').toLowerCase() !== 'true'
+    ) {
+      addIssue(issues, file, STATS_STATUS_MARKUP_ISSUE);
     }
   }
 
@@ -2547,6 +2565,8 @@ function runStatsScenario(source, options = {}) {
   const documentEvents = {};
   const windowEvents = {};
   const intervalCallbacks = [];
+  const intervalDelays = [];
+  let clearedIntervals = 0;
   const storageWrites = [];
   const storageRemovals = [];
   let storageClearCount = 0;
@@ -2593,9 +2613,12 @@ function runStatsScenario(source, options = {}) {
     addEventListener(type, callback) {
       windowEvents[type] = callback;
     },
-    clearInterval() {},
-    setInterval(callback) {
+    clearInterval() {
+      clearedIntervals += 1;
+    },
+    setInterval(callback, delay) {
       intervalCallbacks.push(callback);
+      intervalDelays.push(delay);
       return intervalCallbacks.length;
     }
   };
@@ -2654,7 +2677,9 @@ function runStatsScenario(source, options = {}) {
     storage: Object.freeze(Object.fromEntries(storage)),
     storageWrites: Object.freeze(storageWrites.slice()),
     storageRemovals: Object.freeze(storageRemovals.slice()),
-    storageClearCount
+    storageClearCount,
+    intervalDelays: Object.freeze(intervalDelays.slice()),
+    clearedIntervals
   };
 }
 
@@ -2666,6 +2691,8 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
   let source;
   let fallbackScenario;
   let zeroScenario;
+  let loadingScenario;
+  let partialScenario;
   let unavailableScenario;
   let localScenario;
   try {
@@ -2694,6 +2721,30 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
       triggerLoad: true,
       intervalTicks: 1
     });
+    loadingScenario = runStatsScenario(source, {
+      providerValues: {
+        busuanzi_value_site_pv: '-1',
+        vercount_value_site_pv: '+1',
+        busuanzi_value_site_uv: '1.5',
+        vercount_value_site_uv: '1e3',
+        busuanzi_value_page_pv: '1,000',
+        vercount_value_page_pv: 'broken'
+      },
+      triggerLoad: true,
+      intervalTicks: 31
+    });
+    partialScenario = runStatsScenario(source, {
+      providerValues: {
+        busuanzi_value_site_pv: '42',
+        vercount_value_site_pv: '--',
+        busuanzi_value_site_uv: '--',
+        vercount_value_site_uv: '--',
+        busuanzi_value_page_pv: '--',
+        vercount_value_page_pv: '--'
+      },
+      triggerLoad: true,
+      intervalTicks: 1
+    });
     unavailableScenario = runStatsScenario(source, {
       providerValues: {
         busuanzi_value_site_pv: '-1',
@@ -2704,7 +2755,7 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
         vercount_value_page_pv: 'broken'
       },
       triggerLoad: true,
-      intervalTicks: 24
+      intervalTicks: 32
     });
     localScenario = runStatsScenario(source, {
       storageSeed: {
@@ -2752,6 +2803,24 @@ function validateStatsJavaScriptContracts(rootDir, issues) {
     unavailableScenario.readElement('stats-status').state !== 'warn'
   ) {
     addIssue(issues, file, STATS_UNAVAILABLE_CONTRACT_ISSUE);
+  }
+
+  const loadingStatus = loadingScenario.readElement('stats-status');
+  const partialStatus = partialScenario.readElement('stats-status');
+  const unavailableStatus = unavailableScenario.readElement('stats-status');
+  if (
+    loadingStatus.state !== 'loading' ||
+    loadingStatus.text !== 'Loading public counters (Busuanzi / Vercount)…' ||
+    partialStatus.state !== 'partial' ||
+    partialStatus.text !== 'Public counters loaded. Current values come from whichever services are available.' ||
+    unavailableStatus.state !== 'warn' ||
+    loadingScenario.intervalDelays.length !== 1 ||
+    loadingScenario.intervalDelays[0] !== 250 ||
+    loadingScenario.clearedIntervals !== 0 ||
+    fallbackScenario.clearedIntervals !== 1 ||
+    unavailableScenario.clearedIntervals !== 1
+  ) {
+    addIssue(issues, file, STATS_LOADING_CONTRACT_ISSUE);
   }
 
   const datePattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
