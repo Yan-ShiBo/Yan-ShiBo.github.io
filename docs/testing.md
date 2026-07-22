@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 243 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 包含 246 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
 
 任何测试数量或页面库存发生变化时，本节、脚本和对应测试必须一起更新。
@@ -55,16 +55,22 @@ node --test --test-name-pattern="canonical local visit history" scripts/validate
 node --test --test-name-pattern="home quotation" scripts/validate-site.test.js
 ```
 
+仅定位英文术语回归时可以运行以下名称子集；它同样不能替代全量入口：
+
+```powershell
+node --test --test-name-pattern="English terminology" scripts/validate-site.test.js
+```
+
 当前成功输出应包含：
 
 ```text
-tests 243
-pass 243
+tests 246
+pass 246
 fail 0
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `44 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，规范本地访问历史子集与首页引文子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `243 tests`、`79 pass`、`164 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `44 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `246 tests`、`79 pass`、`167 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -107,6 +113,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - 图片具有 `alt`、`width` 和 `height`；
 - `target="_blank"` 外链包含安全 `rel`。
 - 中英文首页各自恰有一份 `.poem-note` 与 `.quote-text`，同页两处引文的可见文本规范化后完全一致，避免重复文案单边漂移。
+- 七个英文页面的活动 HTML 不含[设计规范](design.md#63-双语)列出的高置信度陈旧术语；HTML 注释不参与该检查。
 
 它不会模拟键盘操作，也不会证明视觉对比度、焦点顺序或屏幕阅读器体验正确。
 
@@ -187,7 +194,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 
 ### 3.9 简历响应式收缩合同
 
-验证器要求 `site.css` 在样式表顶层为精确选择器声明四组全局保护：文档卡片 `min-width: 0`，简历侧栏联系方式行 `min-width: 0`，其值同时使用 `min-width: 0` 与 `overflow-wrap: anywhere`，简历主体长小按钮使用 `max-width: 100%` 与 `white-space: normal`。声明按源码顺序、选择器特异性和 `!important` 优先级解析，并把选择器列表及组合符周围的等价空白规范化；注释、字符串、错误选择器、错误值，以及顶层或 `@media` / `@supports` 中能够覆盖保护值的规则，均不能满足合同。较低优先级的共享基础样式、条件规则中的无关属性、最终 subject 上仅由类型/ID/类组成的单 compound `:not(...)` 明确排除目标的选择器和只作用于伪元素的规则不应被误报。验证器不尝试实现完整浏览器选择器引擎：祖先否定、属性或通配符否定，以及带组合符、嵌套函数或状态条件的复杂函数选择器，若其受保护声明足以覆盖基线，则保守拒绝。重叠候选也逐条受约束：高优先级错误声明即使随后由安全值恢复，仍视为陈旧风险并拒绝；应删除错误声明，不依赖后续补救。证明图的横向滚动仍属于 `.proof-grid` 自身，不能转移为页面级横向滚动。
+验证器要求 `site.css` 在样式表顶层为精确选择器声明五组全局保护：文档卡片 `min-width: 0`，简历侧栏联系方式行 `min-width: 0`，其值同时使用 `min-width: 0` 与 `overflow-wrap: anywhere`，关键词标签同时使用 `min-width: 0`、`white-space: normal` 与 `overflow-wrap: anywhere`，简历主体长小按钮使用 `max-width: 100%` 与 `white-space: normal`。声明按源码顺序、选择器特异性和 `!important` 优先级解析，并把选择器列表及组合符周围的等价空白规范化；注释、字符串、错误选择器、错误值，以及顶层或 `@media` / `@supports` 中能够覆盖保护值的规则，均不能满足合同。较低优先级的共享基础样式、条件规则中的无关属性、最终 subject 上仅由类型/ID/类组成的单 compound `:not(...)` 明确排除目标的选择器和只作用于伪元素的规则不应被误报。验证器不尝试实现完整浏览器选择器引擎：祖先否定、属性或通配符否定，以及带组合符、嵌套函数或状态条件的复杂函数选择器，若其受保护声明足以覆盖基线，则保守拒绝。重叠候选也逐条受约束：高优先级错误声明即使随后由安全值恢复，仍视为陈旧风险并拒绝；应删除错误声明，不依赖后续补救。证明图的横向滚动仍属于 `.proof-grid` 自身，不能转移为页面级横向滚动。
 
 ## 4. 验证器单元测试
 
@@ -203,6 +210,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - 节点 ID 的绝对性、缺失、重复与漂移，悬空引用、非 ID-only 关系、额外字段和错误图库存；
 - `Person` / `WebSite` 跨页身份与事实漂移，以及图节点和语言集合按集合而非数组顺序比较；
 - 项目和研究列表、顺序、可见文本、仓库、贡献者与禁止声明；
+- 英文活动 HTML 中的陈旧术语拒绝，以及 HTML 注释中的同形文本排除；
 - 统计页的数据类型、计数、本地访问和访客字段，以及两个 404 的活动 JSON-LD 排除；
 - 根 404 深层路径的根绝对资源、成对双语映射及其与物理英文 404 的标题/meta/资源/导航/ARIA/主题/正文精确等价，两页唯一倒计时节点和可执行内联脚本排除；共享初始化器在普通页面提前退出、调用顺序、精确 `/en/` 边界、中文反例、完整 URL 写入审计、5 秒保留与语言对应跳转；
 - 正文证据排除 `template`、启用脚本语义下的 `noscript`、`hidden`、`inert`、`aria-hidden="true"`，并正确处理属性引号内的 `>`；
@@ -216,7 +224,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - `stats.js` 的非负 ASCII 整数格式、`0`、前导零、全角数字等异常主来源回退、超长数字原样保留、全部异常降级、本地日期文本不受计数校验影响，规范累计/页面计数的严格形状、损坏值恢复、独立接线、局部与任意长度进位，并拒绝 `Number`、`parseInt`、`parseFloat`、`BigInt`、BigInt 字面量和宽松格式实现，以及历史 localStorage 逐字段安全迁移、规范键优先、旧 `last` 直接刷新、损坏值隔离、旧键保留和伪造旧页面键忽略；
 - 规范本地访问历史的精确 ISO 首次/最近时间、同一当前时间快照、损坏规范值隔离，以及严格真实日期、稳定去重、今天唯一末尾、365 项上限、每次持久化和存储/页面一致性；
 - 移动菜单共享 `(max-width: 833px)` 谓词的退出清理合同，以及 CSS 断点漂移、导航规则跨媒体块、外层 `@supports` 包裹目标媒体块、媒体块内部嵌套 `@supports` 条件组、注释/字符串/普通或嵌套块型自定义属性伪实现、同一规则/后续直接规则/后续同谓词媒体块覆盖 `display`、旧 `(min-width: 834px)` 间隙实现、错误查询、遗漏/反向/嵌套使用 `event.matches`、退出门晚于清理、缺少可见焦点回退、关闭逻辑落在无关函数、关键实现被注释掉或只出现在字符串中的变异用例；
-- 简历文档卡片、联系方式和长小按钮的全局收缩合同，以及注释/字符串、等价空白、选择器列表、条件覆盖、非 `!important` 高特异性覆盖、`:nth-child(... of selector)` 特异性、较短的 `!important` 覆盖、实际 `.subtle` 动作变体、祖先/通配符否定、复杂函数选择器、嵌套状态否定、陈旧错误声明后续修复、错误值和后续覆盖变异；另有无关条件属性、最终 subject 的类型/ID/类单 compound `:not(...)`、简单与复合伪元素及 `!important` 正确优先级的正向用例，防止验证器在已建模范围内过度拒绝或误算层叠；
+- 简历文档卡片、联系方式、关键词标签和长小按钮的全局收缩合同，以及注释/字符串、等价空白、选择器列表、条件覆盖、非 `!important` 高特异性覆盖、`:nth-child(... of selector)` 特异性、较短的 `!important` 覆盖、实际 `.subtle` 动作变体、祖先/通配符否定、复杂函数选择器、嵌套状态否定、陈旧错误声明后续修复、错误值和后续覆盖变异；另有无关条件属性、最终 subject 的类型/ID/类单 compound `:not(...)`、简单与复合伪元素及 `!important` 正确优先级的正向用例，防止验证器在已建模范围内过度拒绝或误算层叠；
 - Lightbox 打开/关闭背景接线与 `inert` 行为合同：等价实现正向夹具，以及缺少任一端接线、任意语句位置的裸赋值或 `var` 覆盖、对象属性赋值 decoy、非行首同名函数语法、遗漏属性值、显式 `aria-hidden="false"` 丢失、多元素共享快照串扰、重复/无关/注释/字符串处理器、激活分支贯穿、倒序恢复、抛错、语法错误、超时、恢复后立即或通过微任务延后再次清除等变异用例；
 - JavaScript 字符串和正则字面量中的注释形文本不会干扰交互合同识别；
 - 验证器只读保证；
@@ -274,7 +282,7 @@ http://127.0.0.1:8000/en/
 
 同时检查横屏、小高度窗口和 200% 浏览器缩放。页面不得出现意外横向滚动、遮挡或无法点击的控件。
 
-简历页还需在中英文 `640px`、`375px` 与 `320px` 检查：`documentElement.scrollWidth === clientWidth`；`.doc-grid` 不产生自身宽度溢出；`.proof-grid` 保留 `overflow-x: auto` 的内部滑轨；联系方式值和长小按钮均落在各自父容器内。自动化或人工测试不得点击 PDF 链接；本机下载管理器可能接管该导航。
+简历页还需在中英文 `640px`、`375px` 与 `320px` 检查：`documentElement.scrollWidth === clientWidth`；`.doc-grid` 不产生自身宽度溢出；`.proof-grid` 保留 `overflow-x: auto` 的内部滑轨；联系方式值、关键词标签和长小按钮均落在各自父容器内，标签文字不得覆盖相邻标签。自动化或人工测试不得点击 PDF 链接；本机下载管理器可能接管该导航。
 
 ### 7.2 页面范围与结构化数据矩阵
 
@@ -400,6 +408,7 @@ http://127.0.0.1:8000/en/
 - 把相同 `lastmod` 日期直接判为错误；
 - 文档继续引用已删除路径或重复维护同一合同；
 - 首页同一引文的卡片副本与页尾副本发生单边漂移；
+- 英文页面重新引入 `graduation design`、`multi-terminal`、`Honourable Mention` 等已废弃表达；
 - 未授权个人材料或未发表研究材料进入公开仓库。
 
 ## 10. 测试结果记录
@@ -407,12 +416,13 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-自动测试：243 passed / 0 failed
+自动测试：246 passed / 0 failed
 结构化数据子集：79 passed / 0 failed
 图标名称子集：44 passed / 0 failed
 历史 localStorage 子集：8 passed / 0 failed
 规范本地访问历史子集：2 passed / 0 failed
 首页引文子集：2 passed / 0 failed
+英文术语子集：2 passed / 0 failed
 站点验证：14 HTML / 12 indexable / 12 sitemap URLs
 diff check：通过或具体问题
 人工检查：页面、主题、视口、键盘路径；涉及结构化数据时记录 12 路由矩阵

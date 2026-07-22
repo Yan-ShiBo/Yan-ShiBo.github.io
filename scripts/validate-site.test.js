@@ -28,12 +28,14 @@ const MENU_CLEANUP_ISSUE =
 const MOBILE_CSS_BREAKPOINT_ISSUE =
   'assets/css/site.css: mobile navigation rules must share one (max-width: 833px) media block';
 const RESUME_OVERFLOW_CSS_ISSUE =
-  'assets/css/site.css: resume cards, contact values, and long actions must remain shrinkable on narrow viewports';
+  'assets/css/site.css: resume cards, contact values, keyword tags, and long actions must remain shrinkable on narrow viewports';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
   'index.html: home quotation copies must include exactly one poem-note and one quote-text';
 const HOME_QUOTE_PARITY_ISSUE = 'en/index.html: home quotation copies must match';
+const ENGLISH_TERMINOLOGY_ISSUE =
+  'en/index.html: English copy uses legacy terminology; replace "graduation design" with "undergraduate capstone project"';
 const MODAL_INERT_RESTORE_ISSUE =
   'assets/js/site.js: modal background cleanup must restore each element\'s pre-existing inert state';
 const STATS_INTEGER_CONTRACT_ISSUE =
@@ -496,7 +498,7 @@ test('validateRepository rejects root 404 English metadata drift from the physic
   replaceOnce(
     rootDir,
     '404.html',
-    'data-not-found-en-content="Page not found. Continue to ShiBo Yan\'s homepage, research page, projects, or the resume page."',
+    'data-not-found-en-content="Page not found. Return to ShiBo Yan\'s homepage, research, projects, or resume."',
     'data-not-found-en-content="Wrong English description."'
   );
 
@@ -673,6 +675,34 @@ test('home quotation rejects drift between duplicate English copies', (t) => {
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(HOME_QUOTE_PARITY_ISSUE));
+});
+
+test('English terminology rejects legacy wording in active English copy', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    '<main class="main-shell" id="main-content">',
+    '<main class="main-shell" id="main-content"><p>graduation design</p>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(ENGLISH_TERMINOLOGY_ISSUE));
+});
+
+test('English terminology ignores legacy wording in HTML comments', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    '<main class="main-shell" id="main-content">',
+    '<!-- graduation design -->\n  <main class="main-shell" id="main-content">'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.deepEqual(result.issues, []);
 });
 
 test('validateRepository requires shared mobile breakpoint menu cleanup', (t) => {
@@ -1009,6 +1039,18 @@ test('validateRepository rejects non-shrinkable resume contact rows and values',
     path.join(rootDir, 'assets/css/site.css'),
     '\n.resume-sidebar .meta-list li{min-width:auto}\n' +
       '.resume-sidebar .meta-list li span{min-width:auto;overflow-wrap:normal}\n'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(RESUME_OVERFLOW_CSS_ISSUE));
+});
+
+test('validateRepository rejects non-wrapping resume keyword tags', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  fs.appendFileSync(
+    path.join(rootDir, 'assets/css/site.css'),
+    '\n.resume-sidebar .chip-list .tag{min-width:auto;white-space:nowrap;overflow-wrap:normal}\n'
   );
 
   const result = validateRepository(rootDir);

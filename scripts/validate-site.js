@@ -124,12 +124,78 @@ const MOBILE_MENU_CLEANUP_ISSUE =
 const MOBILE_CSS_BREAKPOINT_ISSUE =
   `mobile navigation rules must share one (max-width: ${MOBILE_BREAKPOINT_PX}px) media block`;
 const RESUME_OVERFLOW_CSS_ISSUE =
-  'resume cards, contact values, and long actions must remain shrinkable on narrow viewports';
+  'resume cards, contact values, keyword tags, and long actions must remain shrinkable on narrow viewports';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
   'home quotation copies must include exactly one poem-note and one quote-text';
 const HOME_QUOTE_PARITY_ISSUE = 'home quotation copies must match';
+const ENGLISH_COPY_FILES = [
+  'en/index.html',
+  'en/profile.html',
+  'en/research.html',
+  'en/projects.html',
+  'en/resume.html',
+  'en/analytics.html',
+  'en/404.html'
+];
+const LEGACY_ENGLISH_TERMINOLOGY = [
+  {
+    pattern: /\bgraduation design\b/i,
+    legacy: 'graduation design',
+    preferred: 'undergraduate capstone project'
+  },
+  {
+    pattern: /\bmulti-terminal\b/i,
+    legacy: 'multi-terminal',
+    preferred: 'multi-platform'
+  },
+  {
+    pattern: /\bdegree-course\b/i,
+    legacy: 'degree-course',
+    preferred: 'degree-required course'
+  },
+  {
+    pattern: /\bproof photo\b/i,
+    legacy: 'Proof photo',
+    preferred: 'Supporting evidence'
+  },
+  {
+    pattern: /\bHonourable Mention\b/i,
+    legacy: 'Honourable Mention',
+    preferred: 'Honorable Mention'
+  },
+  {
+    pattern: /\bfront-end\s*\/\s*back-end\s+(?:separated|separation)\b/i,
+    legacy: 'front-end / back-end separated',
+    preferred: 'decoupled front-end/back-end architecture'
+  },
+  {
+    pattern: /\bdelivery rhythm\b/i,
+    legacy: 'delivery rhythm',
+    preferred: 'project scheduling'
+  },
+  {
+    pattern: /\bstaged reports\b/i,
+    legacy: 'staged reports',
+    preferred: 'periodic reports'
+  },
+  {
+    pattern: /\bproject proof\b/i,
+    legacy: 'project proof',
+    preferred: 'supporting evidence'
+  },
+  {
+    pattern: /\bprobability bounds?\b/i,
+    legacy: 'probability bound',
+    preferred: 'probability lower bound'
+  },
+  {
+    pattern: /\bprobability guarantees?\b/i,
+    legacy: 'probability guarantee',
+    preferred: 'probabilistic guarantee'
+  }
+];
 const PROVIDER_STATS_IDS = [
   'busuanzi_value_site_pv',
   'busuanzi_value_site_uv',
@@ -576,13 +642,19 @@ const EXPECTED_PROJECT_FACTS = {
   ],
   en: [
     {
-      name: 'Multi-terminal Attendance System Based on Face Recognition',
-      description: 'The system recognizes students from camera capture or uploaded photos and generates attendance summaries and staged reports.',
-      keywords: ['uni-app', 'Spring Boot', 'MySQL', 'Python', 'Android / Mini Program / Web']
+      name: 'Multi-Platform Attendance System Using Face Recognition',
+      description: 'The system identifies students in attendance from camera-captured or uploaded images and generates attendance summaries and periodic reports.',
+      keywords: [
+        'uni-app',
+        'Spring Boot',
+        'MySQL',
+        'Python',
+        'Android / WeChat Mini Program / Web'
+      ]
     },
     {
-      name: 'Front-end / Back-end Separated KTV Management System',
-      description: 'The front end uses Vue, jQuery, Bootstrap, ACE, ElementUI, and font-awesome; the back end uses Spring Boot with MySQL.',
+      name: 'KTV Management System with a Decoupled Front-End/Back-End Architecture',
+      description: 'The front end uses Vue, jQuery, Bootstrap, ACE, Element UI, and Font Awesome; the back end uses Spring Boot with MySQL.',
       keywords: [
         'Vue',
         'jQuery',
@@ -617,11 +689,11 @@ const EXPECTED_RESEARCH_FACTS = {
   en: [
     {
       name: 'Controller updates',
-      description: 'Improve policies in regions where the certified lower bound remains conservative.'
+      description: 'Continue refining the policy in regions where the certified probability lower bound is overly conservative, rather than stopping after the first solve.'
     },
     {
       name: 'PAC approximation',
-      description: 'Balance polynomial degree, sample size, and approximation error to reduce solver pressure.'
+      description: 'Balance polynomial degree, sample size, and approximation error to reduce the computational burden on downstream optimization.'
     },
     {
       name: 'Certificate templates',
@@ -860,6 +932,23 @@ function validateHomeQuotationCopies(rootDir, issues) {
       continue;
     }
     if (notes[0] !== quotes[0]) addIssue(issues, file, HOME_QUOTE_PARITY_ISSUE);
+  }
+}
+
+function validateEnglishTerminology(rootDir, issues) {
+  for (const file of ENGLISH_COPY_FILES) {
+    const absolutePath = path.join(rootDir, file);
+    if (!fs.existsSync(absolutePath)) continue;
+    const activeHtml = removeHtmlComments(fs.readFileSync(absolutePath, 'utf8'));
+
+    for (const term of LEGACY_ENGLISH_TERMINOLOGY) {
+      if (!term.pattern.test(activeHtml)) continue;
+      addIssue(
+        issues,
+        file,
+        `English copy uses legacy terminology; replace "${term.legacy}" with "${term.preferred}"`
+      );
+    }
   }
 }
 
@@ -4002,6 +4091,11 @@ function hasResumeOverflowProtectionCss(rootDir) {
       [['min-width', '0'], ['overflow-wrap', 'anywhere']]
     ],
     [
+      '.resume-sidebar .chip-list .tag',
+      '#main-content .resume-sidebar .chip-list .tag',
+      [['min-width', '0'], ['white-space', 'normal'], ['overflow-wrap', 'anywhere']]
+    ],
+    [
       '.resume-main .button.small',
       '#main-content .resume-main a.button.small.subtle',
       [['max-width', '100%'], ['white-space', 'normal']]
@@ -4695,6 +4789,7 @@ function validateRepository(rootDir) {
 
   validateStructuredDataConsistency(structuredDataRecords, issues);
   validateHomeQuotationCopies(absoluteRoot, issues);
+  validateEnglishTerminology(absoluteRoot, issues);
 
   for (const page of NOT_FOUND_PAGES) {
     if (!existingHtml.has(page.file)) continue;

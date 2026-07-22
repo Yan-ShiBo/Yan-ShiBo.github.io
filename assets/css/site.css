@@ -1820,6 +1820,7 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 
 .resume-sidebar .meta-list li{min-width:0}
 .resume-sidebar .meta-list li span{min-width:0;overflow-wrap:anywhere}
+.resume-sidebar .chip-list .tag{min-width:0;white-space:normal;text-wrap:wrap;overflow-wrap:anywhere}
 
 .resume-main .lead{
   max-width:none;

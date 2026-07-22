@@ -91,8 +91,8 @@
     en: {
       loading: 'Loading public counters (Busuanzi / Vercount)…',
       ok: 'Public counters loaded successfully',
-      partial: 'Public counters loaded. Current values come from the available source.',
-      unavailable: 'Public counters are unavailable right now. Local visit records still work normally.'
+      partial: 'Public counters loaded. Current values come from whichever services are available.',
+      unavailable: 'Public counters are unavailable right now. Local visit records remain available.'
     }
   };
 

@@ -91,6 +91,7 @@ flowchart TB
 - `.flow` 表达顺序关系，不用于无顺序卡片。
 - `.resume-layout` 在宽屏使用侧栏与主体，窄屏回落为单列。
 - `.doc-grid` 内的 `.doc-card` 必须允许收缩；卡片中的证明图横向滑轨只能在自身内部滚动，不能用最小内容宽度撑大页面。
+- 简历侧栏的关键词标签在窄列中允许按词换行，不能以单行文本溢出并覆盖相邻标签。
 - 卡片数量不足时不补空卡；布局应允许最后一行自然结束。
 
 ### 3.5 锚点导航
@@ -174,6 +175,25 @@ flowchart TB
 - 翻译以自然表达和语义一致为准，不追求字对字或 DOM 对 DOM。
 - 页面标题、描述、按钮、图片说明和语言切换目标一起核对。
 - 当前档案页结构差异属于已记录例外，见[维护记录](maintenance.md)。
+
+英文正文采用自然、克制的美式学术英语。下表是跨页术语的唯一事实源；验证器只锁定高置信度的陈旧表达，不用自动规则替代人工语义复核。
+
+| 中文概念 | 统一英文 | 避免使用 |
+| --- | --- | --- |
+| 河北冀州中学 | `Hebei Jizhou High School` | 非官方中文校名对应的旧译 |
+| 本科毕业设计 | `undergraduate capstone project` | `graduation design` |
+| 多端 / 多终端 | `multi-platform` | `multi-terminal` |
+| 实训 | `industry training` | 把实训一律写成 `internship` |
+| 前后端分离 | `decoupled front-end/back-end architecture` | `front-end / back-end separated` |
+| 阶段性报告 | `periodic reports` | `staged reports` |
+| 概率下界 | `probability lower bound` | 省略 `lower` 的 `probability bound` |
+| 概率保证 | `probabilistic guarantee` | `probability guarantee` |
+| 随机障碍证书 | `stochastic barrier certificate` | 无依据增加 `-like` |
+| 随机障碍型证书 | `stochastic barrier-like certificate` | 删除原文中的 `-like` |
+| 证明材料 | `supporting documents` / `supporting evidence` | `proof photo` / `project proof` |
+| MCM 优秀奖 | `Honorable Mention` | `Honourable Mention` |
+
+论文标题沿用公开标题，状态只写当前可核查值，不新增未发表论文的摘要、方法、结果或评审内容。证书或正式记录中的角色名称保持原样；叙述职责时可以使用自然英语，但不能借润色改变事实。
 
 ### 6.4 404 原地本地化
 
