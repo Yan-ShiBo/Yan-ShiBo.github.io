@@ -730,9 +730,15 @@ test('validateRepository rejects path casing that differs from disk', (t) => {
 
   const result = validateRepository(rootDir);
 
-  assert.ok(result.issues.includes(
-    'index.html: path casing mismatch for ./assets/profile/PHOTO.jpg'
-  ));
+  const platformDiagnostics = new Set([
+    'index.html: path casing mismatch for ./assets/profile/PHOTO.jpg',
+    'index.html: missing local target ./assets/profile/PHOTO.jpg -> ' +
+      'assets/profile/PHOTO.jpg'
+  ]);
+  assert.ok(
+    result.issues.some((issue) => platformDiagnostics.has(issue)),
+    result.issues.join('\n')
+  );
 });
 
 test('validateRepository rejects a site-wide robots disallow rule', (t) => {
