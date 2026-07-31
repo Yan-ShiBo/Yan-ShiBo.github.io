@@ -10,7 +10,8 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 包含 279 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 按稳定顺序聚合四个领域模块，共包含 280 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/run-validator-tests.test.js` 包含 22 个分片运行器、超时、信号、摘要与注册守卫用例；
 - `scripts/stats-client.test.js` 包含 6 个浏览器客户端合同用例；
 - `worker/src/index.test.mjs` 包含 26 个 Worker、D1 迁移和隐私合同用例；
 - `scripts/validate-site.js` 是只读验证器，不应修改仓库。
@@ -22,12 +23,45 @@
 本地验证要求 Node.js 24 或更高版本：Worker 测试使用内置 `node:sqlite`，测试入口使用 `--test-isolation=none`。在仓库根目录依次运行：
 
 ```powershell
-node --test --test-isolation=none scripts/validate-site.test.js
+node --test --test-isolation=none scripts/run-validator-tests.test.js
+node scripts/run-validator-tests.js
 node --test --test-isolation=none scripts/stats-client.test.js
 node --test --test-isolation=none worker/src/index.test.mjs
 node scripts/validate-site.js
 git diff --check
 ```
+
+`run-validator-tests.js` 在四个独立 Node 进程中运行互斥分片，是 280 个验证器用例的本地全量入口。每片默认限时 5 分钟；超时先发送 `SIGTERM`，5 秒后仍未退出则发送 `SIGKILL`，强杀后 1 秒仍没有 `close`/`error` 时销毁管道、解除进程引用并以失败结算。运行器会把父进程的 `SIGINT`/`SIGTERM` 转发给存活分片，分片忽略首个信号时自动使用同一强杀链，不要求用户再次中断；最终分别以 130/143 退出，并在所有路径移除信号监听器。成功时只输出每片和全量摘要；失败时保留对应 TAP 与 stderr 供定位。
+
+每个分片必须同时满足库存标记、精确 `tests`/`pass` 数以及 `fail`、`cancelled`、`skipped`、`todo` 全为零，不能只依赖子进程退出码。资源受限或排查分片差异时，可以使用等价的串行回退：
+
+```powershell
+node --test --test-isolation=none scripts/validate-site.test.js
+```
+
+### 2.1 CI 四分片
+
+[GitHub Actions 测试工作流](../.github/workflows/tests.yml)在拉取请求、`main` 推送和手动触发时使用 Node.js 24。验证器的 280 个用例按注册序号稳定分为四个互斥分片，每片包含 70 个用例；四个矩阵任务均通过同一运行器验证摘要，四片并集必须恰好覆盖全量测试。独立合同任务运行分片基础设施回归、统计客户端、Worker/D1 与站点验证入口。
+
+分片同时用于 CI、本地并行入口和故障定位。测试文件会核对发现的用例总数与当前分片数量，非法、错误总数或非四分片配置直接失败。可在 PowerShell 中复现任一分片：
+
+```powershell
+$env:VALIDATOR_TEST_SHARD = '1/4'
+node scripts/run-validator-tests.js
+$env:VALIDATOR_TEST_SHARD = $null
+```
+
+未设置 `VALIDATOR_TEST_SHARD` 时，运行器并行运行全部四片；直接运行聚合测试文件时仍一次串行运行全部 280 个用例。新增、删除或调整用例数量时，必须同步更新 `scripts/validator-test-shard.js` 中的总数合同、本节基线和四个分片的预期数量。
+
+### 2.2 验证器测试模块
+
+`scripts/validate-site.test.js` 只负责按固定顺序加载 `foundation.js`、`stats.js`、`assets.js` 和 `structured-data.js`。四个领域模块位于 `scripts/validate-site-tests/`，共享断言、仓库副本夹具和分片注册器位于同目录的 `support.js`。注册器在分片选择前拒绝重复测试名，以及任何显式 `skip`、`todo` 或 `only` 选项（包括 `false`）；运行器摘要继续兜底检测测试体内动态产生的 skip/todo。
+
+模块加载顺序属于分片合同：调整顺序会改变用例所属分片。移动或新增用例后，必须重新核对 280 个总数、四片各 70 个用例的库存以及并行入口的全量并集。
+
+包含多次完整仓库验证的表驱动变异应拆为多个顶层测试组，使现有取模分片可以分散长尾，并通过断言消息保留具体变异名称；不要把全部昂贵场景重新合并成一个顶层测试。
+
+共享夹具在每个测试进程中只读取一次公开运行时文件和验证器语法入口，随后为每个用例独立落盘；不得跨用例共享可变目录，也不得使用会回写源文件的硬链接。验证器只检查存在性和路径大小写的字体、普通图片与 PDF 使用空占位文件，四个解析内容的图标、HTML、CSS、JS、manifest、robots 和 sitemap 保留真实字节。测试源码、普通文档、CI 配置、`.baoyu-skills/` 与 Wrangler 本地状态不进入夹具；真实仓库基线和显式未登记 HTML 用例继续覆盖全仓库存边界。
 
 仅定位结构化数据回归时可以运行以下名称子集；它不能替代上面的全量入口：
 
@@ -80,15 +114,19 @@ node --test --test-isolation=none --test-name-pattern="mobile home hero" scripts
 当前成功输出应包含：
 
 ```text
-tests 279
-pass 279
-fail 0
+Validator test shard 1/4 passed: 70 tests.
+Validator test shard 2/4 passed: 70 tests.
+Validator test shard 3/4 passed: 70 tests.
+Validator test shard 4/4 passed: 70 tests.
+Validator test shards passed: 280 tests across 4 shards.
 stats client: 6 passed / 0 failed
 Worker and D1: 26 passed / 0 failed
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `47 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，档案与证明滑轨子集汇总为 `13 passed / 0 failed`，首页移动卡片子集汇总为 `10 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `279 tests`、`79 pass`、`200 skipped`。
+分片基础设施测试的 Node 原始摘要应包含 `tests 22`、`pass 22` 和 `fail 0`；串行回退应包含 `tests 280`、`pass 280` 和 `fail 0`。并行入口只有在四个子进程的 TAP 摘要均为 `tests 70`、`pass 70` 且四类例外计数全零后，才输出上面的紧凑成功摘要。
+
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `47 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，档案与证明滑轨子集汇总为 `13 passed / 0 failed`，首页移动卡片子集汇总为 `10 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `280 tests`、`79 pass`、`201 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -133,7 +171,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - `target="_blank"` 外链包含安全 `rel`。
 - 中英文档案概览各自只包含两组已批准的 `mailto:` 标签，其可见文本与目标地址一致，并排除旧电话号码、微信号及对应图标；
 - 档案邮箱和阶段摘要标签具备窄屏收缩与换行保护，不得以最小内容宽度扩大页面；
-- 中英文首页各自恰有一份 `.poem-note` 与 `.quote-text`，同页两处引文的可见文本规范化后完全一致，避免重复文案单边漂移。
+- 中英文首页各自只保留一份 `.quote-text` 引文，不再在 Hero 侧栏复制 `.poem-note`，避免同页重复内容与单边漂移。
 - 七个英文页面的活动 HTML 不含[设计规范](design.md#63-双语)列出的高置信度陈旧术语；HTML 注释不参与该检查。
 
 它不会模拟键盘操作，也不会证明视觉对比度、焦点顺序或屏幕阅读器体验正确。
@@ -228,7 +266,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 
 ## 4. 验证器单元测试
 
-`scripts/validate-site.test.js` 使用临时目录构造有效或损坏的仓库副本，当前覆盖：
+`scripts/validate-site-tests/support.js` 提供临时仓库副本和共享断言，四个领域模块通过 `scripts/validate-site.test.js` 聚合运行，当前覆盖：
 
 - 查询参数、fragment 与路径解析；
 - 从非仓库 cwd 执行；
@@ -316,9 +354,11 @@ http://127.0.0.1:8000/en/
 
 同时检查横屏、小高度窗口和 200% 浏览器缩放。页面不得出现意外横向滚动、遮挡或无法点击的控件。
 
-简历页还需在中英文 `640px`、`375px` 与 `320px` 检查：`documentElement.scrollWidth === clientWidth`；`.doc-grid` 不产生自身宽度溢出；`.proof-grid` 保留 `overflow-x: auto` 的内部滑轨；联系方式值、关键词标签和长小按钮均落在各自父容器内，标签文字不得覆盖相邻标签。自动化或人工测试不得点击 PDF 链接；本机下载管理器可能接管该导航。
+简历页还需在中英文 `640px`、`375px` 与 `320px` 检查：`documentElement.scrollWidth === clientWidth`；`.doc-grid` 不产生自身宽度溢出；`.proof-grid` 保留 `overflow-x: auto` 的内部滑轨；联系方式值、关键词标签和长小按钮均落在各自父容器内，标签文字不得覆盖相邻标签；竖版简历缩略图完整显示且不被 `cover` 裁切；页面不再重复嵌入整页 PDF 插件视图。自动化或人工测试不得点击 PDF 链接；本机下载管理器可能接管该导航。
 
-档案页还需在中英文桌面和 `320px` 检查：概览只显示两组邮箱且不显示电话或微信；页面本身无意外横向滚动；每个 `.proof-grid` 内的卡片宽高一致、说明文字不被裁切。桌面用鼠标主键拖动后滑轨位置应改变且 Lightbox 不打开，随后普通点击及键盘 Enter 仍能打开对应原图；触屏保持原生横向滑动，底部滚动条继续作为回退入口。测试不得打开成绩单 PDF。
+档案页还需在中英文桌面和 `320px` 检查：概览只显示两组邮箱且不显示电话或微信；页面本身无意外横向滚动；每个 `.proof-grid` 内的卡片宽高一致、说明文字不被裁切。另在 `640px`、`833px`、`834px`、`1068px`、`1069px` 与 `1440px` 检查高中阶段：教育卡与长荣誉卡纵向排列，宽屏荣誉列表只在自身卡片内分栏；小学单卡铺满可用宽度；本科等三项以上阶段继续保持自然多栏流。桌面用鼠标主键拖动后滑轨位置应改变且 Lightbox 不打开，随后普通点击及键盘 Enter 仍能打开对应原图；触屏保持原生横向滑动，底部滚动条继续作为回退入口。测试不得打开成绩单 PDF。
+
+项目页还需在中英文 `640px`、`833px`、`834px`、`1068px`、`1069px` 与 `1440px` 检查：首组恰为两张带证明材料的项目卡且可见顺序与 JSON-LD 一致；两卡列宽一致，不与无媒体短卡形成跨行空洞；普通项目同一行等高、操作入口贴近卡底，不满一行的末组自然填满；证明图保留横向滚动，鼠标点击、Enter 与 Escape 的 Lightbox 行为不变。
 
 首页还需在中英文 `320px`、`375px`、`419px` 与 `640px` 检查：四张 `.hero-side` 直属卡片等宽等高且逐张居中吸附，触屏横向滑动不会变成页面级横向滚动；身份信息、六个关键词、三项统计标签和状态说明均落在卡片内。公开统计至少用 `--`、`0` 与 8 位连续数字复核窄屏度量；浅色和深色下检查卡片、组合面板、分隔线与背景网格。
 
@@ -385,6 +425,8 @@ http://127.0.0.1:8000/en/
 - HTTP 4xx/5xx、无效 JSON、网络阻断和超过 5 秒的请求均进入 `warn`，不保留部分或陈旧公开值；
 - 本地首次与最近访问日期仍正常显示；
 - 加载、成功和失败状态由同一个礼貌实时区播报；
+- 在中英文 `640px`、`833px`、`834px`、`1068px`、`1069px` 与 `1440px` 检查公开三项和本地三项数值卡可随可用宽度换行并填满末行，两项日期卡保持等宽；`<= 640px` 全部回落为单列，页面无横向溢出；
+- 公开指标保留与语义一致的位置图标，当前浏览器数值和日期记录不继承这些图标；统计口径列表保持在正文阅读宽度内；
 - 规范累计与页面计数在 `0`、普通值、跨越 `Number.MAX_SAFE_INTEGER` 和超长连续进位时精确加一；
 - 规范计数缺失、为空、为负数、小数、科学计数法、前导零、带正号、含首尾空白、使用全角数字或文本时，本次恢复为 `1`；
 - 规范首次访问为精确 ISO 时保持不变；规范键严格缺失且合法历史键存在时先迁移；迁移后仍缺失时以当前时间重建，已经存在的空值、非规范时区偏移、仅日期、不可解析值或自动修正的无效日期同样重建且不回退历史键；
@@ -458,7 +500,8 @@ http://127.0.0.1:8000/en/
 每次交付至少记录：
 
 ```text
-站点验证器测试：279 passed / 0 failed
+分片运行器基础设施：22 passed / 0 failed
+站点验证器测试：280 passed / 0 failed
 统计客户端测试：6 passed / 0 failed
 Worker 与 D1 测试：26 passed / 0 failed
 Wrangler：本地 migration、dry-run、远程 migration/deploy 与 health 的实际结果

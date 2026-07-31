@@ -82,7 +82,7 @@
     zh: {
       loading: '正在加载访问统计（统计始于 2026-07-22）…',
       ok: '统计已更新；统计始于 2026-07-22，本月独立设备为估算值。',
-      unavailable: '访问统计暂不可用；统计始于 2026-07-22，本机记录仍可正常显示。'
+      unavailable: '访问统计暂不可用；统计始于 2026-07-22，当前浏览器记录仍可正常显示。'
     },
     en: {
       loading: 'Loading visit statistics (tracking since July 22, 2026)…',

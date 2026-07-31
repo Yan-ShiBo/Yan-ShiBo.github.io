@@ -7,17 +7,59 @@ const PERSON_ID = `${SITE_ORIGIN}/#person`;
 const WEBSITE_ID = `${SITE_ORIGIN}/#website`;
 const PROJECT_IDS = [
   `${SITE_ORIGIN}/#project-persevere-study`,
-  `${SITE_ORIGIN}/#project-mic-family`
+  `${SITE_ORIGIN}/#project-mic-family`,
+  `${SITE_ORIGIN}/#project-vision-obstacle-avoidance-rover`,
+  `${SITE_ORIGIN}/#project-local-read-translate`,
+  `${SITE_ORIGIN}/#project-bilingual-subtitle-pipeline`,
+  `${SITE_ORIGIN}/#project-photo-selector`,
+  `${SITE_ORIGIN}/#project-biliclaw-extended`,
+  `${SITE_ORIGIN}/#project-personal-knowledge-base`,
+  `${SITE_ORIGIN}/#project-codex-skills-kit`,
+  `${SITE_ORIGIN}/#project-portfolio`
 ];
 const RESEARCH_IDS = [
-  `${SITE_ORIGIN}/#research-controller-updates`,
-  `${SITE_ORIGIN}/#research-pac-approximation`,
-  `${SITE_ORIGIN}/#research-certificate-templates`,
-  `${SITE_ORIGIN}/#research-complex-systems`
+  `${SITE_ORIGIN}/#research-trustworthy-control`,
+  `${SITE_ORIGIN}/#research-stochastic-reach-avoid`,
+  `${SITE_ORIGIN}/#research-learning-enabled-verification`,
+  `${SITE_ORIGIN}/#research-scalable-verification`
 ];
 const EXPECTED_PROJECT_REPOSITORIES = new Map([
-  [PROJECT_IDS[0], 'https://github.com/Yan-ShiBo/PersevereStudy'],
-  [PROJECT_IDS[1], 'https://github.com/Yan-ShiBo/MicFamily']
+  [
+    'https://yan-shibo.github.io/#project-persevere-study',
+    'https://github.com/Yan-ShiBo/PersevereStudy'
+  ],
+  [
+    'https://yan-shibo.github.io/#project-mic-family',
+    'https://github.com/Yan-ShiBo/MicFamily'
+  ],
+  [
+    'https://yan-shibo.github.io/#project-local-read-translate',
+    'https://github.com/Yan-ShiBo/LocalReadTranslate'
+  ],
+  [
+    'https://yan-shibo.github.io/#project-bilingual-subtitle-pipeline',
+    'https://github.com/Yan-ShiBo/bilingual-subtitle-pipeline'
+  ],
+  [
+    'https://yan-shibo.github.io/#project-photo-selector',
+    'https://github.com/Yan-ShiBo/photo-selector'
+  ],
+  [
+    'https://yan-shibo.github.io/#project-biliclaw-extended',
+    'https://github.com/Yan-ShiBo/BiliClaw-Extended'
+  ],
+  [
+    'https://yan-shibo.github.io/#project-personal-knowledge-base',
+    'https://github.com/Yan-ShiBo/PersonalKnowledgeBase'
+  ],
+  [
+    'https://yan-shibo.github.io/#project-codex-skills-kit',
+    'https://github.com/Yan-ShiBo/codex-skills-kit'
+  ],
+  [
+    'https://yan-shibo.github.io/#project-portfolio',
+    'https://github.com/Yan-ShiBo/Yan-ShiBo.github.io'
+  ]
 ]);
 
 const PAGE_PAIRS = [
@@ -154,8 +196,7 @@ const HOME_HERO_MOBILE_CSS_ISSUE =
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
-  'home quotation copies must include exactly one poem-note and one quote-text';
-const HOME_QUOTE_PARITY_ISSUE = 'home quotation copies must match';
+  'home quotation must include exactly one quote-text and no duplicate poem-note';
 const ENGLISH_COPY_FILES = [
   'en/index.html',
   'en/profile.html',
@@ -279,22 +320,47 @@ function isExternalReference(value) {
   return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value);
 }
 
-function hasExactPathCase(rootDir, targetAbsolutePath) {
+function getFileSystemEntry(absolutePath, fileSystemCache) {
+  const normalizedPath = path.resolve(absolutePath);
+  if (fileSystemCache && fileSystemCache.entries.has(normalizedPath)) {
+    return fileSystemCache.entries.get(normalizedPath);
+  }
+
+  const exists = fs.existsSync(normalizedPath);
+  const entry = {
+    exists,
+    isDirectory: exists && fs.statSync(normalizedPath).isDirectory()
+  };
+  if (fileSystemCache) fileSystemCache.entries.set(normalizedPath, entry);
+  return entry;
+}
+
+function getDirectoryNames(absolutePath, fileSystemCache) {
+  const normalizedPath = path.resolve(absolutePath);
+  if (fileSystemCache && fileSystemCache.directoryNames.has(normalizedPath)) {
+    return fileSystemCache.directoryNames.get(normalizedPath);
+  }
+
+  const names = new Set(fs.readdirSync(normalizedPath));
+  if (fileSystemCache) fileSystemCache.directoryNames.set(normalizedPath, names);
+  return names;
+}
+
+function hasExactPathCase(rootDir, targetAbsolutePath, fileSystemCache) {
   const relativePath = path.relative(path.resolve(rootDir), targetAbsolutePath);
   if (!relativePath) return true;
 
   let currentDirectory = path.resolve(rootDir);
   for (const segment of relativePath.split(path.sep)) {
-    if (!fs.existsSync(currentDirectory) || !fs.statSync(currentDirectory).isDirectory()) {
-      return false;
-    }
-    if (!fs.readdirSync(currentDirectory).includes(segment)) return false;
+    const entry = getFileSystemEntry(currentDirectory, fileSystemCache);
+    if (!entry.exists || !entry.isDirectory) return false;
+    if (!getDirectoryNames(currentDirectory, fileSystemCache).has(segment)) return false;
     currentDirectory = path.join(currentDirectory, segment);
   }
   return true;
 }
 
-function resolveLocalReference(rootDir, sourceRelativePath, reference) {
+function resolveLocalReference(rootDir, sourceRelativePath, reference, fileSystemCache) {
   const trimmed = String(reference || '').trim();
   if (!trimmed || isExternalReference(trimmed)) {
     return { kind: 'external', reference: trimmed };
@@ -334,17 +400,18 @@ function resolveLocalReference(rootDir, sourceRelativePath, reference) {
     };
   }
 
-  if (fs.existsSync(targetAbsolutePath) && fs.statSync(targetAbsolutePath).isDirectory()) {
+  if (getFileSystemEntry(targetAbsolutePath, fileSystemCache).isDirectory) {
     targetAbsolutePath = path.join(targetAbsolutePath, 'index.html');
   }
+  const targetEntry = getFileSystemEntry(targetAbsolutePath, fileSystemCache);
 
   return {
     kind: 'local',
     reference: trimmed,
     absolutePath: targetAbsolutePath,
     relativePath: toPosix(path.relative(rootAbsolutePath, targetAbsolutePath)),
-    exists: fs.existsSync(targetAbsolutePath),
-    exactCase: hasExactPathCase(rootAbsolutePath, targetAbsolutePath),
+    exists: targetEntry.exists,
+    exactCase: hasExactPathCase(rootAbsolutePath, targetAbsolutePath, fileSystemCache),
     fragment: getFragment(trimmed)
   };
 }
@@ -422,8 +489,15 @@ function collectIds(html) {
   return counts;
 }
 
-function validateReference(rootDir, sourceFile, reference, issues, anchorCache) {
-  const result = resolveLocalReference(rootDir, sourceFile, reference);
+function validateReference(
+  rootDir,
+  sourceFile,
+  reference,
+  issues,
+  anchorCache,
+  fileSystemCache
+) {
+  const result = resolveLocalReference(rootDir, sourceFile, reference, fileSystemCache);
   if (result.kind === 'external') return;
   if (result.kind === 'invalid') {
     addIssue(issues, sourceFile, `${reference}: ${result.reason}`);
@@ -446,7 +520,14 @@ function validateReference(rootDir, sourceFile, reference, issues, anchorCache) 
   }
 }
 
-function validateLocalReferences(rootDir, file, html, issues, anchorCache) {
+function validateLocalReferences(
+  rootDir,
+  file,
+  html,
+  issues,
+  anchorCache,
+  fileSystemCache
+) {
   const referenceAttributes = [
     ['a', 'href'],
     ['link', 'href'],
@@ -465,14 +546,22 @@ function validateLocalReferences(rootDir, file, html, issues, anchorCache) {
           file,
           tag.attributes[attributeName],
           issues,
-          anchorCache
+          anchorCache,
+          fileSystemCache
         );
       }
     }
   }
 }
 
-function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
+function validateDocumentStructure(
+  rootDir,
+  file,
+  html,
+  expectedLang,
+  issues,
+  fileSystemCache
+) {
   const htmlTags = extractTags(html, 'html');
   if (htmlTags.length !== 1 || htmlTags[0].attributes.lang !== expectedLang) {
     addIssue(issues, file, `expected one html element with lang="${expectedLang}"`);
@@ -517,7 +606,12 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
     'assets/css/site.css'
   ];
   const linkedResources = links
-    .map((tag) => resolveLocalReference(rootDir, file, tag.attributes.href))
+    .map((tag) => resolveLocalReference(
+      rootDir,
+      file,
+      tag.attributes.href,
+      fileSystemCache
+    ))
     .filter((result) => result.kind === 'local')
     .map((result) => result.relativePath);
   for (const resource of expectedResources) {
@@ -536,7 +630,12 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
     String(tag.attributes.rel || '').toLowerCase().split(/\s+/).includes('manifest')
   ));
   const hasExpectedManifest = allManifestLinks.length === 1 && manifestLinks.length === 1 && (() => {
-    const resolved = resolveLocalReference(rootDir, file, manifestLinks[0].attributes.href);
+    const resolved = resolveLocalReference(
+      rootDir,
+      file,
+      manifestLinks[0].attributes.href,
+      fileSystemCache
+    );
     return resolved.kind === 'local' && resolved.relativePath === expectedManifest;
   })();
   if (!hasExpectedManifest) {
@@ -544,7 +643,12 @@ function validateDocumentStructure(rootDir, file, html, expectedLang, issues) {
   }
 
   const scriptResources = scripts
-    .map((tag) => resolveLocalReference(rootDir, file, tag.attributes.src))
+    .map((tag) => resolveLocalReference(
+      rootDir,
+      file,
+      tag.attributes.src,
+      fileSystemCache
+    ))
     .filter((result) => result.kind === 'local')
     .map((result) => result.relativePath);
   if (!scriptResources.includes('assets/js/site.js')) {
@@ -701,6 +805,67 @@ const EXPECTED_PROJECT_FACTS = {
         'MySQL 8.0.26',
         'Java 1.8'
       ]
+    },
+    {
+      name: '基于视觉的端到端强化学习避障小车',
+      description: '设计结合强化学习与 CBF / CLF 安全约束的端到端视觉控制系统，使小车能够依据相机观测生成控制动作，并面向嵌入式硬件完成闭环验证。',
+      keywords: ['强化学习', 'CBF / CLF', '视觉控制']
+    },
+    {
+      name: '本地划词听译助手',
+      description: '面向浏览器与文档应用的本地朗读、翻译和公式处理工具，结合 Kokoro TTS 与 Ollama，并由本地服务统一管理运行边界。',
+      keywords: [
+        'Python',
+        'FastAPI',
+        'Kokoro-82M',
+        'Ollama',
+        'Browser Extension',
+        'Word / WPS'
+      ]
+    },
+    {
+      name: '双语字幕生成流水线',
+      description: '从外挂或内封字幕、PGS 图像字幕和 Whisper 语音识别结果生成中英双语 ASS 字幕，并使用 Ollama 完成纠错与翻译。',
+      keywords: ['Python', 'ASS', 'Whisper', 'PGS OCR', 'Ollama', '本地工作流']
+    },
+    {
+      name: '本地 AI 选片工作台',
+      description: '通过本地质量分析与视觉模型完成废片初筛、相似照片分组和双图比较，并把最终取舍保留给用户。',
+      keywords: ['Python', 'Flask', 'Ollama', 'Qwen3-VL', 'DINOv2', 'RAW / HEIC']
+    },
+    {
+      name: 'BiliClaw Extended：本地内容发现系统',
+      description: '基于 OpenBiliClaw 深度定制的本地优先内容理解与推荐系统，将用户可见的多平台信号用于本地画像、检索与推荐。',
+      keywords: [
+        'Python',
+        'FastAPI',
+        'Browser Extension',
+        'ChromaDB',
+        'Ollama',
+        '定制分支'
+      ]
+    },
+    {
+      name: 'Research Memory：本地科研知识检索',
+      description: '将结构化资料、论文笔记、代码记录与实验溯源组织为本地可检索知识层，并通过只读接口连接 Codex 与 uTools。',
+      keywords: ['Python', 'SQLite FTS5', 'OpenVINO', 'MCP', 'uTools', '隐私优先']
+    },
+    {
+      name: 'Codex Skills 可复现配置工具包',
+      description: '记录 Codex Skills 与插件的来源、锁定版本和状态，并提供跨平台安装、校验与恢复流程。',
+      keywords: ['Python', 'PowerShell', 'Codex Skills', '可复现性', '安装器', 'CI']
+    },
+    {
+      name: '中英双语个人学术主页',
+      description: '使用原生 HTML、CSS 和 JavaScript 构建的双语学术主页，包含响应式交互、双语 SEO、访问统计和零依赖站点验证。',
+      keywords: [
+        'HTML',
+        'CSS',
+        'JavaScript',
+        'GitHub Pages',
+        'Cloudflare Workers / D1',
+        '双语 SEO'
+      ]
     }
   ],
   en: [
@@ -726,6 +891,67 @@ const EXPECTED_PROJECT_FACTS = {
         'MySQL 8.0.26',
         'Java 1.8'
       ]
+    },
+    {
+      name: 'Vision-Based End-to-End Reinforcement Learning for an Obstacle-Avoidance Robot Car',
+      description: 'Developing an end-to-end vision-based control system that combines reinforcement learning with CBF / CLF safety constraints, maps camera observations to control actions, and supports closed-loop validation on embedded hardware.',
+      keywords: ['Reinforcement Learning', 'CBF / CLF', 'Vision Control']
+    },
+    {
+      name: 'Local Selection Read & Translate',
+      description: 'A local reading, translation, and formula-processing tool for browsers and document apps, combining Kokoro TTS with Ollama behind a locally managed service.',
+      keywords: [
+        'Python',
+        'FastAPI',
+        'Kokoro-82M',
+        'Ollama',
+        'Browser Extension',
+        'Word / WPS'
+      ]
+    },
+    {
+      name: 'Bilingual Subtitle Pipeline',
+      description: 'Generates Chinese–English ASS subtitles from sidecar or embedded subtitles, PGS OCR, or Whisper transcription, followed by Ollama-assisted correction and translation.',
+      keywords: ['Python', 'ASS', 'Whisper', 'PGS OCR', 'Ollama', 'Local workflow']
+    },
+    {
+      name: 'Local AI Photo Selection Workbench',
+      description: 'Uses local image analysis and vision models to reject clear failures, group similar photos, and support side-by-side human selection.',
+      keywords: ['Python', 'Flask', 'Ollama', 'Qwen3-VL', 'DINOv2', 'RAW / HEIC']
+    },
+    {
+      name: 'BiliClaw Extended: Local-First Content Discovery',
+      description: 'A customized fork of OpenBiliClaw for local-first multi-platform content understanding, profile building, retrieval, and recommendation.',
+      keywords: [
+        'Python',
+        'FastAPI',
+        'Browser Extension',
+        'ChromaDB',
+        'Ollama',
+        'Customized fork'
+      ]
+    },
+    {
+      name: 'Research Memory: Local Research Evidence & Knowledge Retrieval',
+      description: 'Organizes structured sources, paper notes, code records, and experiment provenance into a searchable local knowledge layer exposed to Codex and uTools through read-only interfaces.',
+      keywords: ['Python', 'SQLite FTS5', 'OpenVINO', 'MCP', 'uTools', 'Privacy-first']
+    },
+    {
+      name: 'Reproducible Codex Skills Kit',
+      description: 'Tracks Codex Skill and plugin provenance, pinned versions, and states, with cross-platform installation, validation, and recovery workflows.',
+      keywords: ['Python', 'PowerShell', 'Codex Skills', 'Reproducibility', 'Installer', 'CI']
+    },
+    {
+      name: 'Bilingual Academic Portfolio',
+      description: 'A bilingual academic portfolio built with vanilla web technologies, including responsive interaction, bilingual SEO, analytics, and zero-dependency site validation.',
+      keywords: [
+        'HTML',
+        'CSS',
+        'JavaScript',
+        'GitHub Pages',
+        'Cloudflare Workers / D1',
+        'Bilingual SEO'
+      ]
     }
   ]
 };
@@ -733,38 +959,38 @@ const EXPECTED_PROJECT_FACTS = {
 const EXPECTED_RESEARCH_FACTS = {
   'zh-CN': [
     {
-      name: '控制器更新',
-      description: '在概率下界偏保守的区域继续改进策略，而不是停在第一次求解。'
+      name: '安全关键智能系统的可信控制',
+      description: '关注学习型控制在安全关键场景中的可靠性，使策略性能能够与可检查的安全要求共同讨论。'
     },
     {
-      name: 'PAC 近似',
-      description: '平衡多项式次数、样本规模与近似误差，降低后续求解压力。'
+      name: '随机系统的概率安全与可达性',
+      description: '研究系统在随机扰动下到达目标区域并持续避开危险区域时，如何表达和分析概率意义上的保证。'
     },
     {
-      name: '证书模板',
-      description: '面对更复杂几何结构时，提高 stochastic barrier-like certificates 的表达能力。'
+      name: '学习型控制策略的形式化验证',
+      description: '连接数据驱动控制的适应能力与形式化方法的可审计性，理解控制策略在给定条件下为何可靠。'
     },
     {
-      name: '更复杂系统',
-      description: '逐步考虑非多项式动力学、更高维系统和更自动化的学习—验证闭环。'
+      name: '复杂系统的可扩展验证',
+      description: '面向非线性、更高维和模型不确定的系统，探索能够扩展到更复杂任务的验证思路。'
     }
   ],
   en: [
     {
-      name: 'Controller updates',
-      description: 'Continue refining the policy in regions where the certified probability lower bound is overly conservative, rather than stopping after the first solve.'
+      name: 'Trustworthy control for safety-critical intelligent systems',
+      description: 'Study the reliability of learning-enabled control in safety-critical settings so that policy performance and checkable safety requirements can be considered together.'
     },
     {
-      name: 'PAC approximation',
-      description: 'Balance polynomial degree, sample size, and approximation error to reduce the computational burden on downstream optimization.'
+      name: 'Probabilistic safety and reachability for stochastic systems',
+      description: 'Study how to express and analyze probabilistic guarantees when a system must reach a target region while continuing to avoid unsafe regions under stochastic disturbances.'
     },
     {
-      name: 'Certificate templates',
-      description: 'Increase the expressiveness of stochastic barrier-like certificates for more complex geometries.'
+      name: 'Formal verification of learning-enabled control policies',
+      description: 'Connect the adaptability of data-driven control with the auditability of formal methods to understand why a policy is reliable under stated conditions.'
     },
     {
-      name: 'More complex systems',
-      description: 'Move toward non-polynomial dynamics, higher-dimensional systems, and a more automated learning-verification loop.'
+      name: 'Scalable verification for complex systems',
+      description: 'Explore verification ideas that can extend to nonlinear, higher-dimensional, and model-uncertain systems and more complex tasks.'
     }
   ]
 };
@@ -1054,11 +1280,9 @@ function validateHomeQuotationCopies(rootDir, issues) {
     const notes = extractClassElementText(html, 'poem-note');
     const quotes = extractClassElementText(html, 'quote-text');
 
-    if (notes.length !== 1 || quotes.length !== 1 || !notes[0] || !quotes[0]) {
+    if (notes.length !== 0 || quotes.length !== 1 || !quotes[0]) {
       addIssue(issues, file, HOME_QUOTE_INVENTORY_ISSUE);
-      continue;
     }
-    if (notes[0] !== quotes[0]) addIssue(issues, file, HOME_QUOTE_PARITY_ISSUE);
   }
 }
 
@@ -1553,9 +1777,7 @@ function validateListContract(page, list, ids, kind, issues) {
     addIssue(
       issues,
       page.file,
-      kind === 'project'
-        ? 'project list positions must be 1 and 2'
-        : 'research list positions must be 1 through 4'
+      `${kind} list positions must be 1 through ${ids.length}`
     );
   }
 }
@@ -1945,11 +2167,11 @@ function localizedNotFoundAttribute(attributes, locale, suffix, targetName) {
     : attributes[targetName];
 }
 
-function normalizeNotFoundParityReference(rootDir, file, reference) {
+function normalizeNotFoundParityReference(rootDir, file, reference, fileSystemCache) {
   const value = String(reference == null ? '' : reference).trim();
   if (!value || isExternalReference(value)) return value;
   if (value.startsWith('#')) return `self:${value}`;
-  const resolved = resolveLocalReference(rootDir, file, value);
+  const resolved = resolveLocalReference(rootDir, file, value, fileSystemCache);
   if (resolved.kind !== 'local') return `invalid:${value}`;
   const undecorated = stripUrlDecorations(value);
   return `local:${resolved.relativePath}${value.slice(undecorated.length)}`;
@@ -2051,7 +2273,13 @@ function extractLocalizedNotFoundBodyText(html, locale) {
   return parts;
 }
 
-function createNotFoundEnglishParitySnapshot(rootDir, file, html, applyEnglishMappings) {
+function createNotFoundEnglishParitySnapshot(
+  rootDir,
+  file,
+  html,
+  applyEnglishMappings,
+  fileSystemCache
+) {
   const tags = collectOpeningHtmlTags(html);
   const locale = applyEnglishMappings ? 'en' : null;
   const referenceInventory = (tagName, attributeName, suffix = attributeName) => tags
@@ -2062,7 +2290,8 @@ function createNotFoundEnglishParitySnapshot(rootDir, file, html, applyEnglishMa
     .map((tag) => normalizeNotFoundParityReference(
       rootDir,
       file,
-      localizedNotFoundAttribute(tag.attributes, locale, suffix, attributeName)
+      localizedNotFoundAttribute(tag.attributes, locale, suffix, attributeName),
+      fileSystemCache
     ));
 
   return {
@@ -2086,7 +2315,8 @@ function createNotFoundEnglishParitySnapshot(rootDir, file, html, applyEnglishMa
         href: normalizeNotFoundParityReference(
           rootDir,
           file,
-          localizedNotFoundAttribute(tag.attributes, locale, 'href', 'href')
+          localizedNotFoundAttribute(tag.attributes, locale, 'href', 'href'),
+          fileSystemCache
         )
       })),
     scripts: referenceInventory('script', 'src'),
@@ -2114,7 +2344,13 @@ function createNotFoundEnglishParitySnapshot(rootDir, file, html, applyEnglishMa
   };
 }
 
-function validateNotFoundLocalizationMarkup(rootDir, page, html, issues) {
+function validateNotFoundLocalizationMarkup(
+  rootDir,
+  page,
+  html,
+  issues,
+  fileSystemCache
+) {
   const activeHtml = removeHtmlComments(html);
   const openingTags = Array.from(activeHtml.matchAll(/<[a-z][^>]*>/gi), (match) => ({
     raw: match[0],
@@ -2207,7 +2443,12 @@ function validateNotFoundLocalizationMarkup(rootDir, page, html, issues) {
   const localizedHrefsAreValid = [...localizedHrefValues.zh, ...localizedHrefValues.en]
     .every((reference) => {
       if (!reference.startsWith('/')) return false;
-      const result = resolveLocalReference(rootDir, page.file, reference);
+      const result = resolveLocalReference(
+        rootDir,
+        page.file,
+        reference,
+        fileSystemCache
+      );
       return result.kind === 'local' && result.exists && result.exactCase;
     });
   const hasEveryMappingKind = localizedSuffixes.every((suffix) => pairCounts.get(suffix) > 0);
@@ -2216,12 +2457,19 @@ function validateNotFoundLocalizationMarkup(rootDir, page, html, issues) {
     fs.statSync(physicalEnglishPath).isFile();
   const matchesPhysicalEnglishPage = hasPhysicalEnglishFile && (() => {
     const physicalEnglishHtml = fs.readFileSync(physicalEnglishPath, 'utf8');
-    return JSON.stringify(createNotFoundEnglishParitySnapshot(rootDir, page.file, html, true)) ===
+    return JSON.stringify(createNotFoundEnglishParitySnapshot(
+      rootDir,
+      page.file,
+      html,
+      true,
+      fileSystemCache
+    )) ===
       JSON.stringify(createNotFoundEnglishParitySnapshot(
         rootDir,
         'en/404.html',
         physicalEnglishHtml,
-        false
+        false,
+        fileSystemCache
       ));
   })();
 
@@ -2237,7 +2485,7 @@ function validateNotFoundLocalizationMarkup(rootDir, page, html, issues) {
   }
 }
 
-function validateCssReferences(rootDir, issues, anchorCache) {
+function validateCssReferences(rootDir, issues, anchorCache, fileSystemCache) {
   const files = [
     'assets/css/site.css',
     'assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css'
@@ -2249,7 +2497,14 @@ function validateCssReferences(rootDir, issues, anchorCache) {
     let match;
     while ((match = pattern.exec(css)) !== null) {
       const reference = (match[1] || match[2] || match[3] || '').trim();
-      validateReference(rootDir, file, reference, issues, anchorCache);
+      validateReference(
+        rootDir,
+        file,
+        reference,
+        issues,
+        anchorCache,
+        fileSystemCache
+      );
     }
   }
 }
@@ -2485,7 +2740,7 @@ function validateFavicon(rootDir, issues) {
   }
 }
 
-function validateManifest(rootDir, contract, issues, anchorCache) {
+function validateManifest(rootDir, contract, issues, anchorCache, fileSystemCache) {
   const { file, lang, startUrl, scope } = contract;
   if (!ensureFile(rootDir, file, issues)) return;
   let manifest;
@@ -2525,7 +2780,14 @@ function validateManifest(rootDir, contract, issues, anchorCache) {
       addIssue(issues, file, `icons[${index}] must be an object with a non-empty src`);
       continue;
     }
-    validateReference(rootDir, file, icon.src, issues, anchorCache);
+    validateReference(
+      rootDir,
+      file,
+      icon.src,
+      issues,
+      anchorCache,
+      fileSystemCache
+    );
   }
 }
 
@@ -2694,7 +2956,9 @@ function validateJavaScriptSyntax(rootDir, issues) {
     'assets/js/site.js',
     'assets/js/stats.js',
     'scripts/generate-sitemap.js',
+    'scripts/run-validator-tests.js',
     'scripts/validate-site.js',
+    'scripts/validator-test-shard.js',
     'worker/src/index.mjs'
   ];
   for (const file of files) {
@@ -3842,6 +4106,22 @@ function cssSimpleBlockDepthAt(source, endIndex) {
   return stack.length;
 }
 
+function collectCssSimpleBlockDepths(source) {
+  const depths = new Uint32Array(source.length);
+  const stack = [];
+
+  for (let index = 0; index < source.length; index += 1) {
+    depths[index] = stack.length;
+    if (CSS_SIMPLE_BLOCK_PAIRS[source[index]]) {
+      stack.push(CSS_SIMPLE_BLOCK_PAIRS[source[index]]);
+    } else if (source[index] === stack[stack.length - 1]) {
+      stack.pop();
+    }
+  }
+
+  return depths;
+}
+
 function extractCssMediaBlocks(source, codeMask, mediaPattern) {
   const matcher = new RegExp(mediaPattern.source, 'g');
   const executableSource = maskedSource(source, codeMask);
@@ -3918,10 +4198,11 @@ function findCssRulePreludeStart(source, openingBrace) {
 
 function collectCssRuleEntries(source) {
   const rules = [];
+  const blockDepths = collectCssSimpleBlockDepths(source);
   let openingBrace = source.indexOf('{');
 
   while (openingBrace >= 0) {
-    const depth = cssSimpleBlockDepthAt(source, openingBrace);
+    const depth = blockDepths[openingBrace];
     const preludeStart = findCssRulePreludeStart(source, openingBrace);
     const prelude = source.slice(preludeStart, openingBrace).trim();
     if (!prelude.startsWith('@')) {
@@ -5503,6 +5784,10 @@ function validateRepository(rootDir) {
   const absoluteRoot = path.resolve(rootDir);
   const issues = [];
   const anchorCache = new Map();
+  const fileSystemCache = {
+    directoryNames: new Map(),
+    entries: new Map()
+  };
   const structuredDataRecords = [];
   const actualHtmlFiles = listHtmlFiles(absoluteRoot);
   const existingHtml = new Set(actualHtmlFiles);
@@ -5520,8 +5805,22 @@ function validateRepository(rootDir) {
   for (const page of INDEXABLE_PAGES) {
     if (!existingHtml.has(page.file)) continue;
     const html = readUtf8(absoluteRoot, page.file);
-    validateDocumentStructure(absoluteRoot, page.file, html, page.lang, issues);
-    validateLocalReferences(absoluteRoot, page.file, html, issues, anchorCache);
+    validateDocumentStructure(
+      absoluteRoot,
+      page.file,
+      html,
+      page.lang,
+      issues,
+      fileSystemCache
+    );
+    validateLocalReferences(
+      absoluteRoot,
+      page.file,
+      html,
+      issues,
+      anchorCache,
+      fileSystemCache
+    );
     const structuredData = validateStructuredDataPage(page, html, issues);
     if (structuredData) structuredDataRecords.push(structuredData);
     validateIndexableMetadata(page, html, issues);
@@ -5535,16 +5834,42 @@ function validateRepository(rootDir) {
   for (const page of NOT_FOUND_PAGES) {
     if (!existingHtml.has(page.file)) continue;
     const html = readUtf8(absoluteRoot, page.file);
-    validateDocumentStructure(absoluteRoot, page.file, html, page.lang, issues);
-    validateLocalReferences(absoluteRoot, page.file, html, issues, anchorCache);
+    validateDocumentStructure(
+      absoluteRoot,
+      page.file,
+      html,
+      page.lang,
+      issues,
+      fileSystemCache
+    );
+    validateLocalReferences(
+      absoluteRoot,
+      page.file,
+      html,
+      issues,
+      anchorCache,
+      fileSystemCache
+    );
     validateNotFoundStructuredData(page, html, issues);
     validateNotFoundMetadata(page, html, issues);
-    validateNotFoundLocalizationMarkup(absoluteRoot, page, html, issues);
+    validateNotFoundLocalizationMarkup(
+      absoluteRoot,
+      page,
+      html,
+      issues,
+      fileSystemCache
+    );
   }
 
-  validateCssReferences(absoluteRoot, issues, anchorCache);
+  validateCssReferences(absoluteRoot, issues, anchorCache, fileSystemCache);
   for (const contract of MANIFEST_CONTRACTS) {
-    validateManifest(absoluteRoot, contract, issues, anchorCache);
+    validateManifest(
+      absoluteRoot,
+      contract,
+      issues,
+      anchorCache,
+      fileSystemCache
+    );
   }
   validateBrandMarkAsset(absoluteRoot, issues);
   validateInstallIconAssets(absoluteRoot, issues);

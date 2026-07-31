@@ -57,8 +57,8 @@ flowchart LR
 | --- | --- | --- | --- | --- |
 | 首页 | `index.html` | `en/index.html` | 站点概览、研究入口、统计摘要 | 是 |
 | 档案 | `profile.html` | `en/profile.html` | 时间线、经历、证明材料 | 是 |
-| 研究 | `research.html` | `en/research.html` | 一般研究方向与方法说明 | 是 |
-| 项目 | `projects.html` | `en/projects.html` | 项目与仓库入口 | 是 |
+| 研究 | `research.html` | `en/research.html` | 研究背景、核心问题、研究意义与关注方向 | 是 |
+| 项目 | `projects.html` | `en/projects.html` | 持续扩展的研究、工具与工程项目目录 | 是 |
 | 简历 | `resume.html` | `en/resume.html` | 网页简历与公开下载入口 | 是 |
 | 统计 | `analytics.html` | `en/analytics.html` | 站点计数、月度设备估算和本地计数 | 是 |
 | 404 | `404.html` | `en/404.html` | Pages 回退、按路径原地本地化与语言对应跳转 | 否 |
@@ -269,27 +269,35 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 
 ### 8.4 项目图
 
-每个项目页在三个公共节点之外包含一个 `ItemList` 和两个 `SoftwareSourceCode` 节点。列表 `numberOfItems` 为 `2`，两个 `ListItem` 按页面可见顺序使用位置 `1`、`2`，并分别引用：
+每个项目页在三个公共节点之外包含一个 `ItemList` 和当前项目库存对应的 `SoftwareSourceCode` 节点。列表数量、`ListItem.position` 与页面可见顺序必须一致；新增、删除或重新排序项目时，同步中英文 JSON-LD、验证器批准库存与本节清单。当前库存为：
 
 | 项目 | 稳定 ID | `codeRepository` |
 | --- | --- | --- |
 | PersevereStudy | `https://yan-shibo.github.io/#project-persevere-study` | `https://github.com/Yan-ShiBo/PersevereStudy` |
 | MicFamily | `https://yan-shibo.github.io/#project-mic-family` | `https://github.com/Yan-ShiBo/MicFamily` |
+| 视觉强化学习避障小车 | `https://yan-shibo.github.io/#project-vision-obstacle-avoidance-rover` | 无公开仓库 |
+| LocalReadTranslate | `https://yan-shibo.github.io/#project-local-read-translate` | `https://github.com/Yan-ShiBo/LocalReadTranslate` |
+| bilingual-subtitle-pipeline | `https://yan-shibo.github.io/#project-bilingual-subtitle-pipeline` | `https://github.com/Yan-ShiBo/bilingual-subtitle-pipeline` |
+| photo-selector | `https://yan-shibo.github.io/#project-photo-selector` | `https://github.com/Yan-ShiBo/photo-selector` |
+| BiliClaw-Extended | `https://yan-shibo.github.io/#project-biliclaw-extended` | `https://github.com/Yan-ShiBo/BiliClaw-Extended` |
+| PersonalKnowledgeBase | `https://yan-shibo.github.io/#project-personal-knowledge-base` | `https://github.com/Yan-ShiBo/PersonalKnowledgeBase` |
+| codex-skills-kit | `https://yan-shibo.github.io/#project-codex-skills-kit` | `https://github.com/Yan-ShiBo/codex-skills-kit` |
+| 本站 | `https://yan-shibo.github.io/#project-portfolio` | `https://github.com/Yan-ShiBo/Yan-ShiBo.github.io` |
 
-项目节点的本地化名称和描述必须与当前页面可见文本一致，`keywords` 来自可见技术标签，`contributor` 只引用 `/#person`。项目图不使用 `creator`，也不写入奖项或等级、日期、证明图片、测试账号等未批准字段。
+项目节点的本地化名称和描述必须与当前页面可见文本一致，`keywords` 来自可见技术标签，`contributor` 只引用 `/#person`。`codeRepository` 是可选字段：只有公开仓库存在时才声明。项目图不使用 `creator`，也不写入奖项或等级、日期、证明图片、测试账号等未批准字段。普通收藏式 fork、无公开说明的研究仓库和未发表材料不进入库存。
 
 ### 8.5 研究图
 
-每个研究页在三个公共节点之外包含一个 `ItemList` 和四个 `Thing`。列表 `numberOfItems` 为 `4`，按页面“接下来推进的方向”的可见顺序引用以下跨语言稳定 ID：
+每个研究页在三个公共节点之外包含一个 `ItemList` 和四个 `Thing`。列表 `numberOfItems` 为 `4`，按页面“关注方向”的可见顺序引用以下跨语言稳定 ID：
 
 | 方向 | 稳定 ID |
 | --- | --- |
-| 控制器更新 | `https://yan-shibo.github.io/#research-controller-updates` |
-| PAC 近似 | `https://yan-shibo.github.io/#research-pac-approximation` |
-| 证书模板 | `https://yan-shibo.github.io/#research-certificate-templates` |
-| 更复杂系统 | `https://yan-shibo.github.io/#research-complex-systems` |
+| 安全关键智能系统的可信控制 | `https://yan-shibo.github.io/#research-trustworthy-control` |
+| 随机系统的概率安全与可达性 | `https://yan-shibo.github.io/#research-stochastic-reach-avoid` |
+| 学习型控制策略的形式化验证 | `https://yan-shibo.github.io/#research-learning-enabled-verification` |
+| 复杂系统的可扩展验证 | `https://yan-shibo.github.io/#research-scalable-verification` |
 
-每个方向只使用稳定 ID、当前语言的可见名称和简短说明。它们是保守的研究方向描述，不是论文或 `ResearchProject`，不得加入实验结果、概率下界或未发表材料。
+每个方向只使用稳定 ID、当前语言的可见名称和简短说明。它们是背景与大方向层面的保守描述，不是论文或 `ResearchProject`，不得加入具体算法链、实验结果、概率数值或未发表材料。
 
 ### 8.6 统计图的隐私边界
 

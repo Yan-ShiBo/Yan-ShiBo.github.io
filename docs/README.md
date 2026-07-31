@@ -43,7 +43,10 @@ docs/maintenance.md    当前偏差、修复队列、事故根因与防回归
 D1 迁移：worker/migrations/
 生成器：scripts/generate-sitemap.js
 验证器：scripts/validate-site.js
-测试：scripts/validate-site.test.js + scripts/stats-client.test.js + worker/src/index.test.mjs
+分片运行器：scripts/run-validator-tests.js + scripts/run-validator-tests.test.js
+验证器测试：scripts/validate-site.test.js（聚合入口）+ scripts/validate-site-tests/（领域模块）
+其他测试：scripts/stats-client.test.js + worker/src/index.test.mjs
+CI：.github/workflows/tests.yml
 ```
 
 页面总数为 14；其中 12 个普通页面可索引，2 个 404 不进入 sitemap。

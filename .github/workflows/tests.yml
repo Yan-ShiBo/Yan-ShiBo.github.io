@@ -1,0 +1,62 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validator:
+    name: Validator shard ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - 1
+          - 2
+          - 3
+          - 4
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Run validator test shard
+        env:
+          VALIDATOR_TEST_SHARD: ${{ matrix.shard }}/4
+        run: node scripts/run-validator-tests.js
+
+  contracts:
+    name: Site, stats, and Worker contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Test validator shard infrastructure
+        run: node --test --test-isolation=none scripts/run-validator-tests.test.js
+      - name: Test statistics client
+        run: node --test --test-isolation=none scripts/stats-client.test.js
+      - name: Test Worker and D1
+        run: node --test --test-isolation=none worker/src/index.test.mjs
+      - name: Validate site contracts
+        run: node scripts/validate-site.js

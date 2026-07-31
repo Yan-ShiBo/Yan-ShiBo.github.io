@@ -58,6 +58,7 @@ http://127.0.0.1:8000/en/
 
 ```text
 .
+├── .github/workflows/tests.yml # 四分片 CI 与合同测试
 ├── AGENTS.md
 ├── README.md
 ├── index.html
@@ -88,9 +89,13 @@ http://127.0.0.1:8000/en/
 │   └── Shibo-Yan-Undergraduate-Transcript.pdf
 ├── scripts/
 │   ├── generate-sitemap.js
+│   ├── run-validator-tests.js  # 本地四分片全量入口
+│   ├── run-validator-tests.test.js # 分片运行器与注册守卫回归
 │   ├── stats-client.test.js
 │   ├── validate-site.js
-│   └── validate-site.test.js
+│   ├── validate-site.test.js   # 稳定顺序的测试聚合入口
+│   ├── validate-site-tests/    # 四个领域模块与共享测试夹具
+│   └── validator-test-shard.js # 分片总数与库存合同
 ├── worker/                       # 统计 Worker、D1 迁移与测试
 ├── manifest.webmanifest          # 中文安装入口
 ├── manifest.en.webmanifest       # 英文安装入口
