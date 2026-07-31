@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 按稳定顺序聚合四个领域模块，共包含 280 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 按稳定顺序聚合四个领域模块，共包含 292 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/run-validator-tests.test.js` 包含 22 个分片运行器、超时、信号、摘要与注册守卫用例；
 - `scripts/stats-client.test.js` 包含 6 个浏览器客户端合同用例；
 - `worker/src/index.test.mjs` 包含 26 个 Worker、D1 迁移和隐私合同用例；
@@ -31,7 +31,7 @@ node scripts/validate-site.js
 git diff --check
 ```
 
-`run-validator-tests.js` 在四个独立 Node 进程中运行互斥分片，是 280 个验证器用例的本地全量入口。每片默认限时 5 分钟；超时先发送 `SIGTERM`，5 秒后仍未退出则发送 `SIGKILL`，强杀后 1 秒仍没有 `close`/`error` 时销毁管道、解除进程引用并以失败结算。运行器会把父进程的 `SIGINT`/`SIGTERM` 转发给存活分片，分片忽略首个信号时自动使用同一强杀链，不要求用户再次中断；最终分别以 130/143 退出，并在所有路径移除信号监听器。成功时只输出每片和全量摘要；失败时保留对应 TAP 与 stderr 供定位。
+`run-validator-tests.js` 在四个独立 Node 进程中运行互斥分片，是 292 个验证器用例的本地全量入口。每片默认限时 5 分钟；超时先发送 `SIGTERM`，5 秒后仍未退出则发送 `SIGKILL`，强杀后 1 秒仍没有 `close`/`error` 时销毁管道、解除进程引用并以失败结算。运行器会把父进程的 `SIGINT`/`SIGTERM` 转发给存活分片，分片忽略首个信号时自动使用同一强杀链，不要求用户再次中断；最终分别以 130/143 退出，并在所有路径移除信号监听器。成功时只输出每片和全量摘要；失败时保留对应 TAP 与 stderr 供定位。
 
 每个分片必须同时满足库存标记、精确 `tests`/`pass` 数以及 `fail`、`cancelled`、`skipped`、`todo` 全为零，不能只依赖子进程退出码。资源受限或排查分片差异时，可以使用等价的串行回退：
 
@@ -41,7 +41,7 @@ node --test --test-isolation=none scripts/validate-site.test.js
 
 ### 2.1 CI 四分片
 
-[GitHub Actions 测试工作流](../.github/workflows/tests.yml)在拉取请求、`main` 推送和手动触发时使用 Node.js 24。验证器的 280 个用例按注册序号稳定分为四个互斥分片，每片包含 70 个用例；四个矩阵任务均通过同一运行器验证摘要，四片并集必须恰好覆盖全量测试。独立合同任务运行分片基础设施回归、统计客户端、Worker/D1 与站点验证入口。
+[GitHub Actions 测试工作流](../.github/workflows/tests.yml)在拉取请求、`main` 推送和手动触发时使用 Node.js 24。验证器的 292 个用例按注册序号稳定分为四个互斥分片，每片包含 73 个用例；四个矩阵任务均通过同一运行器验证摘要，四片并集必须恰好覆盖全量测试。独立合同任务运行分片基础设施回归、统计客户端、Worker/D1 与站点验证入口。
 
 分片同时用于 CI、本地并行入口和故障定位。测试文件会核对发现的用例总数与当前分片数量，非法、错误总数或非四分片配置直接失败。可在 PowerShell 中复现任一分片：
 
@@ -51,13 +51,13 @@ node scripts/run-validator-tests.js
 $env:VALIDATOR_TEST_SHARD = $null
 ```
 
-未设置 `VALIDATOR_TEST_SHARD` 时，运行器并行运行全部四片；直接运行聚合测试文件时仍一次串行运行全部 280 个用例。新增、删除或调整用例数量时，必须同步更新 `scripts/validator-test-shard.js` 中的总数合同、本节基线和四个分片的预期数量。
+未设置 `VALIDATOR_TEST_SHARD` 时，运行器并行运行全部四片；直接运行聚合测试文件时仍一次串行运行全部 292 个用例。新增、删除或调整用例数量时，必须同步更新 `scripts/validator-test-shard.js` 中的总数合同、本节基线和四个分片的预期数量。
 
 ### 2.2 验证器测试模块
 
 `scripts/validate-site.test.js` 只负责按固定顺序加载 `foundation.js`、`stats.js`、`assets.js` 和 `structured-data.js`。四个领域模块位于 `scripts/validate-site-tests/`，共享断言、仓库副本夹具和分片注册器位于同目录的 `support.js`。注册器在分片选择前拒绝重复测试名，以及任何显式 `skip`、`todo` 或 `only` 选项（包括 `false`）；运行器摘要继续兜底检测测试体内动态产生的 skip/todo。
 
-模块加载顺序属于分片合同：调整顺序会改变用例所属分片。移动或新增用例后，必须重新核对 280 个总数、四片各 70 个用例的库存以及并行入口的全量并集。
+模块加载顺序属于分片合同：调整顺序会改变用例所属分片。移动或新增用例后，必须重新核对 292 个总数、四片各 73 个用例的库存以及并行入口的全量并集。
 
 包含多次完整仓库验证的表驱动变异应拆为多个顶层测试组，使现有取模分片可以分散长尾，并通过断言消息保留具体变异名称；不要把全部昂贵场景重新合并成一个顶层测试。
 
@@ -114,19 +114,19 @@ node --test --test-isolation=none --test-name-pattern="mobile home hero" scripts
 当前成功输出应包含：
 
 ```text
-Validator test shard 1/4 passed: 70 tests.
-Validator test shard 2/4 passed: 70 tests.
-Validator test shard 3/4 passed: 70 tests.
-Validator test shard 4/4 passed: 70 tests.
-Validator test shards passed: 280 tests across 4 shards.
+Validator test shard 1/4 passed: 73 tests.
+Validator test shard 2/4 passed: 73 tests.
+Validator test shard 3/4 passed: 73 tests.
+Validator test shard 4/4 passed: 73 tests.
+Validator test shards passed: 292 tests across 4 shards.
 stats client: 6 passed / 0 failed
 Worker and D1: 26 passed / 0 failed
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-分片基础设施测试的 Node 原始摘要应包含 `tests 22`、`pass 22` 和 `fail 0`；串行回退应包含 `tests 280`、`pass 280` 和 `fail 0`。并行入口只有在四个子进程的 TAP 摘要均为 `tests 70`、`pass 70` 且四类例外计数全零后，才输出上面的紧凑成功摘要。
+分片基础设施测试的 Node 原始摘要应包含 `tests 22`、`pass 22` 和 `fail 0`；串行回退应包含 `tests 292`、`pass 292` 和 `fail 0`。并行入口只有在四个子进程的 TAP 摘要均为 `tests 73`、`pass 73` 且四类例外计数全零后，才输出上面的紧凑成功摘要。
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `47 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，档案与证明滑轨子集汇总为 `13 passed / 0 failed`，首页移动卡片子集汇总为 `10 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `280 tests`、`79 pass`、`201 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `47 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，档案与证明滑轨子集汇总为 `13 passed / 0 failed`，首页移动卡片子集汇总为 `10 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `292 tests`、`79 pass`、`213 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -171,7 +171,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 - `target="_blank"` 外链包含安全 `rel`。
 - 中英文档案概览各自只包含两组已批准的 `mailto:` 标签，其可见文本与目标地址一致，并排除旧电话号码、微信号及对应图标；
 - 档案邮箱和阶段摘要标签具备窄屏收缩与换行保护，不得以最小内容宽度扩大页面；
-- 中英文首页各自只保留一份 `.quote-text` 引文，不再在 Hero 侧栏复制 `.poem-note`，避免同页重复内容与单边漂移。
+- 中英文首页各自只保留一份 `.quote-text` 引文，不再在 Hero 侧栏复制 `.poem-note`，避免同页重复内容与单边漂移；每页 Hero 恰有一个直接包住唯一 `.stats-grid.hero-stats` 的 `.meta-card.meta-card--stats`，研究与工程概览使用不带 `.tile-dark` 的 `.section-block.section-muted`、唯一的 `h2#home-overview-title.visually-hidden` 及对应 `aria-labelledby`，其后紧接唯一的 `.tile-dark.quote-band`。
 - 七个英文页面的活动 HTML 不含[设计规范](design.md#63-双语)列出的高置信度陈旧术语；HTML 注释不参与该检查。
 
 它不会模拟键盘操作，也不会证明视觉对比度、焦点顺序或屏幕阅读器体验正确。
@@ -246,7 +246,7 @@ Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 
 ### 3.8 共享交互结构合同
 
-验证器先按 `{}`、`()`、`[]` 平衡块提取 CSS 媒体块与规则，并排除注释、字符串伪实现；只接受整份样式表顶层的 `(max-width: 833px)` 媒体块，不接受由外层 `@supports` 等条件组包裹的目标媒体块。至少一个合格媒体块必须在其媒体体顶层同时包含精确直接 `.site-nav` 与 `.menu-toggle` 规则，且合并全部合格同谓词块后两者的最终有效 `display` 值分别为 `none` 和 `inline-flex`。这里只在所有块深度均为零的分号处分割顶层声明，再按 `!important` 优先级与源码顺序解析真实 `display:`，不把嵌套条件组、普通或嵌套块型自定义属性当作直接声明，也不扩展为完整的选择器优先级引擎。随后检查 `site.js` 的 `mobileMenuQuery` 是否使用同一谓词、变化监听器是否绑定到该查询，以及 `event.matches` 退出门是否与 `closeMenu(false)` 同处处理器顶层且位于清理之前；处理器还必须保留不返回隐藏菜单按钮焦点的关闭逻辑与可见桌面导航焦点回退。
+验证器先按 `{}`、`()`、`[]` 平衡块提取 CSS 媒体块与规则，并排除注释、字符串伪实现；只接受整份样式表顶层的 `(max-width: 833px)` 媒体块，不接受由外层 `@supports` 等条件组包裹的目标媒体块。至少一个合格媒体块必须在其媒体体顶层同时包含精确直接 `.site-nav`、`.menu-toggle` 和移动触控目标规则，且合并全部合格同谓词块后导航最终有效 `display` 分别为 `none` 和 `inline-flex`，品牌、语言链接、页头及抽屉图标按钮、返回顶部按钮和小按钮仍保留 `44px` 尺寸合同。这里只在所有块深度均为零的分号处分割顶层声明，再按 `!important` 优先级与源码顺序解析真实属性，不把嵌套条件组、普通或嵌套块型自定义属性当作直接声明，也不扩展为完整的选择器优先级引擎。随后检查 `site.js` 的 `mobileMenuQuery` 是否使用同一谓词、变化监听器是否绑定到该查询，以及 `event.matches` 退出门是否与 `closeMenu(false)` 同处处理器顶层且位于清理之前；处理器还必须保留不返回隐藏菜单按钮焦点的关闭逻辑与可见桌面导航焦点回退。
 
 Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLightbox` 必须把 `[overlay]` 作为允许元素调用 `setBackgroundInert(true, ...)`，`closeLightbox` 必须调用 `setBackgroundInert(false)`；`setElementInert` 必须只有一个可执行同名函数语法，且其后不得在任意语句位置由裸赋值或 `var setElementInert = ...` 覆盖。点属性与字符串计算属性赋值只修改对象属性，不计作本地绑定覆盖。声明检测不依赖行首；为避免引入通用 JavaScript 解析器，任何经 `codeMask` 确认为可执行的 `function setElementInert(...)` 同名语法均保守计作竞争声明。注释和字符串中的同形文本不计为接线、声明或重赋值。
 
@@ -262,7 +262,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 
 ### 3.10 首页移动 Hero 样式合同
 
-验证器合并样式表顶层全部精确 `(max-width: 640px)` 媒体块，并按最终有效直接声明检查首页移动 Hero：右侧背景使用低密度 `48px` 网格；滑轨使用视口减 `32px` 的卡宽、`16px` 两端留白、中心吸附与统一 `216px` 卡高；身份卡保留双列布局并把联系方式降为可换行信息行；关键词改为无间隙的 2×3 分隔矩阵；统计改为无嵌套卡框的三栏分段面板，英文标签允许换行，计数在窄屏缩放并裁住异常超长内容。注释、字符串、错误媒体条件、旧宽度上限、尺寸分叉、恢复胶囊或嵌套卡框，以及后续有效覆盖均不能满足合同。该静态检查不模拟真实滚动条、字体度量、触摸惯性或主题颜色，仍须按浏览器矩阵验证。
+验证器合并样式表顶层全部精确 `(max-width: 640px)` 媒体块，并按最终有效直接声明检查首页移动 Hero：右侧背景使用低密度 `48px` 网格；滑轨使用容器减 `56px` 的卡宽、`28px` 两端留白、`12px` 间距、中心吸附与统一 `216px` 卡高，使首卡居中时露出下一卡 `16px`；身份卡保留双列布局并把联系方式降为可换行信息行；关键词改为无间隙的 2×3 分隔矩阵；统计改为无嵌套卡框的三栏分段面板，其中 `.meta-card--stats` 使用 `18px 8px` 内边距，`.compact-stat` 使用 `10px 2px` 内边距，英文标签允许换行，计数在窄屏缩放并裁住异常超长内容。注释、字符串、错误媒体条件、旧满宽卡片、旧宽度上限、尺寸分叉、恢复胶囊或嵌套卡框，以及后续有效覆盖均不能满足合同。该静态检查不模拟真实滚动条、字体度量、触摸惯性或主题颜色，仍须按浏览器矩阵验证。
 
 ## 4. 验证器单元测试
 
@@ -291,10 +291,10 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - Worker endpoint/preconnect 缺失、漂移或扩大到非统计页，以及旧公开计数运行时回归；
 - `stats.js` 的单次 POST、5 秒中止期限、可访问加载/成功/失败状态、响应字段与起始日期严格校验、`0` 和超长数字、统一失败降级、本地日期文本隔离，规范累计/页面计数的严格形状、损坏值恢复、独立接线、局部与任意长度进位，并拒绝 `Number`、`parseInt`、`parseFloat`、`BigInt`、BigInt 字面量和宽松格式实现，以及历史 localStorage 逐字段安全迁移、规范键优先、旧 `last` 直接刷新、损坏值隔离、旧键保留和伪造旧页面键忽略；
 - 规范本地访问历史的精确 ISO 首次/最近时间、同一当前时间快照、损坏规范值隔离，以及严格真实日期、稳定去重、今天唯一末尾、365 项上限、每次持久化和存储/页面一致性；
-- 移动菜单共享 `(max-width: 833px)` 谓词的退出清理合同，以及 CSS 断点漂移、导航规则跨媒体块、外层 `@supports` 包裹目标媒体块、媒体块内部嵌套 `@supports` 条件组、注释/字符串/普通或嵌套块型自定义属性伪实现、同一规则/后续直接规则/后续同谓词媒体块覆盖 `display`、旧 `(min-width: 834px)` 间隙实现、错误查询、遗漏/反向/嵌套使用 `event.matches`、退出门晚于清理、缺少可见焦点回退、关闭逻辑落在无关函数、关键实现被注释掉或只出现在字符串中的变异用例；
+- 移动菜单共享 `(max-width: 833px)` 谓词的退出清理和 `44px` 触控目标合同，以及 CSS 断点漂移、导航或触控规则跨媒体块、外层 `@supports` 包裹目标媒体块、媒体块内部嵌套 `@supports` 条件组、注释/字符串/普通或嵌套块型自定义属性伪实现、同一规则/后续直接规则/后续同谓词媒体块覆盖 `display`、旧 `(min-width: 834px)` 间隙实现、错误查询、遗漏/反向/嵌套使用 `event.matches`、退出门晚于清理、缺少可见焦点回退、关闭逻辑落在无关函数、关键实现被注释掉或只出现在字符串中的变异用例；
 - 简历文档卡片、联系方式、关键词标签和长小按钮的全局收缩合同，以及注释/字符串、等价空白、选择器列表、条件覆盖、非 `!important` 高特异性覆盖、`:nth-child(... of selector)` 特异性、较短的 `!important` 覆盖、实际 `.subtle` 动作变体、祖先/通配符否定、复杂函数选择器、嵌套状态否定、陈旧错误声明后续修复、错误值和后续覆盖变异；另有无关条件属性、最终 subject 的类型/ID/类单 compound `:not(...)`、简单与复合伪元素及 `!important` 正确优先级的正向用例，防止验证器在已建模范围内过度拒绝或误算层叠；
 - 中英文档案的两组批准邮箱、旧电话与微信排除、邮箱及阶段摘要标签换行保护，以及证明卡片统一宽高、尺寸变体覆盖、拖动光标、初始化接线、滚动方向和拖动点击隔离变异；
-- 首页移动 Hero 的视口卡宽、统一卡高、身份信息行、关键词组合矩阵、统计分段面板、英文标签换行、窄屏计数收缩和低密度背景网格，以及对应旧实现变异；
+- 首页移动 Hero 的容器卡宽、统一卡高、身份信息行、关键词组合矩阵、统计卡/分栏内边距、英文标签换行、窄屏计数收缩和低密度背景网格；首页结构扫描跳过注释、模板及 raw-text/RCDATA 内容，正确处理属性引号内的 `>`，并用独立变异拒绝 Hero 外统计卡 decoy、统计 hook 转移或重复、错误统计内边距、概览区错位 decoy、错误 `aria-labelledby` 目标、可见标题和非 `h2` 标题；
 - Lightbox 打开/关闭背景接线与 `inert` 行为合同：等价实现正向夹具，以及缺少任一端接线、任意语句位置的裸赋值或 `var` 覆盖、对象属性赋值 decoy、非行首同名函数语法、遗漏属性值、显式 `aria-hidden="false"` 丢失、多元素共享快照串扰、重复/无关/注释/字符串处理器、激活分支贯穿、倒序恢复、抛错、语法错误、超时、恢复后立即或通过微任务延后再次清除等变异用例；
 - JavaScript 字符串和正则字面量中的注释形文本不会干扰交互合同识别；
 - 验证器只读保证；
@@ -360,7 +360,11 @@ http://127.0.0.1:8000/en/
 
 项目页还需在中英文 `640px`、`833px`、`834px`、`1068px`、`1069px` 与 `1440px` 检查：首组恰为两张带证明材料的项目卡且可见顺序与 JSON-LD 一致；两卡列宽一致，不与无媒体短卡形成跨行空洞；普通项目同一行等高、操作入口贴近卡底，不满一行的末组自然填满；证明图保留横向滚动，鼠标点击、Enter 与 Escape 的 Lightbox 行为不变。
 
-首页还需在中英文 `320px`、`375px`、`419px` 与 `640px` 检查：四张 `.hero-side` 直属卡片等宽等高且逐张居中吸附，触屏横向滑动不会变成页面级横向滚动；身份信息、六个关键词、三项统计标签和状态说明均落在卡片内。公开统计至少用 `--`、`0` 与 8 位连续数字复核窄屏度量；浅色和深色下检查卡片、组合面板、分隔线与背景网格。
+首页还需在中英文 `320px`、`375px`、`419px` 与 `640px` 检查：四张 `.hero-side` 直属卡片等宽等高且逐张居中吸附，首卡居中时仍能看到下一卡边缘，触屏横向滑动不会变成页面级横向滚动；身份信息、六个关键词、三项统计标签和状态说明均落在卡片内。公开统计至少用 `--`、`0` 与 8 位连续数字复核窄屏度量；浅色和深色下检查卡片、组合面板、分隔线与背景网格。中英文概览区应使用 `.section-muted` 中性章节，卡片与章节底色需要保持可辨层级；引文作为唯一相邻的深色收尾锚点，不得重新形成连续 `.tile-dark`。同时在桌面和移动宽度检查白色 Hero、浅灰概览、深色引文及页脚的完整节奏、引文内容驱动的上下留白、文字完整性和页面横向溢出，不要求两种语言具有相同像素高度。
+
+全站色调验收不得只看当前 DOM 顺序：共享 CSS 不应包含为直属 `.section-block` 自动交替底色的 `:nth-of-type` 规则。中英文研究页应为“浅灰 Hero、白、浅灰、白、浅灰、白”，项目页同样为“浅灰 Hero、白、浅灰、白、浅灰、白”；简历页为“浅灰 Hero、白、浅灰”，统计页为“浅灰 Hero、白、浅灰、白”。档案时间线使用独立的透明舞台与卡片体系，不参与章节交替；正文中的 `.tile-dark` 只应出现在中英文首页引文。
+
+内页 Hero 还需在中英文 `320px`、`640px`、`833px`、`834px`、`1068px`、`1069px` 与 `1440px` 检查：`min-height` 保持 `auto`，简单档案或统计页不再被视口比例拉成大面积空白，研究、项目和长英文内容由标题、说明、操作和响应式内边距自然撑开。额外使用 `1440×600`、`1440×1000` 和 `1440×1400` 核对高度不再随屏高膨胀，确认标题、说明、按钮与锚点全部留在 Hero 内，后续章节更早进入首屏且页面没有横向溢出。
 
 ### 7.2 页面范围与结构化数据矩阵
 
@@ -501,7 +505,7 @@ http://127.0.0.1:8000/en/
 
 ```text
 分片运行器基础设施：22 passed / 0 failed
-站点验证器测试：280 passed / 0 failed
+站点验证器测试：292 passed / 0 failed
 统计客户端测试：6 passed / 0 failed
 Worker 与 D1 测试：26 passed / 0 failed
 Wrangler：本地 migration、dry-run、远程 migration/deploy 与 health 的实际结果

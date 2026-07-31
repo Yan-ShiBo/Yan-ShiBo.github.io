@@ -175,7 +175,7 @@ const MOBILE_BREAKPOINT_PX = 833;
 const MOBILE_MENU_CLEANUP_ISSUE =
   `mobile menu cleanup must share the (max-width: ${MOBILE_BREAKPOINT_PX}px) breakpoint predicate`;
 const MOBILE_CSS_BREAKPOINT_ISSUE =
-  `mobile navigation rules must share one (max-width: ${MOBILE_BREAKPOINT_PX}px) media block`;
+  `mobile navigation and 44px touch-target rules must share one (max-width: ${MOBILE_BREAKPOINT_PX}px) media block`;
 const RESUME_OVERFLOW_CSS_ISSUE =
   'resume cards, contact values, keyword tags, and long actions must remain shrinkable on narrow viewports';
 const PROFILE_CONTACT_FILES = ['profile.html', 'en/profile.html'];
@@ -197,6 +197,10 @@ const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
   'home quotation must include exactly one quote-text and no duplicate poem-note';
+const HOME_STATS_CARD_MARKUP_ISSUE =
+  'home hero must include exactly one meta-card--stats card wrapping the hero stats grid';
+const HOME_OVERVIEW_HEADING_ISSUE =
+  'home overview must use one section-block section-muted with a visually hidden h2 referenced by aria-labelledby, followed by one tile-dark quote-band';
 const ENGLISH_COPY_FILES = [
   'en/index.html',
   'en/profile.html',
@@ -1043,6 +1047,22 @@ function isHtmlWhitespace(character) {
 
 const RAW_TEXT_ELEMENT_NAMES = new Set(['script', 'style']);
 const RCDATA_ELEMENT_NAMES = new Set(['textarea', 'title']);
+const VOID_ELEMENT_NAMES = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr'
+]);
 
 function isScriptingEnabledRawTextElement(tagName) {
   return RAW_TEXT_ELEMENT_NAMES.has(tagName) || tagName === 'noscript';
@@ -1059,6 +1079,77 @@ function readHtmlTag(source, startIndex) {
     name: match[2].toLowerCase(),
     raw: source.slice(startIndex, end)
   };
+}
+
+function collectActiveHtmlElements(html) {
+  const source = String(html);
+  const elements = [];
+  const stack = [];
+  let cursor = 0;
+  let templateDepth = 0;
+
+  while (cursor < source.length) {
+    const tagStart = source.indexOf('<', cursor);
+    if (tagStart < 0) break;
+    if (source.startsWith('<!--', tagStart)) {
+      const commentEnd = source.indexOf('-->', tagStart + 4);
+      cursor = commentEnd < 0 ? source.length : commentEnd + 3;
+      continue;
+    }
+
+    const tag = readHtmlTag(source, tagStart);
+    if (!tag) {
+      cursor = tagStart + 1;
+      continue;
+    }
+
+    if (tag.isClosing) {
+      if (tag.name === 'template' && templateDepth > 0) {
+        templateDepth -= 1;
+      } else if (templateDepth === 0) {
+        const matchingIndex = stack.findLastIndex((element) => element.name === tag.name);
+        if (matchingIndex >= 0) stack.length = matchingIndex;
+      }
+      cursor = tag.end;
+      continue;
+    }
+
+    const selfClosing = /\/\s*>$/.test(tag.raw) || VOID_ELEMENT_NAMES.has(tag.name);
+    if (tag.name === 'template') {
+      if (!selfClosing) templateDepth += 1;
+      cursor = tag.end;
+      continue;
+    }
+    if (templateDepth > 0) {
+      cursor = tag.end;
+      continue;
+    }
+    if (isScriptingEnabledRawTextElement(tag.name) || RCDATA_ELEMENT_NAMES.has(tag.name)) {
+      const closingTag = findHtmlClosingTag(source, tag.name, tag.end);
+      cursor = closingTag ? closingTag.end : source.length;
+      continue;
+    }
+
+    const element = {
+      attributes: parseAttributes(tag.raw),
+      end: tag.end,
+      name: tag.name,
+      parent: stack.length > 0 ? stack[stack.length - 1] : null,
+      start: tagStart
+    };
+    elements.push(element);
+    if (!selfClosing) stack.push(element);
+    cursor = tag.end;
+  }
+
+  return elements;
+}
+
+function hasHtmlAncestor(element, ancestor) {
+  for (let parent = element && element.parent; parent; parent = parent.parent) {
+    if (parent === ancestor) return true;
+  }
+  return false;
 }
 
 function extractHeadTags(html, expectedTagName) {
@@ -1282,6 +1373,92 @@ function validateHomeQuotationCopies(rootDir, issues) {
 
     if (notes.length !== 0 || quotes.length !== 1 || !quotes[0]) {
       addIssue(issues, file, HOME_QUOTE_INVENTORY_ISSUE);
+    }
+  }
+}
+
+function validateHomeStructure(rootDir, issues) {
+  for (const file of ['index.html', 'en/index.html']) {
+    const absolutePath = path.join(rootDir, file);
+    if (!fs.existsSync(absolutePath)) continue;
+    const elements = collectActiveHtmlElements(fs.readFileSync(absolutePath, 'utf8'));
+    const mainElements = elements.filter((element) => (
+      element.name === 'main' &&
+      element.attributes.id === 'main-content' &&
+      hasClass(element.attributes, 'main-shell')
+    ));
+    const mainElement = mainElements.length === 1 ? mainElements[0] : null;
+    const mainChildren = mainElement
+      ? elements.filter((element) => element.parent === mainElement)
+      : [];
+    const heroSections = mainChildren.filter((element) => (
+      element.name === 'section' && hasClass(element.attributes, 'hero')
+    ));
+    const heroSection = heroSections.length === 1 ? heroSections[0] : null;
+    const heroSides = heroSection
+      ? elements.filter((element) => (
+          hasClass(element.attributes, 'hero-side') &&
+          hasHtmlAncestor(element, heroSection)
+        ))
+      : [];
+    const heroSide = heroSides.length === 1 ? heroSides[0] : null;
+    const statsCards = elements.filter((element) => (
+      element.name === 'div' &&
+      hasClass(element.attributes, 'meta-card') &&
+      hasClass(element.attributes, 'meta-card--stats')
+    ));
+    const statsGrids = elements.filter((element) => (
+      element.name === 'div' &&
+      hasClass(element.attributes, 'stats-grid') &&
+      hasClass(element.attributes, 'hero-stats')
+    ));
+    if (
+      !mainElement ||
+      !heroSection ||
+      !heroSide ||
+      statsCards.length !== 1 ||
+      statsCards[0].parent !== heroSide ||
+      statsGrids.length !== 1 ||
+      statsGrids[0].parent !== statsCards[0]
+    ) {
+      addIssue(issues, file, HOME_STATS_CARD_MARKUP_ISSUE);
+    }
+
+    const overviewSections = elements.filter((element) => (
+      element.name === 'section' &&
+      hasClass(element.attributes, 'section-block') &&
+      hasClass(element.attributes, 'section-muted') &&
+      !hasClass(element.attributes, 'tile-dark') &&
+      element.attributes['aria-labelledby'] === 'home-overview-title'
+    ));
+    const overviewSection = overviewSections.length === 1 ? overviewSections[0] : null;
+    const quoteSections = mainChildren.filter((element) => (
+      element.name === 'section' &&
+      hasClass(element.attributes, 'quote-band') &&
+      hasClass(element.attributes, 'tile-dark')
+    ));
+    const overviewHeadings = elements.filter((element) => (
+      element.attributes.id === 'home-overview-title'
+    ));
+    const hasValidOverviewHeading = overviewHeadings.length === 1 &&
+      overviewHeadings[0].name === 'h2' &&
+      hasClass(overviewHeadings[0].attributes, 'visually-hidden') &&
+      overviewHeadings[0].parent === overviewSection;
+    const heroIndex = mainChildren.indexOf(heroSection);
+    const overviewIndex = mainChildren.indexOf(overviewSection);
+    const quoteIndex = quoteSections.length === 1
+      ? mainChildren.indexOf(quoteSections[0])
+      : -1;
+    const hasExpectedOverviewPosition = heroIndex >= 0 &&
+      overviewIndex === heroIndex + 1 &&
+      quoteIndex === overviewIndex + 1;
+    if (
+      !mainElement ||
+      overviewSections.length !== 1 ||
+      !hasValidOverviewHeading ||
+      !hasExpectedOverviewPosition
+    ) {
+      addIssue(issues, file, HOME_OVERVIEW_HEADING_ISSUE);
     }
   }
 }
@@ -4687,14 +4864,43 @@ function hasSharedMobileNavigationCss(rootDir) {
 
   const executableMobileBlocks = extractCssMediaBlocks(source, codeMask, mediaPattern)
     .map((block) => maskedSource(block.source, block.codeMask));
-  const hasCompleteMobileBlock = executableMobileBlocks.some((block) => (
-    effectiveDirectCssDisplay(block, '.site-nav') === 'none' &&
-    effectiveDirectCssDisplay(block, '.menu-toggle') === 'inline-flex'
-  ));
+  const touchTargetContracts = [
+    ['.brand', [['min-height', 'var(--header-h)']]],
+    ['.button.small', [['min-height', '44px']]],
+    ['.header-actions .icon-btn', [['width', '44px'], ['height', '44px']]],
+    ['.drawer-header .icon-btn', [['width', '44px'], ['height', '44px']]],
+    ['.back-to-top', [['width', '44px'], ['height', '44px']]],
+    ['.lang-switch', [['min-height', '44px']]],
+    ['.lang-switch a', [['min-width', '44px'], ['min-height', '44px']]]
+  ];
+  const hasTouchTargetContracts = (block) => {
+    const ruleEntries = collectCssRuleEntries(block);
+    return touchTargetContracts.every(([selector, declarations]) => (
+      declarations.every(([property, expectedValue]) => (
+        effectiveDirectCssProperty(block, selector, property, ruleEntries) === expectedValue
+      ))
+    ));
+  };
+  const hasCompleteMobileBlock = executableMobileBlocks.some((block) => {
+    const ruleEntries = collectCssRuleEntries(block);
+    return effectiveDirectCssDisplay(block, '.site-nav', ruleEntries) === 'none' &&
+      effectiveDirectCssDisplay(block, '.menu-toggle', ruleEntries) === 'inline-flex' &&
+      hasTouchTargetContracts(block);
+  });
   const executableMobileCss = executableMobileBlocks.join('\n');
   if (!hasCompleteMobileBlock) return false;
-  return effectiveDirectCssDisplay(executableMobileCss, '.site-nav') === 'none' &&
-    effectiveDirectCssDisplay(executableMobileCss, '.menu-toggle') === 'inline-flex';
+  const combinedRuleEntries = collectCssRuleEntries(executableMobileCss);
+  return effectiveDirectCssDisplay(
+    executableMobileCss,
+    '.site-nav',
+    combinedRuleEntries
+  ) === 'none' &&
+    effectiveDirectCssDisplay(
+      executableMobileCss,
+      '.menu-toggle',
+      combinedRuleEntries
+    ) === 'inline-flex' &&
+    hasTouchTargetContracts(executableMobileCss);
 }
 
 function hasResumeOverflowProtectionCss(rootDir) {
@@ -4868,8 +5074,8 @@ function hasPolishedMobileHomeHeroCss(rootDir) {
     [
       '.hero .hero-side',
       [
-        ['--hero-rail-card', 'calc(100vw - 32px)'],
-        ['--hero-rail-gutter', '16px'],
+        ['--hero-rail-card', 'calc(100% - 56px)'],
+        ['--hero-rail-gutter', '28px'],
         ['gap', '12px'],
         ['padding-top', '24px'],
         ['padding-bottom', '32px'],
@@ -4934,10 +5140,12 @@ function hasPolishedMobileHomeHeroCss(rootDir) {
         ['background', 'var(--surface-pearl)']
       ]
     ],
+    ['.hero-side .meta-card--stats', [['padding', '18px 8px']]],
     [
       '.hero-side .compact-stat',
       [
         ['min-height', '76px'],
+        ['padding', '10px 2px'],
         ['border', '0'],
         ['background', 'transparent'],
         ['box-shadow', 'none']
@@ -5828,6 +6036,7 @@ function validateRepository(rootDir) {
 
   validateStructuredDataConsistency(structuredDataRecords, issues);
   validateHomeQuotationCopies(absoluteRoot, issues);
+  validateHomeStructure(absoluteRoot, issues);
   validateEnglishTerminology(absoluteRoot, issues);
   validateProfileContacts(absoluteRoot, issues);
 

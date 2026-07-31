@@ -122,7 +122,7 @@ let repositoryFixtureSnapshot;
 const MENU_CLEANUP_ISSUE =
   'assets/js/site.js: mobile menu cleanup must share the (max-width: 833px) breakpoint predicate';
 const MOBILE_CSS_BREAKPOINT_ISSUE =
-  'assets/css/site.css: mobile navigation rules must share one (max-width: 833px) media block';
+  'assets/css/site.css: mobile navigation and 44px touch-target rules must share one (max-width: 833px) media block';
 const RESUME_OVERFLOW_CSS_ISSUE =
   'assets/css/site.css: resume cards, contact values, keyword tags, and long actions must remain shrinkable on narrow viewports';
 const PROFILE_CONTACTS_ISSUE =
@@ -139,6 +139,10 @@ const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
   'index.html: home quotation must include exactly one quote-text and no duplicate poem-note';
+const HOME_STATS_CARD_MARKUP_ISSUE =
+  'home hero must include exactly one meta-card--stats card wrapping the hero stats grid';
+const HOME_OVERVIEW_HEADING_ISSUE =
+  'home overview must use one section-block section-muted with a visually hidden h2 referenced by aria-labelledby, followed by one tile-dark quote-band';
 const ENGLISH_TERMINOLOGY_ISSUE =
   'en/index.html: English copy uses legacy terminology; replace "graduation design" with "undergraduate capstone project"';
 const MODAL_INERT_RESTORE_ISSUE =
@@ -585,6 +589,8 @@ module.exports = {
   HOME_HERO_MOBILE_CSS_ISSUE,
   NOT_FOUND_LOCALIZATION_ISSUE,
   HOME_QUOTE_INVENTORY_ISSUE,
+  HOME_STATS_CARD_MARKUP_ISSUE,
+  HOME_OVERVIEW_HEADING_ISSUE,
   ENGLISH_TERMINOLOGY_ISSUE,
   MODAL_INERT_RESTORE_ISSUE,
   STATS_INTEGER_CONTRACT_ISSUE,

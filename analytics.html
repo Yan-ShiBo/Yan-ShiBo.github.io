@@ -44,15 +44,15 @@
 <span>随机系统 · Reach-Avoid 控制 · 形式化验证</span>
 </span>
 </a>
-<nav aria-label="Primary" class="site-nav">
+<nav aria-label="主导航" class="site-nav">
 <a class="nav-link" href="index.html">主页</a><a class="nav-link" href="profile.html">个人档案</a><a class="nav-link" href="research.html">研究方向</a><a class="nav-link" href="projects.html">项目展示</a><a class="nav-link" href="resume.html">简历</a><a aria-current="page" class="nav-link" href="analytics.html">访问统计</a>
 </nav>
 <div class="header-actions">
-<div aria-label="Language switch" class="lang-switch">
+<div aria-label="语言切换" class="lang-switch">
 <a class="active" href="./analytics.html" lang="zh-CN">中</a>
 <a href="./en/analytics.html" lang="en">EN</a>
 </div>
-<button aria-label="Toggle theme" class="icon-btn" data-label-dark="深色" data-label-light="浅色" data-theme-toggle="" type="button">
+<button aria-label="切换主题" class="icon-btn" data-label-dark="深色" data-label-light="浅色" data-theme-toggle="" type="button">
 <i aria-hidden="true" class="fa fa-moon-o"></i>
 <span class="visually-hidden theme-label">深色</span>
 </button>
@@ -63,7 +63,7 @@
 </div>
 </header>
 <div class="drawer-backdrop" data-drawer-backdrop=""></div>
-<aside aria-hidden="true" inert="" aria-label="Navigation" class="drawer" data-drawer="" id="site-drawer">
+<aside aria-hidden="true" inert="" aria-label="导航" class="drawer" data-drawer="" id="site-drawer">
 <div class="drawer-header">
 <div>
 <strong>导航</strong>
@@ -73,11 +73,11 @@
 <i aria-hidden="true" class="fa fa-times"></i>
 </button>
 </div>
-<nav aria-label="Mobile" class="drawer-nav">
+<nav aria-label="移动端导航" class="drawer-nav">
 <a href="index.html">主页<i aria-hidden="true" class="fa fa-angle-right"></i></a><a href="profile.html">个人档案<i aria-hidden="true" class="fa fa-angle-right"></i></a><a href="research.html">研究方向<i aria-hidden="true" class="fa fa-angle-right"></i></a><a href="projects.html">项目展示<i aria-hidden="true" class="fa fa-angle-right"></i></a><a href="resume.html">简历<i aria-hidden="true" class="fa fa-angle-right"></i></a><a aria-current="page" href="analytics.html">访问统计<i aria-hidden="true" class="fa fa-angle-right"></i></a>
 </nav>
 <div class="drawer-group">
-<div aria-label="Language switch" class="lang-switch">
+<div aria-label="语言切换" class="lang-switch">
 <a class="active" href="./analytics.html" lang="zh-CN">中</a>
 <a href="./en/analytics.html" lang="en">EN</a>
 </div>
@@ -92,12 +92,12 @@
 <main class="main-shell" id="main-content">
 <section class="surface page-hero" data-reveal=""><div class="section-title-wrap"><span class="kicker">Stats</span><h1>公开访问与当前浏览器记录。</h1><p class="lead">公开计数用于观察四个受统计页面的访问情况；本地记录只保存在当前浏览器。公开统计始于 2026-07-22，接口不可用时统一显示“--”，本地记录仍可读取。</p></div></section>
 <section class="section-block" data-reveal=""><div class="section-header"><div class="section-title-wrap"><span class="kicker">Public counters</span><h2>站点、本月设备与当前页面。</h2><p>三项公开计数采用同一起始日期；加载状态和异常会在下方单独说明。</p></div></div><div aria-atomic="true" aria-live="polite" class="status-note" data-state="loading" id="stats-status" role="status">正在加载访问统计（统计始于 2026-07-22）…</div><div class="stats-grid stats-grid--balanced"><article class="stat-card"><div class="stat-label">站点访问</div><div class="stat-value" id="site-pv">--</div><div class="stat-tip">四个受统计页面的累计加载次数。</div></article><article class="stat-card"><div class="stat-label">本月独立设备（估算）</div><div class="stat-value" id="month-unique-devices">--</div><div class="stat-tip">按上海时区逐月估算，不等同于精确人数。</div></article><article class="stat-card"><div class="stat-label">当前页访问</div><div class="stat-value" id="page-pv">--</div><div class="stat-tip">当前页面的累计加载次数。</div></article></div></section>
-<section class="section-block" data-reveal=""><div class="section-header"><div class="section-title-wrap"><span class="kicker">Local record</span><h2>只保存在当前浏览器中的记录。</h2><p>更换设备、清理站点数据或使用无痕模式后会重新计数；这些记录不会汇入公开统计。</p></div></div><div class="stats-grid stats-grid--balanced stats-grid--local"><article class="stat-card"><div class="stat-label">当前浏览器累计</div><div class="stat-value" id="local-total">--</div></article><article class="stat-card"><div class="stat-label">当前页本地访问</div><div class="stat-value" id="local-page">--</div></article><article class="stat-card"><div class="stat-label">记录天数</div><div class="stat-value" id="local-days">--</div></article></div><div class="grid-2 stats-date-grid stats-grid--local"><article class="stat-card"><div class="stat-label">首次本地记录</div><div class="stat-value small-value" id="local-first">--</div></article><article class="stat-card"><div class="stat-label">最近本地记录</div><div class="stat-value small-value" id="local-last">--</div></article></div></section>
+<section class="section-block section-muted" data-reveal=""><div class="section-header"><div class="section-title-wrap"><span class="kicker">Local record</span><h2>只保存在当前浏览器中的记录。</h2><p>更换设备、清理站点数据或使用无痕模式后会重新计数；这些记录不会汇入公开统计。</p></div></div><div class="stats-grid stats-grid--balanced stats-grid--local"><article class="stat-card"><div class="stat-label">当前浏览器累计</div><div class="stat-value" id="local-total">--</div></article><article class="stat-card"><div class="stat-label">当前页本地访问</div><div class="stat-value" id="local-page">--</div></article><article class="stat-card"><div class="stat-label">记录天数</div><div class="stat-value" id="local-days">--</div></article></div><div class="grid-2 stats-date-grid stats-grid--local"><article class="stat-card"><div class="stat-label">首次本地记录</div><div class="stat-value small-value" id="local-first">--</div></article><article class="stat-card"><div class="stat-label">最近本地记录</div><div class="stat-value small-value" id="local-last">--</div></article></div></section>
 <section class="section-block" data-reveal=""><div class="section-header"><div class="section-title-wrap"><span class="kicker">Notes</span><h2>统计口径与隐私边界。</h2></div></div><ul class="note-list stats-note-list"><li>公开统计由本站自管接口提供，从 2026-07-22 重新计数，不导入旧数据；只记录中英文首页和统计页。</li><li>独立设备按上海时区逐月估算；服务器只使用当月 HMAC 摘要计算该值，并在跨月后的首个有效访问时删除旧月摘要，不保存原始网络地址或浏览器标识。</li><li>共享网络、浏览器标识变化等可能造成合并或重复，因此该值不等同于精确人数。</li><li>接口错误或超时时显示“--”；当前浏览器中的本地记录不受影响。</li></ul></section>
 </main>
 <footer class="footer-shell">
 <div class="footer-card">
-<div><p>© 2024–<span data-year="">2026</span> ShiBo Yan. Research portfolio.</p></div>
+<div><p>© 2024–<span data-year="">2026</span> ShiBo Yan. 研究与工程作品集。</p></div>
 <div class="footer-actions">
 <a class="button small subtle" href="mailto:y423314860@163.com"><i aria-hidden="true" class="fa fa-envelope-o"></i> 邮箱</a>
 <a class="button small subtle" href="https://github.com/Yan-ShiBo" rel="noopener noreferrer" target="_blank"><i aria-hidden="true" class="fa fa-github"></i> GitHub</a>
@@ -106,7 +106,7 @@
 </div>
 </div>
 </footer>
-<button aria-hidden="true" aria-label="Back to top" class="icon-btn back-to-top" data-back-to-top="" tabindex="-1" type="button">
+<button aria-hidden="true" aria-label="返回顶部" class="icon-btn back-to-top" data-back-to-top="" tabindex="-1" type="button">
 <i aria-hidden="true" class="fa fa-arrow-up"></i>
 </button>
 </body>

@@ -49,14 +49,14 @@ function createShardOutput(overrides = {}, shard = '1/4') {
   const summary = {
     cancelled: 0,
     fail: 0,
-    pass: 70,
+    pass: 73,
     skipped: 0,
-    tests: 70,
+    tests: 73,
     todo: 0,
     ...overrides
   };
   return [
-    `Validator test shard ${shard}: 70/280 tests`,
+    `Validator test shard ${shard}: 73/292 tests`,
     `# tests ${summary.tests}`,
     `# pass ${summary.pass}`,
     `# fail ${summary.fail}`,
@@ -203,8 +203,8 @@ test('validateShardResult rejects an incomplete TAP summary', () => {
     shard: '1/4',
     stderr: '',
     stdout: [
-      'Validator test shard 1/4: 70/280 tests',
-      '# tests 70'
+      'Validator test shard 1/4: 73/292 tests',
+      '# tests 73'
     ].join('\n')
   });
 
@@ -220,7 +220,7 @@ test('validateShardResult requires the shard inventory marker', () => {
     shard: '1/4',
     stderr: '',
     stdout: createShardOutput().replace(
-      'Validator test shard 1/4: 70/280 tests',
+      'Validator test shard 1/4: 73/292 tests',
       'Validator tests started'
     )
   });
@@ -231,7 +231,7 @@ test('validateShardResult requires the shard inventory marker', () => {
 });
 
 test('validateShardResult requires the inventory marker on its own line', () => {
-  const marker = 'Validator test shard 1/4: 70/280 tests';
+  const marker = 'Validator test shard 1/4: 73/292 tests';
   const reasons = validateShardResult({
     code: 0,
     index: 1,
@@ -251,7 +251,7 @@ test('validateShardResult rejects duplicate TAP summary fields', () => {
     index: 1,
     shard: '1/4',
     stderr: '',
-    stdout: `${createShardOutput()}\n# tests 70`
+    stdout: `${createShardOutput()}\n# tests 73`
   });
 
   assert.ok(
@@ -381,7 +381,7 @@ test('runCli validates one requested CI shard through the same runner', async ()
 
   assert.equal(status, 0);
   assert.deepEqual(spawnedShards, ['3/4']);
-  assert.ok(logLines.includes('Validator test shard 3/4 passed: 70 tests.'));
+  assert.ok(logLines.includes('Validator test shard 3/4 passed: 73 tests.'));
 });
 
 test('runCli keeps successful four-shard output compact', async () => {
@@ -406,11 +406,11 @@ test('runCli keeps successful four-shard output compact', async () => {
 
   assert.equal(status, 0);
   assert.deepEqual(logLines, [
-    'Validator test shard 1/4 passed: 70 tests.',
-    'Validator test shard 2/4 passed: 70 tests.',
-    'Validator test shard 3/4 passed: 70 tests.',
-    'Validator test shard 4/4 passed: 70 tests.',
-    'Validator test shards passed: 280 tests across 4 shards.'
+    'Validator test shard 1/4 passed: 73 tests.',
+    'Validator test shard 2/4 passed: 73 tests.',
+    'Validator test shard 3/4 passed: 73 tests.',
+    'Validator test shard 4/4 passed: 73 tests.',
+    'Validator test shards passed: 292 tests across 4 shards.'
   ]);
 });
 

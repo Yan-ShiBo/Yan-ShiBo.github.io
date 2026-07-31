@@ -17,6 +17,8 @@ const {
   HOME_HERO_MOBILE_CSS_ISSUE,
   NOT_FOUND_LOCALIZATION_ISSUE,
   HOME_QUOTE_INVENTORY_ISSUE,
+  HOME_STATS_CARD_MARKUP_ISSUE,
+  HOME_OVERVIEW_HEADING_ISSUE,
   ENGLISH_TERMINOLOGY_ISSUE,
   MODAL_INERT_RESTORE_ISSUE,
   createRepositoryFixture,
@@ -495,15 +497,19 @@ test('mobile home hero accepts the unified dossier rail', () => {
   const result = validateRepository(rootDir);
 
   assert.ok(!result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+  for (const file of ['index.html', 'en/index.html']) {
+    assert.ok(!result.issues.includes(`${file}: ${HOME_STATS_CARD_MARKUP_ISSUE}`));
+    assert.ok(!result.issues.includes(`${file}: ${HOME_OVERVIEW_HEADING_ISSUE}`));
+  }
 });
 
-test('mobile home hero rejects the old capped card width', (t) => {
+test('mobile home hero rejects the old full-width card spacing', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(
     rootDir,
     'assets/css/site.css',
-    '--hero-rail-card:calc(100vw - 32px);',
-    '--hero-rail-card:min(86vw, 340px);'
+    '    --hero-rail-card:calc(100% - 56px);\n    --hero-rail-gutter:28px;',
+    '    --hero-rail-card:calc(100vw - 32px);\n    --hero-rail-gutter:16px;'
   );
 
   const result = validateRepository(rootDir);
@@ -572,13 +578,129 @@ test('mobile home hero rejects nested stat card borders', (t) => {
   replaceOnce(
     rootDir,
     'assets/css/site.css',
-    '    min-height:76px;\n    overflow:hidden;\n    padding:10px 6px;\n    border:0;',
-    '    min-height:76px;\n    overflow:hidden;\n    padding:10px 6px;\n    border:1px solid var(--hairline);'
+    '    min-height:76px;\n    overflow:hidden;\n    padding:10px 2px;\n    border:0;',
+    '    min-height:76px;\n    overflow:hidden;\n    padding:10px 2px;\n    border:1px solid var(--hairline);'
   );
 
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('home stats card rejects an out-of-hero decoy', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'index.html',
+    'class="meta-card meta-card--stats"',
+    'class="meta-card meta-card--stats-missing"'
+  );
+  replaceOnce(
+    rootDir,
+    'index.html',
+    '</section>\n<section aria-labelledby="home-overview-title"',
+    '</section>\n<div class="meta-card meta-card--stats"></div>\n<section aria-labelledby="home-overview-title"'
+  );
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${HOME_STATS_CARD_MARKUP_ISSUE}`));
+});
+
+test('home stats card ignores a template decoy', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    'class="meta-card meta-card--stats"',
+    'class="meta-card meta-card--stats-missing"'
+  );
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    '</section>\n<section aria-labelledby="home-overview-title"',
+    '</section>\n<template><div class="meta-card meta-card--stats"></div></template>\n<section aria-labelledby="home-overview-title"'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`en/index.html: ${HOME_STATS_CARD_MARKUP_ISSUE}`));
+});
+
+test('home stats card rejects a hook moved to another rail card', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'index.html',
+    'class="meta-card meta-card--stats"',
+    'class="meta-card meta-card--stats-missing"'
+  );
+  replaceOnce(
+    rootDir,
+    'index.html',
+    'class="meta-card"',
+    'class="meta-card meta-card--stats"'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${HOME_STATS_CARD_MARKUP_ISSUE}`));
+});
+
+test('home stats card rejects a duplicate hook', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    'class="meta-card"',
+    'class="meta-card meta-card--stats"'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`en/index.html: ${HOME_STATS_CARD_MARKUP_ISSUE}`));
+});
+
+test('mobile stats layout rejects wide meta-card padding', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '  .hero-side .meta-card--stats{padding:18px 8px}',
+    '  .hero-side .meta-card--stats{padding:18px 16px}'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('mobile stats layout rejects wide compact-stat padding', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'assets/css/site.css',
+    '    min-height:76px;\n    overflow:hidden;\n    padding:10px 2px;\n    border:0;',
+    '    min-height:76px;\n    overflow:hidden;\n    padding:10px 6px;\n    border:0;'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+});
+
+test('home structure accepts a quoted comparison attribute', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'index.html',
+    '<section aria-labelledby="home-overview-title"',
+    '<section data-note="1 > 0" aria-labelledby="home-overview-title"'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(!result.issues.includes(`index.html: ${HOME_STATS_CARD_MARKUP_ISSUE}`));
+  assert.ok(!result.issues.includes(`index.html: ${HOME_OVERVIEW_HEADING_ISSUE}`));
 });
 
 test('mobile home hero rejects clipped counter labels', (t) => {
@@ -646,6 +768,99 @@ test('home quotation rejects a duplicate quotation', (t) => {
   assert.ok(result.issues.includes(
     'en/index.html: home quotation must include exactly one quote-text and no duplicate poem-note'
   ));
+});
+
+test('home overview rejects reversed or missing section tones', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'index.html',
+    '<section aria-labelledby="home-overview-title" class="section-block section-muted" data-reveal="">',
+    '<section aria-labelledby="home-overview-title" class="section-block tile-dark" data-reveal="">'
+  );
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${HOME_OVERVIEW_HEADING_ISSUE}`));
+
+  replaceOnce(
+    rootDir,
+    'index.html',
+    '<section aria-labelledby="home-overview-title" class="section-block tile-dark" data-reveal="">',
+    '<section aria-labelledby="home-overview-title" class="section-block section-muted" data-reveal="">'
+  );
+  replaceOnce(
+    rootDir,
+    'index.html',
+    '<section class="section-block tile-dark quote-band" data-reveal="">',
+    '<section class="section-block quote-band" data-reveal="">'
+  );
+  const missingQuoteToneResult = validateRepository(rootDir);
+
+  assert.ok(missingQuoteToneResult.issues.includes(
+    `index.html: ${HOME_OVERVIEW_HEADING_ISSUE}`
+  ));
+});
+
+test('home overview ignores a raw-text aria decoy', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    '<section aria-labelledby="home-overview-title" class="section-block section-muted" data-reveal="">',
+    '<section class="section-block section-muted" data-reveal="">'
+  );
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    '</main>\n<footer class="footer-shell">',
+    '</main>\n<script type="text/plain"><section aria-labelledby="home-overview-title" class="section-block section-muted"></section></script>\n<footer class="footer-shell">'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`en/index.html: ${HOME_OVERVIEW_HEADING_ISSUE}`));
+});
+
+test('home overview rejects a mismatched heading id', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    'id="home-overview-title"',
+    'id="home-overview-heading"'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`en/index.html: ${HOME_OVERVIEW_HEADING_ISSUE}`));
+});
+
+test('home overview rejects a visible semantic heading', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'index.html',
+    'class="visually-hidden" id="home-overview-title"',
+    'id="home-overview-title"'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${HOME_OVERVIEW_HEADING_ISSUE}`));
+});
+
+test('home overview requires an h2 heading', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    '<h2 class="visually-hidden" id="home-overview-title">Research and engineering overview</h2>',
+    '<p class="visually-hidden" id="home-overview-title">Research and engineering overview</p>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`en/index.html: ${HOME_OVERVIEW_HEADING_ISSUE}`));
 });
 
 test('English terminology rejects legacy wording in active English copy', (t) => {
@@ -878,18 +1093,30 @@ test('validateRepository rejects a mobile media block nested inside an outer sup
   assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
 });
 
-test('validateRepository requires mobile navigation rules in the same CSS media block', (t) => {
-  const rootDir = createRepositoryFixture(t);
+test('validateRepository requires mobile navigation and touch targets in the same CSS media block', (t) => {
+  const navigationRootDir = createRepositoryFixture(t);
   replaceOnce(
-    rootDir,
+    navigationRootDir,
     'assets/css/site.css',
     '  .site-nav{display:none}\n  .menu-toggle{display:inline-flex}',
     '  .site-nav{display:none}\n}\n\n@media (max-width:833px){\n  .menu-toggle{display:inline-flex}'
   );
 
-  const result = validateRepository(rootDir);
+  const navigationResult = validateRepository(navigationRootDir);
 
-  assert.ok(result.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+  assert.ok(navigationResult.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
+
+  const touchTargetRootDir = createRepositoryFixture(t);
+  replaceOnce(
+    touchTargetRootDir,
+    'assets/css/site.css',
+    '  .brand{min-height:var(--header-h)}\n',
+    ''
+  );
+
+  const touchTargetResult = validateRepository(touchTargetRootDir);
+
+  assert.ok(touchTargetResult.issues.includes(MOBILE_CSS_BREAKPOINT_ISSUE));
 });
 
 test('validateRepository rejects nested supports-rule mobile display decoys', (t) => {
