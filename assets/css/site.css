@@ -2336,7 +2336,8 @@ body.lightbox-open{overflow:hidden}
 
 .home-hero .lead{max-width:800px}
 .hero-side .stats-grid.hero-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.hero-side .compact-stat{min-height:auto}
+.hero-side .compact-stat{display:flex;min-height:auto;flex-direction:column}
+.hero-side .compact-stat .stat-value{margin-top:auto}
 .hero-side .profile-body h2{font-size:24px;margin-bottom:4px}
 .hero-side .profile-body p{font-size:14px}
 .hero-side .inline-list{margin-top:8px;gap:6px}
