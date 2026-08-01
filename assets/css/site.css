@@ -2732,3 +2732,15 @@ body.lightbox-open{overflow:hidden}
   margin: 0;
   font-size: 0.95rem;
 }
+
+@media (max-width:833px){
+  .anchor-chip,
+  .hero-side .profile-card .inline-list a.tag,
+  .link-inline{min-height:44px}
+
+  .hero-side .profile-card .inline-list a.tag,
+  .link-inline{
+    display:inline-flex;
+    align-items:center;
+  }
+}
