@@ -94,6 +94,7 @@
 <h1>I study how to synthesize reach-avoid controllers for stochastic systems and provide verifiable probabilistic guarantees.</h1>
 <p class="lead">Under stochastic disturbances, a system must reach its target region while avoiding unsafe regions beforehand. My work focuses on synthesizing controllers that meet this requirement and using formal methods to establish a lower bound on the probability of satisfying it.</p>
 <p class="hero-context">Outside my core research, I also turn recurring problems in research, study, and content processing into software that I expect to keep using.</p>
+<div class="action-row home-hero-actions"><a class="button primary" href="research.html"><i aria-hidden="true" class="fa fa-compass"></i> Explore my research</a><a class="button" href="resume.html"><i aria-hidden="true" class="fa fa-id-card-o"></i> View my resume</a></div>
 </div>
 </article>
 <aside class="surface hero-side-surface" data-reveal="">
@@ -102,7 +103,7 @@
 <div class="avatar"><img alt="Portrait of ShiBo Yan" fetchpriority="high" height="320" loading="eager" src="../assets/profile/photo.jpg" width="240"/></div>
 <div class="profile-body">
 <h2>闫士博 / ShiBo Yan</h2>
-<p>B.Eng. alumnus and current M.Eng. student in Software Engineering at Southwest University</p>
+<p>Southwest University · M.Eng. student in Software Engineering</p>
 <div class="inline-list">
 <span class="tag"><i aria-hidden="true" class="fa fa-map-marker"></i> Chongqing</span>
 <a class="tag" href="mailto:y423314860@163.com"><i aria-hidden="true" class="fa fa-envelope-o"></i> y423314860@163.com</a>
@@ -110,8 +111,8 @@
 </div>
 </div>
 <div class="meta-card">
-<h3>Research now</h3>
-<p>My current work focuses on learning-aided reach-avoid controller synthesis and probabilistic guarantees based on stochastic barrier-like certificates.</p>
+<h3>Research method</h3>
+<p>Starting from a reinforcement-learning reference policy, I construct sparse polynomial controllers and use stochastic barrier-like certificates to compute a lower bound on the reach-avoid probability.</p>
 </div>
 <div class="meta-card">
 <h3>Tools I maintain</h3>
@@ -133,6 +134,15 @@
 <div class="section-header">
 <div class="section-title-wrap"><span class="kicker">Current work</span><h2 id="home-current-title">What I’m working on.</h2><p>Since beginning graduate study, I have spent most of my time on the following three projects.</p></div>
 </div>
+<figure aria-labelledby="home-research-flow-title" class="home-research-flow">
+<figcaption class="visually-hidden" id="home-research-flow-title">Research method flow</figcaption>
+<ol class="home-research-flow__list">
+<li><span aria-hidden="true" class="home-research-flow__index">01</span><span class="home-research-flow__label">RL Reference Policy</span><span aria-hidden="true" class="home-research-flow__arrow">→</span></li>
+<li><span aria-hidden="true" class="home-research-flow__index">02</span><span class="home-research-flow__label">Sparse Polynomial Controller</span><span aria-hidden="true" class="home-research-flow__arrow">→</span></li>
+<li><span aria-hidden="true" class="home-research-flow__index">03</span><span class="home-research-flow__label">Stochastic Barrier-like Certificate</span><span aria-hidden="true" class="home-research-flow__arrow">→</span></li>
+<li><span aria-hidden="true" class="home-research-flow__index">04</span><span class="home-research-flow__label">Certified Probability Lower Bound</span></li>
+</ol>
+</figure>
 <div class="grid-3">
 <article class="panel">
 <span class="kicker">Research</span>
@@ -143,12 +153,12 @@
 <article class="panel">
 <span class="kicker">Funded research</span>
 <h3>Formal safety verification of neural-network control policies</h3>
-<p>I contribute to an NSFC General Program project that studies the conditions and domains under which neural-network control policies meet specified safety requirements in nonlinear systems.</p>
+<p>I contribute to an NSFC General Program project on safety verification for neural-network control systems using polynomial algebraic methods.</p>
 </article>
 <article class="panel">
 <span class="kicker">Engineering</span>
-<h3>Vision-based reinforcement-learning rover</h3>
-<p>I am responsible for the system architecture, safety constraints, and simulation training, while preserving a complete interface for later embedded deployment. This project is also a long-term testbed for evaluating learning-based control and formal safety methods.</p>
+<h3>CBF-Rover: Vision-based reinforcement-learning simulation platform</h3>
+<p>I am responsible for system architecture, safety constraints, and simulation training. The current focus is online computation, visualization, and closed-loop validation of barrier certificates, with an interface reserved for embedded deployment.</p>
 <div class="action-row"><a class="button small primary" href="projects.html#research-projects"><i aria-hidden="true" class="fa fa-code-fork"></i> View the project record</a></div>
 </article>
 </div>
@@ -159,10 +169,10 @@
 </div>
 <article class="panel home-updates-panel">
 <ul class="meta-list home-update-list">
-<li><strong><time datetime="2026">2026</time></strong><span>My first-author paper, <em>Learning-Aided Reach-Avoid Controller Synthesis with Formal Guarantees for Stochastic Systems</em>, has been accepted at MEMOCODE 2026.</span></li>
-<li><strong><time datetime="2026">2026</time></strong><span><em>Safety Guarantees for Nonlinear Systems with Bayesian Neural Network Control Policies</em> has been submitted to <em>Formal Aspects of Computing</em>; my supervisor is first author, and I am second author.</span></li>
-<li><strong><time datetime="2026">2026</time></strong><span><em>Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning</em> has been submitted to AAAI 2027; my supervisor is first author, and I am second author.</span></li>
-<li><strong><time datetime="2026">2026</time></strong><span>I am continuing work on a vision-based end-to-end reinforcement-learning obstacle-avoidance rover.</span></li>
+<li><strong>Paper accepted</strong><span>My first-author paper, <em>Learning-Aided Reach-Avoid Controller Synthesis with Formal Guarantees for Stochastic Systems</em>, has been accepted at MEMOCODE 2026.</span></li>
+<li><strong>Journal review</strong><span>A paper on safety guarantees for Bayesian-neural-network control policies is under review at <em>Formal Aspects of Computing</em>; my supervisor is first author, and I am second author.</span></li>
+<li><strong>Under review</strong><span>A related paper on reach-avoid controller synthesis for stochastic systems is currently under review.</span></li>
+<li><strong>Project update</strong><span>I am advancing the CBF-Rover simulation platform, focusing on online computation, visualization, and closed-loop validation of barrier certificates.</span></li>
 </ul>
 </article>
 </section>

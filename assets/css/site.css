@@ -2329,6 +2329,7 @@ body.lightbox-open{overflow:hidden}
   font-size:17px;
   line-height:1.47;
 }
+.home-hero-actions{margin-top:0}
 .hero-side .profile-body h2{font-size:24px;margin-bottom:4px}
 .hero-side .profile-body p{font-size:14px}
 .hero-side .inline-list{margin-top:8px;gap:6px}
@@ -2352,8 +2353,75 @@ body.lightbox-open{overflow:hidden}
   text-wrap:wrap;
 }
 
+.home-research-flow{
+  max-width:var(--max-width);
+  margin:0 auto 28px;
+}
+
+.home-research-flow__list{
+  --home-flow-gap:clamp(32px, 3vw, 56px);
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:var(--home-flow-gap);
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+
+.home-research-flow__list li{
+  position:relative;
+  min-width:0;
+  display:grid;
+  grid-template-columns:26px minmax(0, 1fr);
+  align-items:start;
+  gap:8px;
+  padding-top:12px;
+  border-top:1px solid var(--hairline);
+}
+
+.home-research-flow__list li::before{
+  content:"";
+  position:absolute;
+  top:-4px;
+  left:0;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--accent);
+}
+
+.home-research-flow__index{
+  color:var(--accent);
+  font-family:var(--font-mono);
+  font-size:12px;
+  font-weight:600;
+  line-height:1.75;
+}
+
+.home-research-flow__label{
+  min-width:0;
+  color:var(--text);
+  font-size:15px;
+  font-weight:600;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+
+.home-research-flow__arrow{
+  position:absolute;
+  top:10px;
+  right:calc(var(--home-flow-gap) * -1);
+  width:var(--home-flow-gap);
+  color:var(--accent);
+  font-family:var(--font-mono);
+  font-size:16px;
+  line-height:1.3;
+  text-align:center;
+}
+
 .section-block > .home-updates-panel{max-width:var(--text-width)}
 .home-update-list li span{min-width:0;overflow-wrap:anywhere}
+.home-update-list li strong{flex:0 0 120px;min-width:0}
 
 .section-title-wrap h2{
   max-width:780px;
@@ -2425,6 +2493,7 @@ body.lightbox-open{overflow:hidden}
   .hero .action-row{
     margin-top:12px;
   }
+  .hero .home-hero-actions{margin-top:0}
   .hero .quick-stats{
     gap:12px;
     margin-top:18px;
@@ -2491,6 +2560,17 @@ body.lightbox-open{overflow:hidden}
     max-width:100%;
     white-space:normal;
     text-wrap:wrap;
+  }
+  .home-research-flow__list{
+    grid-template-columns:minmax(0, 1fr);
+    gap:30px;
+  }
+  .home-research-flow__arrow{
+    top:calc(100% + 3px);
+    right:auto;
+    left:1px;
+    width:24px;
+    transform:rotate(90deg);
   }
 }
 
