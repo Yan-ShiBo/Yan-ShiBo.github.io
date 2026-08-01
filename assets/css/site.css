@@ -2669,7 +2669,7 @@ body.lightbox-open{overflow:hidden}
   box-shadow:none;
 }
 
-@media (max-width:640px){
+@media (max-width:833px){
   #overview > .grid-2{display:block}
 
   #overview > .grid-2 > article{padding:28px 0}
@@ -2678,7 +2678,9 @@ body.lightbox-open{overflow:hidden}
     border-top:1px solid var(--hairline);
     border-left:0;
   }
+}
 
+@media (max-width:640px){
   .timeline-stage > .stage-card > .info-grid{column-gap:0}
 }
 
