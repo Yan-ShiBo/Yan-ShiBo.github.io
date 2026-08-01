@@ -10,6 +10,10 @@ const {
   runShard,
   validateShardResult
 } = require('./run-validator-tests');
+const {
+  EXPECTED_VALIDATOR_TEST_COUNT,
+  expectedTestsForShard
+} = require('./validator-test-shard');
 
 function createFakeChild(onKill) {
   const child = new EventEmitter();
@@ -45,18 +49,27 @@ function createManualTimers() {
   };
 }
 
+function createShardInventoryMarker(shard = '1/4') {
+  const shardIndex = Number(shard.split('/')[0]);
+  const expectedTests = expectedTestsForShard(shardIndex);
+  return `Validator test shard ${shard}: ${expectedTests}/` +
+    `${EXPECTED_VALIDATOR_TEST_COUNT} tests`;
+}
+
 function createShardOutput(overrides = {}, shard = '1/4') {
+  const shardIndex = Number(shard.split('/')[0]);
+  const expectedTests = expectedTestsForShard(shardIndex);
   const summary = {
     cancelled: 0,
     fail: 0,
-    pass: 73,
+    pass: expectedTests,
     skipped: 0,
-    tests: 73,
+    tests: expectedTests,
     todo: 0,
     ...overrides
   };
   return [
-    `Validator test shard ${shard}: 73/292 tests`,
+    createShardInventoryMarker(shard),
     `# tests ${summary.tests}`,
     `# pass ${summary.pass}`,
     `# fail ${summary.fail}`,
@@ -197,14 +210,15 @@ test('validateShardResult accepts one exact TAP summary', () => {
 });
 
 test('validateShardResult rejects an incomplete TAP summary', () => {
+  const expectedTests = expectedTestsForShard(1);
   const reasons = validateShardResult({
     code: 0,
     index: 1,
     shard: '1/4',
     stderr: '',
     stdout: [
-      'Validator test shard 1/4: 73/292 tests',
-      '# tests 73'
+      createShardInventoryMarker(),
+      `# tests ${expectedTests}`
     ].join('\n')
   });
 
@@ -220,7 +234,7 @@ test('validateShardResult requires the shard inventory marker', () => {
     shard: '1/4',
     stderr: '',
     stdout: createShardOutput().replace(
-      'Validator test shard 1/4: 73/292 tests',
+      createShardInventoryMarker(),
       'Validator tests started'
     )
   });
@@ -231,7 +245,7 @@ test('validateShardResult requires the shard inventory marker', () => {
 });
 
 test('validateShardResult requires the inventory marker on its own line', () => {
-  const marker = 'Validator test shard 1/4: 73/292 tests';
+  const marker = createShardInventoryMarker();
   const reasons = validateShardResult({
     code: 0,
     index: 1,
@@ -246,12 +260,13 @@ test('validateShardResult requires the inventory marker on its own line', () => 
 });
 
 test('validateShardResult rejects duplicate TAP summary fields', () => {
+  const expectedTests = expectedTestsForShard(1);
   const reasons = validateShardResult({
     code: 0,
     index: 1,
     shard: '1/4',
     stderr: '',
-    stdout: `${createShardOutput()}\n# tests 73`
+    stdout: `${createShardOutput()}\n# tests ${expectedTests}`
   });
 
   assert.ok(
@@ -381,7 +396,7 @@ test('runCli validates one requested CI shard through the same runner', async ()
 
   assert.equal(status, 0);
   assert.deepEqual(spawnedShards, ['3/4']);
-  assert.ok(logLines.includes('Validator test shard 3/4 passed: 73 tests.'));
+  assert.ok(logLines.includes('Validator test shard 3/4 passed: 78 tests.'));
 });
 
 test('runCli keeps successful four-shard output compact', async () => {
@@ -406,11 +421,11 @@ test('runCli keeps successful four-shard output compact', async () => {
 
   assert.equal(status, 0);
   assert.deepEqual(logLines, [
-    'Validator test shard 1/4 passed: 73 tests.',
-    'Validator test shard 2/4 passed: 73 tests.',
-    'Validator test shard 3/4 passed: 73 tests.',
-    'Validator test shard 4/4 passed: 73 tests.',
-    'Validator test shards passed: 292 tests across 4 shards.'
+    'Validator test shard 1/4 passed: 79 tests.',
+    'Validator test shard 2/4 passed: 78 tests.',
+    'Validator test shard 3/4 passed: 78 tests.',
+    'Validator test shard 4/4 passed: 78 tests.',
+    'Validator test shards passed: 313 tests across 4 shards.'
   ]);
 });
 

@@ -28,62 +28,77 @@ test('validateRepository reports missing analytics local-counter nodes', (t) => 
   assert.ok(result.issues.includes('analytics.html: stats.js requires #local-total'));
 });
 
-test('validateRepository limits the stats client and approved Worker endpoint to analytics pages', (t) => {
-  const mutations = [
-    {
-      pattern: '<meta name="stats-api-endpoint" content="https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit"/>',
-      replacement: '<meta name="stats-api-endpoint" content="https://example.invalid/v1/visit"/>'
-    },
-    {
-      pattern: '<link href="https://yan-shibo-site-stats.yan-shibo.workers.dev" rel="preconnect"/>',
-      replacement: '<link href="https://example.invalid" rel="preconnect"/>'
-    }
-  ];
-
-  for (const mutation of mutations) {
-    const rootDir = createRepositoryFixture(t);
-    replaceOnce(rootDir, 'analytics.html', mutation.pattern, mutation.replacement);
-
-    const result = validateRepository(rootDir);
-
-    assert.ok(result.issues.includes(`analytics.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
-  }
-
-  const missingClientRoot = createRepositoryFixture(t);
+test('validateRepository rejects an unapproved analytics Worker endpoint', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    missingClientRoot,
+    rootDir,
+    'analytics.html',
+    '<meta name="stats-api-endpoint" content="https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit"/>',
+    '<meta name="stats-api-endpoint" content="https://example.invalid/v1/visit"/>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`analytics.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
+});
+
+test('validateRepository rejects an unapproved analytics Worker preconnect', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'analytics.html',
+    '<link href="https://yan-shibo-site-stats.yan-shibo.workers.dev" rel="preconnect"/>',
+    '<link href="https://example.invalid" rel="preconnect"/>'
+  );
+
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`analytics.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
+});
+
+test('validateRepository requires the stats client on analytics pages', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
     'analytics.html',
     '  <script defer="" src="./assets/js/stats.js"></script>\n',
     ''
   );
-  const missingClientResult = validateRepository(missingClientRoot);
-  assert.ok(missingClientResult.issues.includes(
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
     'analytics.html: stats.js load scope does not match the stats-enabled pages'
   ));
+});
 
-  const homeClientRoot = createRepositoryFixture(t);
+test('validateRepository rejects the stats client on the home page', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    homeClientRoot,
+    rootDir,
     'index.html',
     '  <script defer="" src="./assets/js/site.js"></script>',
     '  <script defer="" src="./assets/js/site.js"></script>\n' +
       '  <script defer="" src="./assets/js/stats.js"></script>'
   );
-  const homeClientResult = validateRepository(homeClientRoot);
-  assert.ok(homeClientResult.issues.includes(
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(
     'index.html: stats.js load scope does not match the stats-enabled pages'
   ));
+});
 
-  const homeEndpointRoot = createRepositoryFixture(t);
+test('validateRepository rejects the stats Worker endpoint on the home page', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    homeEndpointRoot,
+    rootDir,
     'index.html',
     '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>',
     '  <meta name="stats-api-endpoint" content="https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit"/>\n' +
       '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>'
   );
-  const homeEndpointResult = validateRepository(homeEndpointRoot);
-  assert.ok(homeEndpointResult.issues.includes(`index.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
 });
 
 test('validateRepository requires the stats Worker preconnect inside head', (t) => {

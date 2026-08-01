@@ -10,7 +10,7 @@
 - 12 个可索引页面：六组中英文内容页；
 - 2 个 404 页面：`noindex` 且不进入 sitemap；
 - 12 个 sitemap URL；
-- `scripts/validate-site.test.js` 按稳定顺序聚合四个领域模块，共包含 292 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
+- `scripts/validate-site.test.js` 按稳定顺序聚合四个领域模块，共包含 313 个零依赖 `node:test` 用例，其中结构化数据专项为 79 个；
 - `scripts/run-validator-tests.test.js` 包含 22 个分片运行器、超时、信号、摘要与注册守卫用例；
 - `scripts/stats-client.test.js` 包含 6 个浏览器客户端合同用例；
 - `worker/src/index.test.mjs` 包含 26 个 Worker、D1 迁移和隐私合同用例；
@@ -31,7 +31,7 @@ node scripts/validate-site.js
 git diff --check
 ```
 
-`run-validator-tests.js` 在四个独立 Node 进程中运行互斥分片，是 292 个验证器用例的本地全量入口。每片默认限时 5 分钟；超时先发送 `SIGTERM`，5 秒后仍未退出则发送 `SIGKILL`，强杀后 1 秒仍没有 `close`/`error` 时销毁管道、解除进程引用并以失败结算。运行器会把父进程的 `SIGINT`/`SIGTERM` 转发给存活分片，分片忽略首个信号时自动使用同一强杀链，不要求用户再次中断；最终分别以 130/143 退出，并在所有路径移除信号监听器。成功时只输出每片和全量摘要；失败时保留对应 TAP 与 stderr 供定位。
+`run-validator-tests.js` 在四个独立 Node 进程中运行互斥分片，是 313 个验证器用例的本地全量入口。每片默认限时 5 分钟；超时先发送 `SIGTERM`，5 秒后仍未退出则发送 `SIGKILL`，强杀后 1 秒仍没有 `close`/`error` 时销毁管道、解除进程引用并以失败结算。运行器会把父进程的 `SIGINT`/`SIGTERM` 转发给存活分片，分片忽略首个信号时自动使用同一强杀链，不要求用户再次中断；最终分别以 130/143 退出，并在所有路径移除信号监听器。成功时只输出每片和全量摘要；失败时保留对应 TAP 与 stderr 供定位。
 
 每个分片必须同时满足库存标记、精确 `tests`/`pass` 数以及 `fail`、`cancelled`、`skipped`、`todo` 全为零，不能只依赖子进程退出码。资源受限或排查分片差异时，可以使用等价的串行回退：
 
@@ -41,7 +41,7 @@ node --test --test-isolation=none scripts/validate-site.test.js
 
 ### 2.1 CI 四分片
 
-[GitHub Actions 测试工作流](../.github/workflows/tests.yml)在拉取请求、`main` 推送和手动触发时使用 Node.js 24。验证器的 292 个用例按注册序号稳定分为四个互斥分片，每片包含 73 个用例；四个矩阵任务均通过同一运行器验证摘要，四片并集必须恰好覆盖全量测试。独立合同任务运行分片基础设施回归、统计客户端、Worker/D1 与站点验证入口。
+[GitHub Actions 测试工作流](../.github/workflows/tests.yml)在拉取请求、`main` 推送和手动触发时使用 Node.js 24。验证器的 313 个用例按注册序号稳定分为四个互斥分片，第一片包含 79 个用例，其余三片各 78 个；四个矩阵任务均通过同一运行器验证摘要，四片并集必须恰好覆盖全量测试。独立合同任务运行分片基础设施回归、统计客户端、Worker/D1 与站点验证入口。
 
 分片同时用于 CI、本地并行入口和故障定位。测试文件会核对发现的用例总数与当前分片数量，非法、错误总数或非四分片配置直接失败。可在 PowerShell 中复现任一分片：
 
@@ -51,13 +51,13 @@ node scripts/run-validator-tests.js
 $env:VALIDATOR_TEST_SHARD = $null
 ```
 
-未设置 `VALIDATOR_TEST_SHARD` 时，运行器并行运行全部四片；直接运行聚合测试文件时仍一次串行运行全部 292 个用例。新增、删除或调整用例数量时，必须同步更新 `scripts/validator-test-shard.js` 中的总数合同、本节基线和四个分片的预期数量。
+未设置 `VALIDATOR_TEST_SHARD` 时，运行器并行运行全部四片；直接运行聚合测试文件时仍一次串行运行全部 313 个用例。新增、删除或调整用例数量时，必须同步更新 `scripts/validator-test-shard.js` 中的总数合同、本节基线和四个分片的预期数量。
 
 ### 2.2 验证器测试模块
 
 `scripts/validate-site.test.js` 只负责按固定顺序加载 `foundation.js`、`stats.js`、`assets.js` 和 `structured-data.js`。四个领域模块位于 `scripts/validate-site-tests/`，共享断言、仓库副本夹具和分片注册器位于同目录的 `support.js`。注册器在分片选择前拒绝重复测试名，以及任何显式 `skip`、`todo` 或 `only` 选项（包括 `false`）；运行器摘要继续兜底检测测试体内动态产生的 skip/todo。
 
-模块加载顺序属于分片合同：调整顺序会改变用例所属分片。移动或新增用例后，必须重新核对 292 个总数、四片各 73 个用例的库存以及并行入口的全量并集。
+模块加载顺序属于分片合同：调整顺序会改变用例所属分片。移动或新增用例后，必须重新核对 313 个总数、第一片 79 个且其余三片各 78 个的库存，以及并行入口的全量并集。
 
 包含多次完整仓库验证的表驱动变异应拆为多个顶层测试组，使现有取模分片可以分散长尾，并通过断言消息保留具体变异名称；不要把全部昂贵场景重新合并成一个顶层测试。
 
@@ -114,19 +114,19 @@ node --test --test-isolation=none --test-name-pattern="mobile home hero" scripts
 当前成功输出应包含：
 
 ```text
-Validator test shard 1/4 passed: 73 tests.
-Validator test shard 2/4 passed: 73 tests.
-Validator test shard 3/4 passed: 73 tests.
-Validator test shard 4/4 passed: 73 tests.
-Validator test shards passed: 292 tests across 4 shards.
+Validator test shard 1/4 passed: 79 tests.
+Validator test shard 2/4 passed: 78 tests.
+Validator test shard 3/4 passed: 78 tests.
+Validator test shard 4/4 passed: 78 tests.
+Validator test shards passed: 313 tests across 4 shards.
 stats client: 6 passed / 0 failed
 Worker and D1: 26 passed / 0 failed
 Site validation passed: 14 HTML files, 12 indexable pages, 12 sitemap URLs.
 ```
 
-分片基础设施测试的 Node 原始摘要应包含 `tests 22`、`pass 22` 和 `fail 0`；串行回退应包含 `tests 292`、`pass 292` 和 `fail 0`。并行入口只有在四个子进程的 TAP 摘要均为 `tests 73`、`pass 73` 且四类例外计数全零后，才输出上面的紧凑成功摘要。
+分片基础设施测试的 Node 原始摘要应包含 `tests 22`、`pass 22` 和 `fail 0`；串行回退应包含 `tests 313`、`pass 313` 和 `fail 0`。并行入口只有在第一片的 TAP 摘要为 `tests 79`、`pass 79`，其余三片均为 `tests 78`、`pass 78`，且四类例外计数全零后，才输出上面的紧凑成功摘要。
 
-结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `47 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，档案与证明滑轨子集汇总为 `13 passed / 0 failed`，首页移动卡片子集汇总为 `10 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `292 tests`、`79 pass`、`213 skipped`。
+结构化数据名称子集的验收记录应汇总为 `79 passed / 0 failed`，图标名称子集汇总为 `47 passed / 0 failed`，历史 localStorage 子集汇总为 `8 passed / 0 failed`，档案与证明滑轨名称子集汇总为 `13 passed / 0 failed`，首页移动卡片子集汇总为 `10 passed / 0 failed`，规范本地访问历史子集、首页引文子集与英文术语子集分别汇总为 `2 passed / 0 failed`，不要把这些行写成 Node 原始输出。不同 Node 版本或执行方式仍可能把名称过滤掉的用例计入 TAP 总数；结构化数据子集此时会显示 `313 tests`、`79 pass`、`234 skipped`。
 
 `git diff --check` 成功时通常不输出内容。测试报告必须记录实际输出；不得用“应该通过”代替执行证据。
 
@@ -513,7 +513,7 @@ http://127.0.0.1:8000/en/
 
 ```text
 分片运行器基础设施：22 passed / 0 failed
-站点验证器测试：292 passed / 0 failed
+站点验证器测试：313 passed / 0 failed
 统计客户端测试：6 passed / 0 failed
 Worker 与 D1 测试：26 passed / 0 failed
 Wrangler：本地 migration、dry-run、远程 migration/deploy 与 health 的实际结果

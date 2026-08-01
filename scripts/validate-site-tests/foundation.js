@@ -636,7 +636,7 @@ test('mobile home hero rejects quick-link buttons that cannot shrink', (t) => {
   assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
 });
 
-test('home hero rejects an out-of-rail quick card, a fifth rail card, or a missing semantic side surface', (t) => {
+test('home hero rejects a quick card moved outside the side rail', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(
     rootDir,
@@ -653,90 +653,108 @@ test('home hero rejects an out-of-rail quick card, a fifth rail card, or a missi
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+});
 
-  const semanticRoot = createRepositoryFixture(t);
+test('home hero requires the semantic side surface', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    semanticRoot,
+    rootDir,
     'index.html',
     'class="surface hero-side-surface"',
     'class="surface"'
   );
-  const semanticResult = validateRepository(semanticRoot);
-  assert.ok(semanticResult.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const fifthCardRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+});
+
+test('home hero rejects a fifth side-rail card', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    fifthCardRoot,
+    rootDir,
     'index.html',
     '<div class="meta-card home-quick-card">',
     '<div class="meta-card"></div>\n<div class="meta-card home-quick-card">'
   );
-  const fifthCardResult = validateRepository(fifthCardRoot);
-  assert.ok(fifthCardResult.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const reorderedCardsRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+});
+
+test('home hero rejects reordered side-rail cards', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    reorderedCardsRoot,
+    rootDir,
     'index.html',
     'class="profile-card"',
     'class="card-order-placeholder"'
   );
   replaceOnce(
-    reorderedCardsRoot,
+    rootDir,
     'index.html',
     'class="meta-card"',
     'class="profile-card"'
   );
   replaceOnce(
-    reorderedCardsRoot,
+    rootDir,
     'index.html',
     'class="card-order-placeholder"',
     'class="meta-card"'
   );
-  const reorderedCardsResult = validateRepository(reorderedCardsRoot);
-  assert.ok(reorderedCardsResult.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const shortQuickGridRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+});
+
+test('home hero rejects a missing GitHub quick link', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    shortQuickGridRoot,
+    rootDir,
     'index.html',
     '<a class="button small" href="https://github.com/Yan-ShiBo" rel="noopener noreferrer" target="_blank"><i aria-hidden="true" class="fa fa-github"></i> GitHub</a>\n',
     ''
   );
-  const shortQuickGridResult = validateRepository(shortQuickGridRoot);
-  assert.ok(shortQuickGridResult.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const reorderedQuickLinksRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+});
+
+test('home hero rejects reordered English quick links', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    reorderedQuickLinksRoot,
+    rootDir,
     'en/index.html',
     'class="button small primary" href="research.html"><i aria-hidden="true" class="fa fa-compass"></i> Research',
     'class="button small primary" href="quick-link-placeholder"><i aria-hidden="true" class="fa fa-compass"></i> Research'
   );
   replaceOnce(
-    reorderedQuickLinksRoot,
+    rootDir,
     'en/index.html',
     'class="button small" href="projects.html"><i aria-hidden="true" class="fa fa-code-fork"></i> Projects',
     'class="button small" href="research.html"><i aria-hidden="true" class="fa fa-code-fork"></i> Projects'
   );
   replaceOnce(
-    reorderedQuickLinksRoot,
+    rootDir,
     'en/index.html',
     'class="button small primary" href="quick-link-placeholder"><i aria-hidden="true" class="fa fa-compass"></i> Research',
     'class="button small primary" href="projects.html"><i aria-hidden="true" class="fa fa-compass"></i> Research'
   );
-  const reorderedQuickLinksResult = validateRepository(reorderedQuickLinksRoot);
-  assert.ok(reorderedQuickLinksResult.issues.includes(`en/index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const wrongProfileLinkRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`en/index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+});
+
+test('home hero requires the profile quick-link route', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    wrongProfileLinkRoot,
+    rootDir,
     'index.html',
     '<a class="button small" href="profile.html"><i aria-hidden="true" class="fa fa-user-o"></i> 个人档案</a>',
     '<a class="button small" href="resume.html"><i aria-hidden="true" class="fa fa-user-o"></i> 个人档案</a>'
   );
-  const wrongProfileLinkResult = validateRepository(wrongProfileLinkRoot);
-  assert.ok(wrongProfileLinkResult.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
 });
 
 test('home quick card ignores a template decoy', (t) => {
@@ -779,7 +797,7 @@ test('home quick links reject a hook moved to another rail card', (t) => {
   assert.ok(result.issues.includes(`index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
 });
 
-test('home hero rejects duplicate quick or rail hooks and legacy stats hooks', (t) => {
+test('home hero rejects a duplicate quick-card hook', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(
     rootDir,
@@ -791,28 +809,45 @@ test('home hero rejects duplicate quick or rail hooks and legacy stats hooks', (
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(`en/index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+});
 
-  for (const legacyClass of ['meta-card--stats', 'hero-stats']) {
-    const legacyRoot = createRepositoryFixture(t);
-    replaceOnce(
-      legacyRoot,
-      'en/index.html',
-      'class="meta-card home-quick-card"',
-      `class="meta-card home-quick-card ${legacyClass}"`
-    );
-    const legacyResult = validateRepository(legacyRoot);
-    assert.ok(legacyResult.issues.includes(`en/index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
-  }
-
-  const duplicateRailRoot = createRepositoryFixture(t);
+test('home hero rejects the legacy meta-card stats hook', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    duplicateRailRoot,
+    rootDir,
+    'en/index.html',
+    'class="meta-card home-quick-card"',
+    'class="meta-card home-quick-card meta-card--stats"'
+  );
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`en/index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+});
+
+test('home hero rejects the legacy hero stats hook', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
+    'en/index.html',
+    'class="meta-card home-quick-card"',
+    'class="meta-card home-quick-card hero-stats"'
+  );
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`en/index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+});
+
+test('home hero rejects a duplicate side-rail hook', (t) => {
+  const rootDir = createRepositoryFixture(t);
+  replaceOnce(
+    rootDir,
     'en/index.html',
     'class="meta-card"',
     'class="meta-card hero-side"'
   );
-  const duplicateRailResult = validateRepository(duplicateRailRoot);
-  assert.ok(duplicateRailResult.issues.includes(`en/index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`en/index.html: ${HOME_HERO_STRUCTURE_ISSUE}`));
 });
 
 test('mobile quick-link layout rejects widened button padding', (t) => {
@@ -965,7 +1000,7 @@ test('home quotation rejects a duplicate quotation', (t) => {
   ));
 });
 
-test('home section sequence rejects reordered roles, missing tones, or a duplicate quote band', (t) => {
+test('home section sequence requires the current section muted tone', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(
     rootDir,
@@ -976,88 +1011,109 @@ test('home section sequence rejects reordered roles, missing tones, or a duplica
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+});
 
-  const reorderedRoot = createRepositoryFixture(t);
+test('home section sequence rejects reordered current and updates roles', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    reorderedRoot,
+    rootDir,
     'index.html',
     'aria-labelledby="home-current-title"',
     'aria-labelledby="home-role-placeholder"'
   );
   replaceOnce(
-    reorderedRoot,
+    rootDir,
     'index.html',
     'aria-labelledby="home-updates-title"',
     'aria-labelledby="home-current-title"'
   );
   replaceOnce(
-    reorderedRoot,
+    rootDir,
     'index.html',
     'aria-labelledby="home-role-placeholder"',
     'aria-labelledby="home-updates-title"'
   );
-  const reorderedResult = validateRepository(reorderedRoot);
-  assert.ok(reorderedResult.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const updatesToneRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+});
+
+test('home section sequence requires the updates section default tone', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    updatesToneRoot,
+    rootDir,
     'index.html',
     '<section aria-labelledby="home-updates-title" class="section-block" data-reveal="">',
     '<section aria-labelledby="home-updates-title" class="section-block section-muted" data-reveal="">'
   );
-  const updatesToneResult = validateRepository(updatesToneRoot);
-  assert.ok(updatesToneResult.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const beyondToneRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+});
+
+test('home section sequence requires the beyond section muted tone', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    beyondToneRoot,
+    rootDir,
     'index.html',
     '<section aria-labelledby="home-beyond-title" class="section-block section-muted" data-reveal="">',
     '<section aria-labelledby="home-beyond-title" class="section-block" data-reveal="">'
   );
-  const beyondToneResult = validateRepository(beyondToneRoot);
-  assert.ok(beyondToneResult.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const missingQuoteToneRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+});
+
+test('home section sequence requires the quote band dark tone', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    missingQuoteToneRoot,
+    rootDir,
     'index.html',
     '<section class="section-block tile-dark quote-band" data-reveal="">',
     '<section class="section-block quote-band" data-reveal="">'
   );
-  const missingQuoteToneResult = validateRepository(missingQuoteToneRoot);
-  assert.ok(missingQuoteToneResult.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const duplicateQuoteRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+});
+
+test('home section sequence rejects a duplicate quote band', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    duplicateQuoteRoot,
+    rootDir,
     'index.html',
     '</main>',
     '<section class="section-block tile-dark quote-band"></section>\n</main>'
   );
-  const duplicateQuoteResult = validateRepository(duplicateQuoteRoot);
-  assert.ok(duplicateQuoteResult.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const nestedQuoteRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+});
+
+test('home section sequence rejects a nested quote band', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    nestedQuoteRoot,
+    rootDir,
     'index.html',
     '<section aria-labelledby="home-beyond-title" class="section-block section-muted" data-reveal="">',
     '<section aria-labelledby="home-beyond-title" class="section-block section-muted" data-reveal=""><section class="section-block tile-dark quote-band"></section>'
   );
-  const nestedQuoteResult = validateRepository(nestedQuoteRoot);
-  assert.ok(nestedQuoteResult.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+  const result = validateRepository(rootDir);
 
-  const leadingContentRoot = createRepositoryFixture(t);
+  assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+});
+
+test('home section sequence rejects leading main content', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    leadingContentRoot,
+    rootDir,
     'index.html',
     '<main class="main-shell" id="main-content">',
     '<main class="main-shell" id="main-content"><div>Unexpected leading content</div>'
   );
-  const leadingContentResult = validateRepository(leadingContentRoot);
-  assert.ok(leadingContentResult.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
 });
 
 test('home section sequence ignores a raw-text aria decoy', (t) => {
@@ -1106,16 +1162,19 @@ test('home section sequence rejects a hidden semantic heading', (t) => {
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+});
 
-  const hiddenSectionRoot = createRepositoryFixture(t);
+test('home section sequence rejects a hidden semantic section', (t) => {
+  const rootDir = createRepositoryFixture(t);
   replaceOnce(
-    hiddenSectionRoot,
+    rootDir,
     'index.html',
     '<section aria-labelledby="home-current-title"',
     '<section hidden="" aria-labelledby="home-current-title"'
   );
-  const hiddenSectionResult = validateRepository(hiddenSectionRoot);
-  assert.ok(hiddenSectionResult.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
+  const result = validateRepository(rootDir);
+
+  assert.ok(result.issues.includes(`index.html: ${HOME_SECTION_SEQUENCE_ISSUE}`));
 });
 
 test('home section sequence requires descendant h2 headings', (t) => {
