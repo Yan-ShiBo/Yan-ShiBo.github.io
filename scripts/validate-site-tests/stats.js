@@ -28,7 +28,7 @@ test('validateRepository reports missing analytics local-counter nodes', (t) => 
   assert.ok(result.issues.includes('analytics.html: stats.js requires #local-total'));
 });
 
-test('validateRepository requires the approved Worker endpoint on all stats pages', (t) => {
+test('validateRepository limits the stats client and approved Worker endpoint to analytics pages', (t) => {
   const mutations = [
     {
       pattern: '<meta name="stats-api-endpoint" content="https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit"/>',
@@ -42,26 +42,62 @@ test('validateRepository requires the approved Worker endpoint on all stats page
 
   for (const mutation of mutations) {
     const rootDir = createRepositoryFixture(t);
-    replaceOnce(rootDir, 'index.html', mutation.pattern, mutation.replacement);
+    replaceOnce(rootDir, 'analytics.html', mutation.pattern, mutation.replacement);
 
     const result = validateRepository(rootDir);
 
-    assert.ok(result.issues.includes(`index.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
+    assert.ok(result.issues.includes(`analytics.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
   }
+
+  const missingClientRoot = createRepositoryFixture(t);
+  replaceOnce(
+    missingClientRoot,
+    'analytics.html',
+    '  <script defer="" src="./assets/js/stats.js"></script>\n',
+    ''
+  );
+  const missingClientResult = validateRepository(missingClientRoot);
+  assert.ok(missingClientResult.issues.includes(
+    'analytics.html: stats.js load scope does not match the stats-enabled pages'
+  ));
+
+  const homeClientRoot = createRepositoryFixture(t);
+  replaceOnce(
+    homeClientRoot,
+    'index.html',
+    '  <script defer="" src="./assets/js/site.js"></script>',
+    '  <script defer="" src="./assets/js/site.js"></script>\n' +
+      '  <script defer="" src="./assets/js/stats.js"></script>'
+  );
+  const homeClientResult = validateRepository(homeClientRoot);
+  assert.ok(homeClientResult.issues.includes(
+    'index.html: stats.js load scope does not match the stats-enabled pages'
+  ));
+
+  const homeEndpointRoot = createRepositoryFixture(t);
+  replaceOnce(
+    homeEndpointRoot,
+    'index.html',
+    '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>',
+    '  <meta name="stats-api-endpoint" content="https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit"/>\n' +
+      '  <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>'
+  );
+  const homeEndpointResult = validateRepository(homeEndpointRoot);
+  assert.ok(homeEndpointResult.issues.includes(`index.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
 });
 
 test('validateRepository requires the stats Worker preconnect inside head', (t) => {
   const rootDir = createRepositoryFixture(t);
   const preconnect = '  <link href="https://yan-shibo-site-stats.yan-shibo.workers.dev" rel="preconnect"/>\n';
-  replaceOnce(rootDir, 'index.html', preconnect, '');
-  replaceOnce(rootDir, 'index.html', '</body>', `${preconnect}</body>`);
+  replaceOnce(rootDir, 'analytics.html', preconnect, '');
+  replaceOnce(rootDir, 'analytics.html', '</body>', `${preconnect}</body>`);
 
   const result = validateRepository(rootDir);
 
-  assert.ok(result.issues.includes(`index.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
+  assert.ok(result.issues.includes(`analytics.html: ${STATS_ENDPOINT_MARKUP_ISSUE}`));
 });
 
-test('validateRepository limits the stats Worker preconnect to the four stats pages', (t) => {
+test('validateRepository limits the stats Worker preconnect to the two analytics pages', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(
     rootDir,
@@ -74,7 +110,7 @@ test('validateRepository limits the stats Worker preconnect to the four stats pa
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(
-    'projects.html: stats-service preconnect https://yan-shibo-site-stats.yan-shibo.workers.dev is limited to the four stats-enabled pages'
+    'projects.html: stats-service preconnect https://yan-shibo-site-stats.yan-shibo.workers.dev is limited to the stats-enabled pages'
   ));
 });
 
@@ -116,11 +152,11 @@ test('validateRepository accepts accessible public stats status regions', (t) =>
 
 test('validateRepository rejects an inaccessible public stats status region', (t) => {
   const rootDir = createRepositoryFixture(t);
-  replaceOnce(rootDir, 'index.html', ' aria-live="polite"', '');
+  replaceOnce(rootDir, 'analytics.html', ' aria-live="polite"', '');
 
   const result = validateRepository(rootDir);
 
-  assert.ok(result.issues.includes(`index.html: ${STATS_STATUS_MARKUP_ISSUE}`));
+  assert.ok(result.issues.includes(`analytics.html: ${STATS_STATUS_MARKUP_ISSUE}`));
 });
 
 test('validateRepository accepts the bounded Worker request state machine', (t) => {

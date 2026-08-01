@@ -38,7 +38,7 @@ docs/maintenance.md    当前偏差、修复队列、事故根因与防回归
 英文：en/ 下对应七页
 共享样式：assets/css/site.css
 共享交互：assets/js/site.js
-统计脚本：assets/js/stats.js（仅四页）
+统计脚本：assets/js/stats.js（仅中英文统计页）
 统计后端：worker/src/index.mjs + worker/wrangler.toml
 D1 迁移：worker/migrations/
 生成器：scripts/generate-sitemap.js

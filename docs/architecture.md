@@ -43,7 +43,7 @@ flowchart LR
     Maintainer["维护者"] --> Repo["GitHub 仓库 main"]
     Repo --> Pages
     Pages --> Assets["本地 CSS / JS / 图片 / 字体 / 下载材料"]
-    Pages -. "四个统计页面" .-> StatsAPI["Cloudflare Worker 统计 API"]
+    Pages -. "中英文统计页" .-> StatsAPI["Cloudflare Worker 统计 API"]
     StatsAPI --> D1["Cloudflare D1"]
     Maintainer --> Tools["生成器与只读验证器"]
     Tools --> Repo
@@ -55,7 +55,7 @@ flowchart LR
 
 | 页面组 | 中文文件 | 英文文件 | 主要职责 | 可索引 |
 | --- | --- | --- | --- | --- |
-| 首页 | `index.html` | `en/index.html` | 站点概览、研究入口、统计摘要 | 是 |
+| 首页 | `index.html` | `en/index.html` | 研究身份、当前问题、近期状态与个人侧面 | 是 |
 | 档案 | `profile.html` | `en/profile.html` | 时间线、经历、证明材料 | 是 |
 | 研究 | `research.html` | `en/research.html` | 研究背景、核心问题、研究意义与关注方向 | 是 |
 | 项目 | `projects.html` | `en/projects.html` | 持续扩展的研究、工具与工程项目目录 | 是 |
@@ -75,13 +75,13 @@ flowchart TB
         HTML["14 个独立 HTML"]
         CSS["assets/css/site.css"]
         SiteJS["assets/js/site.js"]
-        StatsJS["assets/js/stats.js（仅 4 页）"]
+        StatsJS["assets/js/stats.js（仅 2 个统计页）"]
         Storage["localStorage"]
     end
 
     HTML --> CSS
     HTML --> SiteJS
-    HTML -. "中英文首页与统计页" .-> StatsJS
+    HTML -. "中英文统计页" .-> StatsJS
     SiteJS <--> Storage
     StatsJS <--> Storage
     StatsJS --> Worker["Cloudflare Worker"]
@@ -147,14 +147,12 @@ stateDiagram-v2
 
 ## 6. 访问统计
 
-`assets/js/stats.js` 只在四个页面加载：
+`assets/js/stats.js` 只在两个统计页面加载：
 
-- 中文首页；
-- 英文首页；
 - 中文统计页；
 - 英文统计页。
 
-因此本地累计访问只表示当前浏览器在这四个页面上的累计，不是 14 个页面的全站总访问量。其他页面既不加载统计脚本，也不应保留统计服务的专用依赖提示。
+因此本地累计访问只表示当前浏览器在这两个统计页上的累计，不是 14 个页面的全站总访问量。其他页面既不加载统计脚本，也不应保留统计服务的专用依赖提示。
 
 本地记录的规范键为 `ysb-visit-total`、`ysb-visit-first`、`ysb-visit-last` 和 `ysb-visit-days`。为兼容旧版内联统计脚本，`stats.js` 在更新本次访问前按字段检查以下历史键：
 
@@ -187,11 +185,11 @@ sequenceDiagram
     Stats-->>Page: 完整填充或统一降级为 --
 ```
 
-四页在 `<head>` 中通过唯一的 `stats-api-endpoint` meta 指向 `https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit`，并且只有这四页可以预连接该 Worker 源。客户端在 `window.load` 后发起一次 JSON `POST /v1/visit`，请求体只有当前 `pathname`；Worker 只接受 `/`、`/index.html`、`/en/`、`/en/index.html`、`/analytics.html` 与 `/en/analytics.html`，并把首页别名归一化到 `/` 或 `/en/`。`GET /v1/stats?path=...` 提供不递增的公开读取，`GET /health` 检查固定配置、D1 连接、精确表结构和站点总计种子。所有响应使用 `no-store`；浏览器跨域只允许 `https://yan-shibo.github.io`、`http://127.0.0.1:8000` 与 `http://localhost:8000` 这一完整且不可扩展的来源集合。
+两个统计页在 `<head>` 中通过唯一的 `stats-api-endpoint` meta 指向 `https://yan-shibo-site-stats.yan-shibo.workers.dev/v1/visit`，并且只有这两个页面可以预连接该 Worker 源。客户端在 `window.load` 后发起一次 JSON `POST /v1/visit`，请求体只有当前 `pathname`；Worker 为兼容既有聚合记录，仍接受 `/`、`/index.html`、`/en/`、`/en/index.html`、`/analytics.html` 与 `/en/analytics.html`，并把首页别名归一化到 `/` 或 `/en/`，但当前首页不加载客户端、不再产生新统计请求。`GET /v1/stats?path=...` 提供不递增的公开读取，`GET /health` 检查固定配置、D1 连接、精确表结构和站点总计种子。所有响应使用 `no-store`；浏览器跨域只允许 `https://yan-shibo.github.io`、`http://127.0.0.1:8000` 与 `http://localhost:8000` 这一完整且不可扩展的来源集合。
 
 成功响应必须同时包含 `siteViews`、`monthUniqueDevices`、`pageViews`、`period` 和 `trackingSince`。三个计数必须是非负 ASCII 十进制字符串，`period` 必须是合法 `YYYY-MM`，`trackingSince` 必须精确等于 `2026-07-22`；任一字段或整次请求无效时，三项公开值统一显示 `--`，状态进入 `warn`，不展示部分或陈旧结果。客户端使用 5 秒中止期限；缺少 endpoint、`fetch` 或 `AbortController` 时立即按同一规则降级。`loading`、`ok` 与 `warn` 都写入同一个具备 `role="status"`、`aria-live="polite"`、`aria-atomic="true"` 的 `#stats-status`。本地首次/最近日期走独立文本路径，Worker 或网络失败不能阻断本地计数与页面主体。
 
-公开统计从部署日 `2026-07-22` 由零开始，不导入旧计数。`siteViews` 是四个统计页面自该日起的成功记录次数；`pageViews` 是规范化后当前页面的成功记录次数；“本月独立设备（估算）”不是独立访客或真人数量，而是按 `Asia/Shanghai` 自然月对换行分隔的 `period + "\n" + IP + "\n" + User-Agent` 计算 `HMAC-SHA-256` 后去重的设备/浏览器近似值。IP 与 User-Agent 只在 Worker 请求内用于生成摘要，不写入 D1；`monthly_devices` 最终只保留月份和 64 位十六进制 HMAC 摘要，不保留首次出现时间。跨月后的首个有效访问只删除早于当前月份的摘要；迟到的旧月份请求不能删除或替换已存在的新月份摘要。D1 另外只保存站点总次数和按规范路径聚合的页面次数。
+公开统计从部署日 `2026-07-22` 由零开始，不导入旧计数。`siteViews` 是统计客户端成功请求的累计次数；它保留首页曾加载客户端时产生的历史记录，但当前新增流量只来自两个统计页。`pageViews` 是规范化后当前页面的成功记录次数；“本月独立设备（估算）”不是独立访客或真人数量，而是按 `Asia/Shanghai` 自然月对换行分隔的 `period + "\n" + IP + "\n" + User-Agent` 计算 `HMAC-SHA-256` 后去重的设备/浏览器近似值。IP 与 User-Agent 只在 Worker 请求内用于生成摘要，不写入 D1；`monthly_devices` 最终只保留月份和 64 位十六进制 HMAC 摘要，不保留首次出现时间。跨月后的首个有效访问只删除早于当前月份的摘要；迟到的旧月份请求不能删除或替换已存在的新月份摘要。D1 另外只保存站点总次数和按规范路径聚合的页面次数。
 
 摘要密钥只作为 Worker secret 存在，不进入仓库或响应；月中轮换会让同一设备在新旧密钥下形成不同摘要，因此只在安全事件或有明确维护计划时轮换。CORS 是浏览器访问边界，不是身份认证或防刷机制；伪造请求、共享出口 IP、UA 变化、隐私代理与多设备都会让估算偏离真人数量。部署、迁移、归零、密钥和故障操作只在[运维指南](operations.md)维护。
 
@@ -341,7 +339,7 @@ flowchart LR
     Validate --> WorkerDeploy["Wrangler 部署"]
     WorkerDeploy --> Worker["Cloudflare Worker"]
     Worker --> D1["Cloudflare D1"]
-    Browser -. "四个统计页面" .-> Worker
+    Browser -. "中英文统计页" .-> Worker
 ```
 
 静态站点没有独立构建产物；提交的文件就是 GitHub Pages 发布输入。统计后端是单独部署的 Worker，D1 迁移先于依赖新表结构的 Worker，Worker 健康后才发布引用它的静态页面。文档改名不要求重建 sitemap，只有可索引 HTML 路由或 mtime 需要发布时才运行生成器。发布、缓存和回滚步骤由[运维指南](operations.md)维护。
@@ -362,7 +360,7 @@ flowchart LR
 | 渲染模型 | 原生静态 HTML | 无构建依赖，Pages 可直接发布 |
 | 双语模型 | 两套独立 HTML | 文案与 SEO 可独立控制 |
 | 样式与交互 | 全站共享 CSS/JS | 降低重复并保持体验一致 |
-| 统计系统 | 四页自管 Worker + D1，部署日重新计数 | 明确口径、隐私和故障边界 |
+| 统计系统 | 两个统计页使用自管 Worker + D1，部署日重新计数 | 明确口径、隐私和故障边界 |
 | 字体与图标 | 本地资源优先 | 避免核心视觉依赖外部 CDN |
 | 证明图 | 缩略图链接原图 | 兼顾加载性能与可核查性 |
 | 页面验证 | 零依赖 Node.js 脚本 | 与无构建站点保持一致 |
@@ -372,7 +370,7 @@ flowchart LR
 
 1. 页面库存始终是 14 个 HTML；可索引库存始终是其中 12 个。
 2. 404 保持 `noindex`、无 canonical/hreflang/JSON-LD 且不进 sitemap。
-3. `site.css` 和 `site.js` 为全站共享入口，`stats.js` 只加载于指定四页。
+3. `site.css` 和 `site.js` 为全站共享入口，`stats.js` 只加载于中英文统计页。
 4. 品牌标识始终指向 PNG 资源，不回退为字体字形。
 5. 833/834px 两侧及两者之间的小数 CSS 视口中，导航状态、键盘焦点和 Escape 行为保持可用；移动谓词失配后不得残留移动菜单状态。
 6. 中英文 URL、导航、SEO 和资源引用修改时成对核对，但不虚构现有 DOM 完全对称。

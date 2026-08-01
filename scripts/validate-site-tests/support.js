@@ -134,7 +134,7 @@ const PROOF_RAIL_CSS_ISSUE =
 const PROOF_RAIL_DRAG_ISSUE =
   'assets/js/site.js: proof rails must support mouse drag scrolling without opening evidence after a drag';
 const HOME_HERO_MOBILE_CSS_ISSUE =
-  'assets/css/site.css: mobile home hero cards must use the unified full-width dossier rail and integrated inner groups';
+  'assets/css/site.css: mobile home hero cards must use the unified full-width dossier rail with wrappable summaries and quick links';
 const PROJECT_GRID_CSS_ISSUE =
   'assets/css/site.css: project grids must use stable auto-fit columns while one- and two-card groups fill available width';
 const HOME_QUOTE_CSS_ISSUE =
@@ -143,10 +143,10 @@ const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
   'index.html: home quotation must include exactly one quote-text and no duplicate poem-note';
-const HOME_STATS_CARD_MARKUP_ISSUE =
-  'home hero must include one semantic side surface containing one hero-side and one meta-card--stats card wrapping the hero stats grid';
-const HOME_OVERVIEW_HEADING_ISSUE =
-  'home overview must use one section-block section-muted with a visually hidden h2 referenced by aria-labelledby, followed by one tile-dark quote-band';
+const HOME_HERO_STRUCTURE_ISSUE =
+  'home hero must include one semantic side surface containing one ordered four-card hero-side rail whose direct home-quick-card wraps ordered research, projects, profile, and GitHub links, without legacy hero stats';
+const HOME_SECTION_SEQUENCE_ISSUE =
+  'home sections after the hero must be muted current, plain updates, muted beyond, and one tile-dark quote band with alternating tones and visible referenced h2 headings';
 const ENGLISH_TERMINOLOGY_ISSUE =
   'en/index.html: English copy uses legacy terminology; replace "graduation design" with "undergraduate capstone project"';
 const MODAL_INERT_RESTORE_ISSUE =
@@ -595,8 +595,8 @@ module.exports = {
   HOME_QUOTE_CSS_ISSUE,
   NOT_FOUND_LOCALIZATION_ISSUE,
   HOME_QUOTE_INVENTORY_ISSUE,
-  HOME_STATS_CARD_MARKUP_ISSUE,
-  HOME_OVERVIEW_HEADING_ISSUE,
+  HOME_HERO_STRUCTURE_ISSUE,
+  HOME_SECTION_SEQUENCE_ISSUE,
   ENGLISH_TERMINOLOGY_ISSUE,
   MODAL_INERT_RESTORE_ISSUE,
   STATS_INTEGER_CONTRACT_ISSUE,

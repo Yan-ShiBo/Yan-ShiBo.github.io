@@ -1915,15 +1915,6 @@ html.reveal-ready [data-reveal].is-visible{opacity:1;transform:none}
 .media-card figcaption{padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px}
 .media-card figcaption strong{font-size:17px;font-weight:600;line-height:1.24}
 
-.hero-stats{margin-top:10px}
-.hero-stats + .status-note{margin-top:10px;margin-bottom:0}
-.compact-stat{min-height:unset;padding:12px 14px}
-.compact-stat .stat-value{font-size:28px;line-height:1.1;margin-top:4px}
-.compact-stat .stat-label::before{
-  width:20px;
-  height:20px;
-  font-size:10px;
-}
 .small-value{font-size:17px !important;line-height:1.47;word-break:break-word}
 .figure-card{overflow:hidden}
 .figure-card img{display:block;width:100%;border-radius:var(--radius-sm);border:1px solid var(--hairline);background:var(--canvas-parchment)}
@@ -2331,16 +2322,38 @@ body.lightbox-open{overflow:hidden}
 }
 
 .home-hero .lead{max-width:800px}
-.hero-side .stats-grid.hero-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.hero-side .compact-stat{display:flex;min-height:auto;flex-direction:column}
-.hero-side .compact-stat .stat-value{margin-top:auto}
+.hero-context{
+  max-width:760px;
+  margin:0;
+  color:var(--ink-muted-48);
+  font-size:17px;
+  line-height:1.47;
+}
 .hero-side .profile-body h2{font-size:24px;margin-bottom:4px}
 .hero-side .profile-body p{font-size:14px}
 .hero-side .inline-list{margin-top:8px;gap:6px}
 .hero-side .inline-list .tag{min-height:32px;padding:0 10px;font-size:13px;gap:5px}
 .hero-side .meta-card{padding:16px}
 .hero-side .meta-card h3{font-size:17px;margin-bottom:8px}
+.hero-side .meta-card > p{margin:0}
 .hero-side .surface-inner{gap:12px}
+
+.home-quick-links{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.home-quick-links .button{
+  min-width:0;
+  padding-left:10px;
+  padding-right:10px;
+  white-space:normal;
+  text-wrap:wrap;
+}
+
+.section-block > .home-updates-panel{max-width:var(--text-width)}
+.home-update-list li span{min-width:0;overflow-wrap:anywhere}
 
 .section-title-wrap h2{
   max-width:780px;
@@ -2571,89 +2584,18 @@ body.lightbox-open{overflow:hidden}
     justify-content:center;
     padding:18px;
   }
-  .hero-side .meta-card--stats{padding:18px 8px}
   .hero-side .meta-card h3{
     margin-bottom:12px;
     font-size:18px;
   }
-  .hero-side .meta-card .chip-list{
+  .hero-side .meta-card > p{min-width:0;overflow-wrap:anywhere}
+  .hero-side .home-quick-links .button{min-height:44px;font-size:13px}
+  .home-update-list li{
     display:grid;
-    grid-template-columns:repeat(2, minmax(0, 1fr));
-    gap:0;
-    overflow:hidden;
-    border:1px solid var(--hairline);
-    border-radius:10px;
-    background:var(--surface-pearl);
+    grid-template-columns:minmax(0,1fr);
+    gap:4px;
   }
-  .hero-side .meta-card .chip-list .tag{
-    width:100%;
-    min-width:0;
-    min-height:36px;
-    padding:4px 8px;
-    border:0;
-    border-radius:0;
-    background:transparent;
-    font-size:12px;
-    line-height:1.15;
-    justify-content:flex-start;
-    white-space:normal;
-    text-wrap:wrap;
-    overflow-wrap:anywhere;
-  }
-  .hero-side .meta-card .chip-list .tag:nth-child(even){border-left:1px solid var(--hairline)}
-  .hero-side .meta-card .chip-list .tag:nth-child(n+3){border-top:1px solid var(--hairline)}
-  .hero-side .stats-grid.hero-stats{
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:0;
-    overflow:hidden;
-    border:1px solid var(--hairline);
-    border-radius:10px;
-    background:var(--surface-pearl);
-  }
-  .hero-side .compact-stat{
-    min-width:0;
-    min-height:76px;
-    overflow:hidden;
-    padding:10px 2px;
-    border:0;
-    border-radius:0;
-    background:transparent;
-    box-shadow:none;
-  }
-  .hero-side .compact-stat + .compact-stat{border-left:1px solid var(--hairline)}
-  .hero-side .compact-stat .stat-label{
-    min-width:0;
-    min-height:24px;
-    justify-content:center;
-    gap:0;
-    overflow:visible;
-    font-size:10px;
-    line-height:1.15;
-    text-align:center;
-    white-space:normal;
-  }
-  .hero-side .compact-stat .stat-label::before{display:none}
-  .hero-side .compact-stat .stat-value{
-    max-width:100%;
-    margin:6px 0 0;
-    overflow:hidden;
-    text-overflow:clip;
-    font-size:clamp(14px, 4.25vw, 20px);
-    line-height:1.05;
-    letter-spacing:-.02em;
-    white-space:nowrap;
-    text-align:center;
-  }
-  .hero-stats + .status-note{
-    width:100%;
-    box-sizing:border-box;
-    margin-top:12px;
-    padding:8px 10px;
-    border:0;
-    border-radius:8px;
-    font-size:12px;
-    text-align:center;
-  }
+  .home-update-list li strong{min-width:0}
 }
 
 /* Profile and resume editorial surfaces */

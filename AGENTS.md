@@ -37,7 +37,7 @@ Do not copy a contract into multiple documents. Update its single source and lin
 - The site contains 14 HTML files: 7 Chinese and 7 English.
 - Twelve ordinary pages are indexable; two 404 pages are explicit SEO exceptions.
 - Shared behavior belongs in `assets/css/site.css` and `assets/js/site.js`.
-- `assets/js/stats.js` is limited to the Chinese/English home and analytics pages.
+- `assets/js/stats.js` is limited to the Chinese and English analytics pages.
 - The brand mark is `assets/icons/brand-mark.png`, not a Font Awesome terminal glyph.
 - Mobile navigation applies through 833px; desktop navigation starts at 834px.
 - Bilingual pages must preserve equivalent purpose, navigation, resources, and SEO mapping, but existing DOM structures are not assumed to be identical.

@@ -28,7 +28,7 @@
 - 原生 HTML5；
 - 单一全站样式 `assets/css/site.css`；
 - 全站交互 `assets/js/site.js`；
-- 四个统计页面使用 `assets/js/stats.js`；
+- 中英文统计页使用 `assets/js/stats.js`；
 - 本地字体、Font Awesome、品牌图和 favicon；
 - GitHub Pages 静态部署，以及 Cloudflare Worker + D1 访问统计后端；
 - Node.js 24+ 下运行的零外部依赖 sitemap 生成器、站点验证器和单元测试。
@@ -72,7 +72,7 @@ http://127.0.0.1:8000/en/
 ├── assets/
 │   ├── css/site.css            # 全站视觉与响应式
 │   ├── js/site.js              # 主题、抽屉、Lightbox
-│   ├── js/stats.js             # 四页访问统计
+│   ├── js/stats.js             # 中英文统计页访问统计
 │   ├── fonts/                  # 本地 Inter 字体
 │   ├── icons/                  # 品牌图与 favicon
 │   ├── images/                 # 项目与证明图
@@ -118,7 +118,7 @@ http://127.0.0.1:8000/en/
 ## 维护约束
 
 - 14 个 HTML 的共享导航和语言映射需要整体考虑。
-- `stats.js` 只加载于中英文首页和统计页。
+- `stats.js` 只加载于中英文统计页。
 - 品牌标识使用 `assets/icons/brand-mark.png`，不是字体 terminal。
 - 移动导航适用于 `<=833px`，桌面导航从 `834px` 开始。
 - 页面库存变化时同步 sitemap 生成器、验证器、测试和架构文档。

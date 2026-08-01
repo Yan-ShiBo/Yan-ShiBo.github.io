@@ -105,9 +105,7 @@ const HTML_FILES = [
 ];
 
 const STATS_PAGES = new Set([
-  'index.html',
   'analytics.html',
-  'en/index.html',
   'en/analytics.html'
 ]);
 
@@ -192,7 +190,7 @@ const PROOF_RAIL_CSS_ISSUE =
 const PROOF_RAIL_DRAG_ISSUE =
   'proof rails must support mouse drag scrolling without opening evidence after a drag';
 const HOME_HERO_MOBILE_CSS_ISSUE =
-  'mobile home hero cards must use the unified full-width dossier rail and integrated inner groups';
+  'mobile home hero cards must use the unified full-width dossier rail with wrappable summaries and quick links';
 const PROJECT_GRID_CSS_ISSUE =
   'project grids must use stable auto-fit columns while one- and two-card groups fill available width';
 const HOME_QUOTE_CSS_ISSUE =
@@ -201,10 +199,10 @@ const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
   'home quotation must include exactly one quote-text and no duplicate poem-note';
-const HOME_STATS_CARD_MARKUP_ISSUE =
-  'home hero must include one semantic side surface containing one hero-side and one meta-card--stats card wrapping the hero stats grid';
-const HOME_OVERVIEW_HEADING_ISSUE =
-  'home overview must use one section-block section-muted with a visually hidden h2 referenced by aria-labelledby, followed by one tile-dark quote-band';
+const HOME_HERO_STRUCTURE_ISSUE =
+  'home hero must include one semantic side surface containing one ordered four-card hero-side rail whose direct home-quick-card wraps ordered research, projects, profile, and GitHub links, without legacy hero stats';
+const HOME_SECTION_SEQUENCE_ISSUE =
+  'home sections after the hero must be muted current, plain updates, muted beyond, and one tile-dark quote band with alternating tones and visible referenced h2 headings';
 const ENGLISH_COPY_FILES = [
   'en/index.html',
   'en/profile.html',
@@ -665,7 +663,7 @@ function validateDocumentStructure(
 
   const loadsStats = scriptResources.includes('assets/js/stats.js');
   if (loadsStats !== STATS_PAGES.has(file)) {
-    addIssue(issues, file, 'stats.js load scope does not match the four stats-enabled pages');
+    addIssue(issues, file, 'stats.js load scope does not match the stats-enabled pages');
   }
   const statsEndpointMetas = extractHeadTags(html, 'meta').filter((tag) => (
     String(tag.attributes.name || '').toLowerCase() === 'stats-api-endpoint'
@@ -695,7 +693,7 @@ function validateDocumentStructure(
       addIssue(
         issues,
         file,
-        `stats-service preconnect ${origin} is limited to the four stats-enabled pages`
+        `stats-service preconnect ${origin} is limited to the stats-enabled pages`
       );
     }
   }
@@ -1417,14 +1415,45 @@ function validateHomeStructure(rootDir, issues) {
         ))
       : [];
     const heroSide = heroSides.length === 1 ? heroSides[0] : null;
-    const statsCards = elements.filter((element) => (
-      element.name === 'div' &&
-      hasClass(element.attributes, 'meta-card') &&
-      hasClass(element.attributes, 'meta-card--stats')
+    const heroSideChildren = heroSide
+      ? elements.filter((element) => element.parent === heroSide)
+      : [];
+    const profileCards = heroSideChildren.filter((element) => (
+      hasClass(element.attributes, 'profile-card')
     ));
-    const statsGrids = elements.filter((element) => (
-      element.name === 'div' &&
-      hasClass(element.attributes, 'stats-grid') &&
+    const metaCards = heroSideChildren.filter((element) => (
+      hasClass(element.attributes, 'meta-card')
+    ));
+    const quickCards = elements.filter((element) => (
+      hasClass(element.attributes, 'home-quick-card')
+    ));
+    const quickCard = quickCards.length === 1 ? quickCards[0] : null;
+    const quickLinks = elements.filter((element) => (
+      hasClass(element.attributes, 'home-quick-links')
+    ));
+    const quickLinksElement = quickLinks.length === 1 ? quickLinks[0] : null;
+    const quickLinkEntries = quickLinksElement
+      ? elements.filter((element) => element.parent === quickLinksElement)
+      : [];
+    const expectedQuickLinkHrefs = [
+      'research.html',
+      'projects.html',
+      'profile.html',
+      'https://github.com/Yan-ShiBo'
+    ];
+    const hasExpectedQuickLinks = quickLinkEntries.length === expectedQuickLinkHrefs.length &&
+      quickLinkEntries.every((element, index) => (
+        element.name === 'a' && element.attributes.href === expectedQuickLinkHrefs[index]
+      ));
+    const hasOrderedHeroCards = heroSideChildren.length === 4 &&
+      heroSideChildren[0] === profileCards[0] &&
+      heroSideChildren[1] === metaCards[0] &&
+      heroSideChildren[2] === metaCards[1] &&
+      heroSideChildren[3] === quickCard &&
+      !hasClass(heroSideChildren[1].attributes, 'home-quick-card') &&
+      !hasClass(heroSideChildren[2].attributes, 'home-quick-card');
+    const hasLegacyHeroStats = elements.some((element) => (
+      hasClass(element.attributes, 'meta-card--stats') ||
       hasClass(element.attributes, 'hero-stats')
     ));
     if (
@@ -1433,49 +1462,87 @@ function validateHomeStructure(rootDir, issues) {
       !heroSideSurface ||
       !heroSide ||
       heroSide.parent !== heroSideSurface ||
-      statsCards.length !== 1 ||
-      statsCards[0].parent !== heroSide ||
-      statsGrids.length !== 1 ||
-      statsGrids[0].parent !== statsCards[0]
+      heroSideChildren.length !== 4 ||
+      profileCards.length !== 1 ||
+      metaCards.length !== 3 ||
+      !hasOrderedHeroCards ||
+      !quickCard ||
+      quickCard.name !== 'div' ||
+      !hasClass(quickCard.attributes, 'meta-card') ||
+      quickCard.parent !== heroSide ||
+      !quickLinksElement ||
+      quickLinksElement.name !== 'div' ||
+      quickLinksElement.parent !== quickCard ||
+      !hasExpectedQuickLinks ||
+      hasLegacyHeroStats
     ) {
-      addIssue(issues, file, HOME_STATS_CARD_MARKUP_ISSUE);
+      addIssue(issues, file, HOME_HERO_STRUCTURE_ISSUE);
     }
 
-    const overviewSections = elements.filter((element) => (
+    const sectionContracts = [
+      { headingId: 'home-current-title', muted: true },
+      { headingId: 'home-updates-title', muted: false },
+      { headingId: 'home-beyond-title', muted: true }
+    ];
+    const orderedSections = [];
+    let hasValidSectionHeadings = true;
+    for (const contract of sectionContracts) {
+      const matchingSections = mainChildren.filter((element) => (
+        element.name === 'section' &&
+        hasClass(element.attributes, 'section-block') &&
+        !hasClass(element.attributes, 'tile-dark') &&
+        hasClass(element.attributes, 'section-muted') === contract.muted &&
+        element.attributes['aria-labelledby'] === contract.headingId
+      ));
+      const section = matchingSections.length === 1 ? matchingSections[0] : null;
+      orderedSections.push(section);
+
+      const headings = elements.filter((element) => (
+        element.attributes.id === contract.headingId
+      ));
+      const heading = headings.length === 1 ? headings[0] : null;
+      let headingIsHidden = false;
+      for (let current = heading; current; current = current.parent) {
+        if (
+          Object.hasOwn(current.attributes, 'hidden') ||
+          String(current.attributes['aria-hidden'] || '').toLowerCase() === 'true' ||
+          hasClass(current.attributes, 'visually-hidden')
+        ) {
+          headingIsHidden = true;
+          break;
+        }
+        if (current === section) break;
+      }
+      if (
+        !section ||
+        !heading ||
+        heading.name !== 'h2' ||
+        !hasHtmlAncestor(heading, section) ||
+        headingIsHidden
+      ) {
+        hasValidSectionHeadings = false;
+      }
+    }
+    const quoteSections = elements.filter((element) => (
       element.name === 'section' &&
       hasClass(element.attributes, 'section-block') &&
-      hasClass(element.attributes, 'section-muted') &&
-      !hasClass(element.attributes, 'tile-dark') &&
-      element.attributes['aria-labelledby'] === 'home-overview-title'
-    ));
-    const overviewSection = overviewSections.length === 1 ? overviewSections[0] : null;
-    const quoteSections = mainChildren.filter((element) => (
-      element.name === 'section' &&
       hasClass(element.attributes, 'quote-band') &&
       hasClass(element.attributes, 'tile-dark')
     ));
-    const overviewHeadings = elements.filter((element) => (
-      element.attributes.id === 'home-overview-title'
-    ));
-    const hasValidOverviewHeading = overviewHeadings.length === 1 &&
-      overviewHeadings[0].name === 'h2' &&
-      hasClass(overviewHeadings[0].attributes, 'visually-hidden') &&
-      overviewHeadings[0].parent === overviewSection;
     const heroIndex = mainChildren.indexOf(heroSection);
-    const overviewIndex = mainChildren.indexOf(overviewSection);
-    const quoteIndex = quoteSections.length === 1
-      ? mainChildren.indexOf(quoteSections[0])
-      : -1;
-    const hasExpectedOverviewPosition = heroIndex >= 0 &&
-      overviewIndex === heroIndex + 1 &&
-      quoteIndex === overviewIndex + 1;
+    const expectedTail = [...orderedSections, quoteSections.length === 1 ? quoteSections[0] : null];
+    const hasExpectedSectionSequence = heroIndex === 0 &&
+      mainChildren.length === heroIndex + 1 + expectedTail.length &&
+      expectedTail.every((element, index) => (
+        element && mainChildren[heroIndex + 1 + index] === element
+      ));
     if (
       !mainElement ||
-      overviewSections.length !== 1 ||
-      !hasValidOverviewHeading ||
-      !hasExpectedOverviewPosition
+      quoteSections.length !== 1 ||
+      !hasValidSectionHeadings ||
+      !hasExpectedSectionSequence
     ) {
-      addIssue(issues, file, HOME_OVERVIEW_HEADING_ISSUE);
+      addIssue(issues, file, HOME_SECTION_SEQUENCE_ISSUE);
     }
   }
 }
@@ -5203,6 +5270,39 @@ function hasPolishedMobileHomeHeroCss(rootDir) {
     .join('\n');
   if (!executableMobileCss) return false;
 
+  const baseRuleEntries = collectCssRuleEntries(executableCss);
+  const baseContracts = [
+    [
+      '.home-quick-links',
+      [
+        ['display', 'grid'],
+        ['grid-template-columns', 'repeat(2,minmax(0,1fr))'],
+        ['gap', '8px']
+      ]
+    ],
+    [
+      '.home-quick-links .button',
+      [
+        ['min-width', '0'],
+        ['padding-left', '10px'],
+        ['padding-right', '10px'],
+        ['white-space', 'normal'],
+        ['text-wrap', 'wrap']
+      ]
+    ]
+  ];
+  const hasCompleteBaseRules = baseContracts.every(([selector, declarations]) => {
+    const normalizedSelector = normalizeCssSelector(selector);
+    const matchingRules = baseRuleEntries.filter((rule) => (
+      rule.depth === 0 && rule.selectors.includes(normalizedSelector)
+    ));
+    return matchingRules.length === 1 && declarations.every(([property, expectedValue]) => {
+      const declaration = effectiveCssPropertyInBody(matchingRules[0].body, property);
+      return declaration && declaration.value === expectedValue;
+    });
+  });
+  if (!hasCompleteBaseRules) return false;
+
   const ruleEntries = collectCssRuleEntries(executableMobileCss);
   const contracts = [
     [
@@ -5271,69 +5371,12 @@ function hasPolishedMobileHomeHeroCss(rootDir) {
       ]
     ],
     [
-      '.hero-side .meta-card .chip-list',
-      [
-        ['display', 'grid'],
-        ['gap', '0'],
-        ['overflow', 'hidden'],
-        ['border', '1px solid var(--hairline)'],
-        ['background', 'var(--surface-pearl)']
-      ]
+      '.hero-side .meta-card > p',
+      [['min-width', '0'], ['overflow-wrap', 'anywhere']]
     ],
     [
-      '.hero-side .meta-card .chip-list .tag',
-      [
-        ['min-height', '36px'],
-        ['border', '0'],
-        ['background', 'transparent'],
-        ['white-space', 'normal'],
-        ['overflow-wrap', 'anywhere']
-      ]
-    ],
-    [
-      '.hero-side .stats-grid.hero-stats',
-      [
-        ['gap', '0'],
-        ['overflow', 'hidden'],
-        ['border', '1px solid var(--hairline)'],
-        ['background', 'var(--surface-pearl)']
-      ]
-    ],
-    ['.hero-side .meta-card--stats', [['padding', '18px 8px']]],
-    [
-      '.hero-side .compact-stat',
-      [
-        ['min-height', '76px'],
-        ['padding', '10px 2px'],
-        ['border', '0'],
-        ['background', 'transparent'],
-        ['box-shadow', 'none']
-      ]
-    ],
-    [
-      '.hero-side .compact-stat .stat-label',
-      [
-        ['min-height', '24px'],
-        ['justify-content', 'center'],
-        ['overflow', 'visible'],
-        ['text-align', 'center'],
-        ['white-space', 'normal']
-      ]
-    ],
-    ['.hero-side .compact-stat .stat-label::before', [['display', 'none']]],
-    [
-      '.hero-side .compact-stat .stat-value',
-      [
-        ['overflow', 'hidden'],
-        ['font-size', 'clamp(14px, 4.25vw, 20px)'],
-        ['letter-spacing', '-.02em'],
-        ['white-space', 'nowrap'],
-        ['text-align', 'center']
-      ]
-    ],
-    [
-      '.hero-stats + .status-note',
-      [['margin-top', '12px'], ['border', '0'], ['font-size', '12px'], ['text-align', 'center']]
+      '.hero-side .home-quick-links .button',
+      [['min-height', '44px'], ['font-size', '13px']]
     ]
   ];
 

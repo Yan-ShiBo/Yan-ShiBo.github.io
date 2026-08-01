@@ -15,7 +15,7 @@ flowchart LR
     Verify --> Wrangler["Wrangler"]
     Wrangler --> Worker["Cloudflare Worker"]
     Worker --> D1["Cloudflare D1"]
-    User -. "四个统计页面" .-> Worker
+    User -. "中英文统计页" .-> Worker
 ```
 
 文档、资源和 Markdown 位于公开仓库时都应视为公开，即使站内导航没有链接。
@@ -75,7 +75,7 @@ npx.cmd --yes wrangler@latest d1 migrations apply DB --local --config worker/wra
 npx.cmd --yes wrangler@latest dev --config worker/wrangler.toml
 ```
 
-本地 Worker 默认不替换四页中已提交的生产 endpoint；可直接请求本地 URL，或在一次性浏览器测试环境中覆盖请求目标，不要为本地预览提交 endpoint 改动。真实 D1 迁移、线上 Worker 与静态页面联调属于发布检查。
+本地 Worker 默认不替换两个统计页中已提交的生产 endpoint；可直接请求本地 URL，或在一次性浏览器测试环境中覆盖请求目标，不要为本地预览提交 endpoint 改动。真实 D1 迁移、线上 Worker 与静态页面联调属于发布检查。
 
 ## 3. Sitemap
 
@@ -125,7 +125,7 @@ node scripts/generate-sitemap.js
 4. 等待 GitHub Pages 完成部署；
 5. 按本节线上清单核验。
 
-新增或修改统计后端、D1 结构或四页 endpoint 时，按以下顺序发布，避免静态页面先连接到尚未就绪的 API：
+新增或修改统计后端、D1 结构或两个统计页的 endpoint 时，按以下顺序发布，避免静态页面先连接到尚未就绪的 API：
 
 1. 首次部署通过 `npx.cmd --yes wrangler@latest secret put VISITOR_HASH_SECRET --config worker/wrangler.toml` 交互式设置随机 secret；后续普通部署不重复设置。
 2. 完成本地 migration、Worker dry-run、自动测试和浏览器检查，明确暂存并创建本地提交，但暂不推送引用新 endpoint 的静态页面。
@@ -157,7 +157,7 @@ npx.cmd --yes wrangler@latest d1 execute DB --remote --config worker/wrangler.to
 - 结构化数据变更没有改变页面可见内容、布局或交互；
 - 缺失中文与 `/en/...` 深层路径均返回真实 HTTP 404 且倒计时前保留原 URL；根 404 的语言、导航、manifest 和 5 秒跳转目标对应，且不进 sitemap；
 - `robots.txt` 与 `sitemap.xml` 可访问；
-- Worker `/health` 返回 200；四个统计页面只向批准 endpoint 发出一次 POST，响应起始日期正确，失败时显示 `--` 而本地记录仍可用；
+- Worker `/health` 返回 200；两个统计页面只向批准 endpoint 发出一次 POST，响应起始日期正确，失败时显示 `--` 而本地记录仍可用；首页不加载统计客户端或发出统计请求；
 - 浏览器控制台没有由本次变更引入的错误；
 - 强制刷新后仍显示新版本。
 
@@ -229,7 +229,7 @@ secret 不做例行月中轮换：同一设备在新旧 secret 下会产生不�
 
 ### 9.5 统计为空
 
-先确认页面 `<head>` 的 endpoint meta 和 Worker preconnect 精确匹配批准地址，再在 Network 检查是否只有一次 `POST /v1/visit`、请求 JSON path 是否正确，以及响应状态和五个字段。`403` 通常表示 Origin 未获批准，`400` 表示请求体或 path 不在四页白名单，`503` 表示 Worker 配置、身份输入或 D1 不可用；先读 `/health` 区分后端健康与单次请求问题。不得为了排障记录 secret、原始 IP 或 User-Agent。
+先确认统计页 `<head>` 的 endpoint meta 和 Worker preconnect 精确匹配批准地址，再在 Network 检查是否只有一次 `POST /v1/visit`、请求 JSON path 是否正确，以及响应状态和五个字段。`403` 通常表示 Origin 未获批准，`400` 表示请求体或 path 不在 Worker 兼容路径白名单，`503` 表示 Worker 配置、身份输入或 D1 不可用；先读 `/health` 区分后端健康与单次请求问题。不得为了排障记录 secret、原始 IP 或 User-Agent。
 
 客户端只接受完整有效响应；任何失败都应让三项公开值显示 `--` 且状态为 `warn`，不能显示部分或异常文本。localStorage 本地记录应继续更新，页面主体也应保持可用。需要只读检查聚合值时使用 `GET /v1/stats?path=/` 并带生产 Origin；需要检查数据结构时用 Wrangler 只读查询，确认月度表最终只有 `period` 与 `device_hash`。CORS 不能防止伪造请求，数值异常增长应作为防刷或流量质量问题单独记录。精确值与隐私合同见[架构文档](architecture.md#6-访问统计)。
 
