@@ -2463,6 +2463,13 @@ body.lightbox-open{overflow:hidden}
   }
 }
 
+@media (min-width:641px){
+  .home-hero h1{
+    font-size:clamp(40px, 3.75vw, 56px);
+    line-height:1.08;
+  }
+}
+
 @media (max-width:833px){
   .page-hero > .section-title-wrap,
   .page-hero > .surface-inner{
@@ -2480,6 +2487,11 @@ body.lightbox-open{overflow:hidden}
     justify-content:flex-start;
   }
   .main-shell > .resume-layout{padding-left:24px;padding-right:24px}
+  .grid-3 .action-row .button.small{
+    max-width:100%;
+    white-space:normal;
+    text-wrap:wrap;
+  }
 }
 
 @media (max-width:640px){
