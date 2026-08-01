@@ -202,7 +202,7 @@ sequenceDiagram
 - `assets/fonts/`：本地 Inter 字体；
 - `assets/icons/`：品牌标识、manifest 安装 PNG 与 HTML favicon；
 - `assets/images/`：项目、档案与证明图；
-- `assets/profile/`：头像；
+- `assets/profile/`：全站共享头像与简历页专用正式照片；
 - `worker/`：统计 Worker 源码、Wrangler 配置、D1 迁移与后端测试；
 - `assets/vendor/`：本地 Font Awesome 样式与字体；
 - `docs/`：项目文档以及明确允许公开的简历、成绩单材料。
