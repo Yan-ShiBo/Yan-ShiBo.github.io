@@ -193,12 +193,16 @@ const PROOF_RAIL_DRAG_ISSUE =
   'proof rails must support mouse drag scrolling without opening evidence after a drag';
 const HOME_HERO_MOBILE_CSS_ISSUE =
   'mobile home hero cards must use the unified full-width dossier rail and integrated inner groups';
+const PROJECT_GRID_CSS_ISSUE =
+  'project grids must use stable auto-fit columns while one- and two-card groups fill available width';
+const HOME_QUOTE_CSS_ISSUE =
+  'home quotation must keep primary quote text brighter than its source';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
   'home quotation must include exactly one quote-text and no duplicate poem-note';
 const HOME_STATS_CARD_MARKUP_ISSUE =
-  'home hero must include exactly one meta-card--stats card wrapping the hero stats grid';
+  'home hero must include one semantic side surface containing one hero-side and one meta-card--stats card wrapping the hero stats grid';
 const HOME_OVERVIEW_HEADING_ISSUE =
   'home overview must use one section-block section-muted with a visually hidden h2 referenced by aria-labelledby, followed by one tile-dark quote-band';
 const ENGLISH_COPY_FILES = [
@@ -1392,9 +1396,20 @@ function validateHomeStructure(rootDir, issues) {
       ? elements.filter((element) => element.parent === mainElement)
       : [];
     const heroSections = mainChildren.filter((element) => (
-      element.name === 'section' && hasClass(element.attributes, 'hero')
+      element.name === 'section' &&
+      hasClass(element.attributes, 'hero') &&
+      hasClass(element.attributes, 'home-hero')
     ));
     const heroSection = heroSections.length === 1 ? heroSections[0] : null;
+    const heroSideSurfaces = heroSection
+      ? elements.filter((element) => (
+          element.name === 'aside' &&
+          element.parent === heroSection &&
+          hasClass(element.attributes, 'surface') &&
+          hasClass(element.attributes, 'hero-side-surface')
+        ))
+      : [];
+    const heroSideSurface = heroSideSurfaces.length === 1 ? heroSideSurfaces[0] : null;
     const heroSides = heroSection
       ? elements.filter((element) => (
           hasClass(element.attributes, 'hero-side') &&
@@ -1415,7 +1430,9 @@ function validateHomeStructure(rootDir, issues) {
     if (
       !mainElement ||
       !heroSection ||
+      !heroSideSurface ||
       !heroSide ||
+      heroSide.parent !== heroSideSurface ||
       statsCards.length !== 1 ||
       statsCards[0].parent !== heroSide ||
       statsGrids.length !== 1 ||
@@ -5052,6 +5069,123 @@ function hasProfileContactOverflowProtectionCss(rootDir) {
   ));
 }
 
+function hasStableProjectGridCss(rootDir) {
+  const file = 'assets/css/site.css';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return false;
+
+  const source = readUtf8(rootDir, file);
+  const executableSource = maskedSource(source, buildCssCodeMask(source));
+  const ruleEntries = collectCssRuleEntries(executableSource);
+  const contracts = [
+    [
+      '.project-grid',
+      [['--project-card-min', '22.5rem']],
+      '.project-grid:not(.project-grid--featured)'
+    ],
+    [
+      '.project-grid',
+      [
+        ['display', 'grid'],
+        [
+          'grid-template-columns',
+          'repeat(auto-fit,minmax(min(100%,var(--project-card-min)),1fr))'
+        ],
+        ['gap', '20px'],
+        ['align-items', 'stretch']
+      ],
+      '.project-grid:not(.project-grid--featured)'
+    ],
+    [
+      '.project-grid',
+      [
+        ['display', 'grid'],
+        [
+          'grid-template-columns',
+          'repeat(auto-fit,minmax(min(100%,var(--project-card-min)),1fr))'
+        ],
+        ['gap', '20px'],
+        ['align-items', 'stretch']
+      ],
+      '.project-grid.project-grid--featured'
+    ],
+    [
+      '.project-grid--featured',
+      [['--project-card-min', '30rem']],
+      '.project-grid--featured'
+    ],
+    [
+      '.project-grid > .project-card',
+      [['min-width', '0']],
+      '#main-content .project-grid > article.project-card'
+    ]
+  ];
+
+  return contracts.every(([selector, declarations, overlapSelector]) => (
+    declarations.every(([property, expectedValue]) => (
+      effectiveDirectCssProperty(
+        executableSource,
+        selector,
+        property,
+        ruleEntries
+      ) === expectedValue
+    )) &&
+    !hasConflictingCssPropertyRule(
+      executableSource,
+      selector,
+      declarations,
+      ruleEntries,
+      overlapSelector
+    )
+  ));
+}
+
+function hasHomeQuoteHierarchyCss(rootDir) {
+  const file = 'assets/css/site.css';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return false;
+
+  const source = readUtf8(rootDir, file);
+  const executableSource = maskedSource(source, buildCssCodeMask(source));
+  const ruleEntries = collectCssRuleEntries(executableSource);
+  const contracts = [
+    [
+      '.main-shell > .section-block.tile-dark > .quote-block > .quote-text',
+      [['color', 'var(--on-dark)']],
+      '#main-content.main-shell > section.section-block.tile-dark.quote-band > blockquote.quote-block > p.quote-text'
+    ],
+    [
+      '.main-shell > .section-block.tile-dark > .quote-block > .quote-source',
+      [['color', 'var(--body-muted)']],
+      '#main-content.main-shell > section.section-block.tile-dark.quote-band > blockquote.quote-block > footer.quote-source'
+    ]
+  ];
+
+  const hasDirectContracts = contracts.every(([selector, declarations, overlapSelector]) => (
+    declarations.every(([property, expectedValue]) => (
+      effectiveDirectCssProperty(
+        executableSource,
+        selector,
+        property,
+        ruleEntries
+      ) === expectedValue
+    )) &&
+    !hasConflictingCssPropertyRule(
+      executableSource,
+      selector,
+      declarations,
+      ruleEntries,
+      overlapSelector
+    )
+  ));
+  if (!hasDirectContracts) return false;
+  return !ruleEntries.some((rule) => (
+    rule.depth === 0 &&
+    rule.selectors.includes('.main-shell>.section-block.tile-dark p') &&
+    Boolean(effectiveCssPropertyInBody(rule.body, 'color'))
+  ));
+}
+
 function hasPolishedMobileHomeHeroCss(rootDir) {
   const file = 'assets/css/site.css';
   const absolutePath = path.join(rootDir, file);
@@ -5059,6 +5193,10 @@ function hasPolishedMobileHomeHeroCss(rootDir) {
 
   const source = readUtf8(rootDir, file);
   const codeMask = buildCssCodeMask(source);
+  const executableCss = maskedSource(source, codeMask);
+  if (/\.(?:home-hero|hero)(?![\w-])\s*>\s*[^,{]*:\s*nth-(?:child|of-type)\s*\(/.test(executableCss)) {
+    return false;
+  }
   const mediaPattern = /@media\s*\(\s*max-width\s*:\s*640px\s*\)\s*\{/;
   const executableMobileCss = extractCssMediaBlocks(source, codeMask, mediaPattern)
     .map((block) => maskedSource(block.source, block.codeMask))
@@ -5068,7 +5206,7 @@ function hasPolishedMobileHomeHeroCss(rootDir) {
   const ruleEntries = collectCssRuleEntries(executableMobileCss);
   const contracts = [
     [
-      '.hero > .surface:nth-child(2)',
+      '.home-hero > .hero-side-surface',
       [['background-size', 'auto,48px 48px,48px 48px,auto']]
     ],
     [
@@ -5076,22 +5214,43 @@ function hasPolishedMobileHomeHeroCss(rootDir) {
       [
         ['--hero-rail-card', 'calc(100% - 56px)'],
         ['--hero-rail-gutter', '28px'],
+        ['display', 'flex'],
+        ['flex-direction', 'row'],
+        ['align-items', 'stretch'],
         ['gap', '12px'],
+        ['overflow-x', 'auto'],
+        ['padding-left', '0'],
+        ['padding-right', '0'],
         ['padding-top', '24px'],
         ['padding-bottom', '32px'],
-        ['scroll-padding-inline', 'var(--hero-rail-gutter)']
+        ['scroll-snap-type', 'x mandatory'],
+        ['scroll-padding-inline', 'var(--hero-rail-gutter)'],
+        ['overscroll-behavior-inline', 'contain'],
+        ['scrollbar-width', 'none']
       ]
     ],
+    ['.hero .hero-side::-webkit-scrollbar', [['display', 'none']]],
     [
       '.hero .hero-side > *',
       [
-        ['height', '216px'],
+        ['box-sizing', 'border-box'],
+        ['flex', '0 0 var(--hero-rail-card)'],
+        ['height', 'auto'],
         ['min-height', '216px'],
-        ['max-height', '216px'],
+        ['max-height', 'none'],
         ['border-radius', '14px'],
         ['box-shadow', 'var(--shadow-soft)'],
-        ['scroll-snap-align', 'center']
+        ['scroll-snap-align', 'center'],
+        ['scroll-snap-stop', 'always']
       ]
+    ],
+    [
+      '.hero .hero-side > :first-child',
+      [['margin-left', 'var(--hero-rail-gutter)']]
+    ],
+    [
+      '.hero .hero-side > :last-child',
+      [['margin-right', 'var(--hero-rail-gutter)']]
     ],
     [
       '.hero-side .profile-card',
@@ -5177,6 +5336,24 @@ function hasPolishedMobileHomeHeroCss(rootDir) {
       [['margin-top', '12px'], ['border', '0'], ['font-size', '12px'], ['text-align', 'center']]
     ]
   ];
+
+  const completeRuleSelectors = new Set([
+    normalizeCssSelector('.hero .hero-side'),
+    normalizeCssSelector('.hero .hero-side > *')
+  ]);
+  const hasCompleteComponentRules = contracts
+    .filter(([selector]) => completeRuleSelectors.has(normalizeCssSelector(selector)))
+    .every(([selector, declarations]) => {
+      const normalizedSelector = normalizeCssSelector(selector);
+      const matchingRules = ruleEntries.filter((rule) => (
+        rule.depth === 0 && rule.selectors.includes(normalizedSelector)
+      ));
+      return matchingRules.length === 1 && declarations.every(([property, expectedValue]) => {
+        const declaration = effectiveCssPropertyInBody(matchingRules[0].body, property);
+        return declaration && declaration.value === expectedValue;
+      });
+    });
+  if (!hasCompleteComponentRules) return false;
 
   return contracts.every(([selector, declarations]) => (
     declarations.every(([property, expectedValue]) => (
@@ -5682,6 +5859,18 @@ function validateMobileHomeHeroCssContract(rootDir, issues) {
   }
 }
 
+function validateProjectGridCssContract(rootDir, issues) {
+  if (!hasStableProjectGridCss(rootDir)) {
+    addIssue(issues, 'assets/css/site.css', PROJECT_GRID_CSS_ISSUE);
+  }
+}
+
+function validateHomeQuoteCssContract(rootDir, issues) {
+  if (!hasHomeQuoteHierarchyCss(rootDir)) {
+    addIssue(issues, 'assets/css/site.css', HOME_QUOTE_CSS_ISSUE);
+  }
+}
+
 function preservesProofRailDragBehavior(handler) {
   if (!handler) return false;
 
@@ -6091,6 +6280,8 @@ function validateRepository(rootDir) {
   validateResumeOverflowCssContract(absoluteRoot, issues);
   validateProfileContactCssContract(absoluteRoot, issues);
   validateProofRailCssContract(absoluteRoot, issues);
+  validateProjectGridCssContract(absoluteRoot, issues);
+  validateHomeQuoteCssContract(absoluteRoot, issues);
   validateMobileHomeHeroCssContract(absoluteRoot, issues);
   validateSiteJavaScriptContracts(absoluteRoot, issues);
 

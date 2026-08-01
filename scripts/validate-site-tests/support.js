@@ -135,12 +135,16 @@ const PROOF_RAIL_DRAG_ISSUE =
   'assets/js/site.js: proof rails must support mouse drag scrolling without opening evidence after a drag';
 const HOME_HERO_MOBILE_CSS_ISSUE =
   'assets/css/site.css: mobile home hero cards must use the unified full-width dossier rail and integrated inner groups';
+const PROJECT_GRID_CSS_ISSUE =
+  'assets/css/site.css: project grids must use stable auto-fit columns while one- and two-card groups fill available width';
+const HOME_QUOTE_CSS_ISSUE =
+  'assets/css/site.css: home quotation must keep primary quote text brighter than its source';
 const NOT_FOUND_LOCALIZATION_ISSUE =
   'root 404 must localize /en/... missing routes in place with root-absolute links and shared five-second redirects';
 const HOME_QUOTE_INVENTORY_ISSUE =
   'index.html: home quotation must include exactly one quote-text and no duplicate poem-note';
 const HOME_STATS_CARD_MARKUP_ISSUE =
-  'home hero must include exactly one meta-card--stats card wrapping the hero stats grid';
+  'home hero must include one semantic side surface containing one hero-side and one meta-card--stats card wrapping the hero stats grid';
 const HOME_OVERVIEW_HEADING_ISSUE =
   'home overview must use one section-block section-muted with a visually hidden h2 referenced by aria-labelledby, followed by one tile-dark quote-band';
 const ENGLISH_TERMINOLOGY_ISSUE =
@@ -587,6 +591,8 @@ module.exports = {
   PROOF_RAIL_CSS_ISSUE,
   PROOF_RAIL_DRAG_ISSUE,
   HOME_HERO_MOBILE_CSS_ISSUE,
+  PROJECT_GRID_CSS_ISSUE,
+  HOME_QUOTE_CSS_ISSUE,
   NOT_FOUND_LOCALIZATION_ISSUE,
   HOME_QUOTE_INVENTORY_ISSUE,
   HOME_STATS_CARD_MARKUP_ISSUE,

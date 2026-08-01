@@ -15,6 +15,8 @@ const {
   PROOF_RAIL_CSS_ISSUE,
   PROOF_RAIL_DRAG_ISSUE,
   HOME_HERO_MOBILE_CSS_ISSUE,
+  PROJECT_GRID_CSS_ISSUE,
+  HOME_QUOTE_CSS_ISSUE,
   NOT_FOUND_LOCALIZATION_ISSUE,
   HOME_QUOTE_INVENTORY_ISSUE,
   HOME_STATS_CARD_MARKUP_ISSUE,
@@ -315,7 +317,7 @@ test('validateRepository accepts the checked-in site baseline', () => {
   assert.equal(result.summary.sitemapUrls, 12);
 });
 
-test('validateRepository accepts approved profile contacts and proof rail interaction', () => {
+test('validateRepository accepts approved profile contacts, proof rails, and project grids', (t) => {
   const rootDir = path.resolve(__dirname, '..', '..');
   const result = validateRepository(rootDir);
 
@@ -325,6 +327,27 @@ test('validateRepository accepts approved profile contacts and proof rail intera
   assert.ok(!result.issues.includes(PROFILE_CONTACT_CSS_ISSUE));
   assert.ok(!result.issues.includes(PROOF_RAIL_CSS_ISSUE));
   assert.ok(!result.issues.includes(PROOF_RAIL_DRAG_ISSUE));
+  assert.ok(!result.issues.includes(PROJECT_GRID_CSS_ISSUE));
+
+  const fixtureRoot = createRepositoryFixture(t);
+  replaceOnce(
+    fixtureRoot,
+    'assets/css/site.css',
+    'repeat(auto-fit,minmax(min(100%,var(--project-card-min)),1fr))',
+    'repeat(auto-fill,minmax(min(100%,var(--project-card-min)),1fr))'
+  );
+  const fixtureResult = validateRepository(fixtureRoot);
+  assert.ok(fixtureResult.issues.includes(PROJECT_GRID_CSS_ISSUE));
+
+  const featuredRoot = createRepositoryFixture(t);
+  replaceOnce(
+    featuredRoot,
+    'assets/css/site.css',
+    '.project-grid--featured{\n  --project-card-min:30rem;\n}',
+    '.project-grid--featured{\n  --project-card-min:30rem;\n}\n.project-grid--featured{display:flex;grid-template-columns:none}'
+  );
+  const featuredResult = validateRepository(featuredRoot);
+  assert.ok(featuredResult.issues.includes(PROJECT_GRID_CSS_ISSUE));
 });
 
 test('validateRepository rejects a missing campus email in either profile language', (t) => {
@@ -515,15 +538,41 @@ test('mobile home hero rejects the old full-width card spacing', (t) => {
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+
+  const endMarginRoot = createRepositoryFixture(t);
+  replaceOnce(
+    endMarginRoot,
+    'assets/css/site.css',
+    '  .hero .hero-side > :last-child{\n    margin-right:var(--hero-rail-gutter);\n  }',
+    '  .hero .hero-side > :last-child{\n    margin-right:0;\n  }'
+  );
+  const endMarginResult = validateRepository(endMarginRoot);
+  assert.ok(endMarginResult.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+
+  const splitRuleRoot = createRepositoryFixture(t);
+  replaceOnce(
+    splitRuleRoot,
+    'assets/css/site.css',
+    '    --hero-rail-gutter:28px;\n    display:flex;\n    flex-direction:row;',
+    '    --hero-rail-gutter:28px;\n    flex-direction:row;'
+  );
+  replaceOnce(
+    splitRuleRoot,
+    'assets/css/site.css',
+    '  .hero .hero-side::-webkit-scrollbar{display:none}',
+    '  .hero .hero-side{display:flex}\n  .hero .hero-side::-webkit-scrollbar{display:none}'
+  );
+  const splitRuleResult = validateRepository(splitRuleRoot);
+  assert.ok(splitRuleResult.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
 });
 
-test('mobile home hero rejects uneven card heights', (t) => {
+test('mobile home hero rejects a restored fixed card height cap', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(
     rootDir,
     'assets/css/site.css',
-    '    max-height:216px;',
-    '    max-height:none;'
+    '    height:auto;\n    min-height:216px;\n    max-height:none;',
+    '    height:216px;\n    min-height:216px;\n    max-height:216px;'
   );
 
   const result = validateRepository(rootDir);
@@ -587,7 +636,7 @@ test('mobile home hero rejects nested stat card borders', (t) => {
   assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
 });
 
-test('home stats card rejects an out-of-hero decoy', (t) => {
+test('home stats card rejects an out-of-hero decoy or missing semantic side surface', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(
     rootDir,
@@ -604,6 +653,16 @@ test('home stats card rejects an out-of-hero decoy', (t) => {
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(`index.html: ${HOME_STATS_CARD_MARKUP_ISSUE}`));
+
+  const semanticRoot = createRepositoryFixture(t);
+  replaceOnce(
+    semanticRoot,
+    'index.html',
+    'class="surface hero-side-surface"',
+    'class="surface"'
+  );
+  const semanticResult = validateRepository(semanticRoot);
+  assert.ok(semanticResult.issues.includes(`index.html: ${HOME_STATS_CARD_MARKUP_ISSUE}`));
 });
 
 test('home stats card ignores a template decoy', (t) => {
@@ -743,15 +802,55 @@ test('mobile home hero rejects the old dense background grid', (t) => {
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
+
+  const positionalRoot = createRepositoryFixture(t);
+  replaceOnce(
+    positionalRoot,
+    'assets/css/site.css',
+    '  .home-hero > .hero-side-surface{',
+    '  .home-hero > .hero-side-surface,\n  .home-hero > aside:nth-child(2){'
+  );
+  const positionalResult = validateRepository(positionalRoot);
+  assert.ok(positionalResult.issues.includes(HOME_HERO_MOBILE_CSS_ISSUE));
 });
 
-test('home quotation rejects a missing quotation', (t) => {
+test('home quotation rejects missing copy or a muted primary quote', (t) => {
   const rootDir = createRepositoryFixture(t);
   replaceOnce(rootDir, 'index.html', 'class="quote-text"', 'class="quote-copy"');
 
   const result = validateRepository(rootDir);
 
   assert.ok(result.issues.includes(HOME_QUOTE_INVENTORY_ISSUE));
+
+  const cssRoot = createRepositoryFixture(t);
+  replaceOnce(
+    cssRoot,
+    'assets/css/site.css',
+    '.main-shell > .section-block.tile-dark > .quote-block > .quote-text{color:var(--on-dark)}',
+    '.main-shell > .section-block.tile-dark > .quote-block > .quote-text{color:var(--body-muted)}'
+  );
+  const cssResult = validateRepository(cssRoot);
+  assert.ok(cssResult.issues.includes(HOME_QUOTE_CSS_ISSUE));
+
+  const cascadeRoot = createRepositoryFixture(t);
+  replaceOnce(
+    cascadeRoot,
+    'assets/css/site.css',
+    '.main-shell > .section-block.tile-dark > .quote-block > .quote-text{color:var(--on-dark)}',
+    '.main-shell > .section-block.tile-dark > .quote-block > .quote-text{color:var(--on-dark)}\n#main-content .quote-band p{color:var(--body-muted)}'
+  );
+  const cascadeResult = validateRepository(cascadeRoot);
+  assert.ok(cascadeResult.issues.includes(HOME_QUOTE_CSS_ISSUE));
+
+  const sourceCascadeRoot = createRepositoryFixture(t);
+  replaceOnce(
+    sourceCascadeRoot,
+    'assets/css/site.css',
+    '.main-shell > .section-block.tile-dark > .quote-block > .quote-source{color:var(--body-muted)}',
+    '.main-shell > .section-block.tile-dark > .quote-block > .quote-source{color:var(--body-muted)}\n#main-content .quote-band footer{color:var(--on-dark)}'
+  );
+  const sourceCascadeResult = validateRepository(sourceCascadeRoot);
+  assert.ok(sourceCascadeResult.issues.includes(HOME_QUOTE_CSS_ISSUE));
 });
 
 test('home quotation rejects a duplicate quotation', (t) => {
