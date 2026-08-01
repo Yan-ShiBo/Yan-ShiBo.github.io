@@ -1483,7 +1483,7 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
   margin:0 auto;
   display:flex;
   align-items:center;
-  justify-content:center;
+  justify-content:safe center;
   gap:10px;
   min-width:0;
 }
@@ -1527,7 +1527,7 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
   scroll-margin-top:calc(var(--header-h) + 64px);
 }
 
-@media (max-width:640px){
+@media (max-width:833px){
   .anchor-bar{
     padding:0 14px;
   }
@@ -1537,7 +1537,9 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
     min-width:100%;
     justify-content:flex-start;
   }
+}
 
+@media (max-width:640px){
   .anchor-chip{
     min-height:40px;
     padding:0 14px;
