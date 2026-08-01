@@ -2401,6 +2401,8 @@ body.lightbox-open{overflow:hidden}
   }
 }
 
+.proof-grid-project > .proof-item:only-child{flex-basis:min(100%, 280px)}
+
 @media (min-width:1069px) and (max-width:1320px){
   .hero .hero-copy,
   .hero .hero-side{
