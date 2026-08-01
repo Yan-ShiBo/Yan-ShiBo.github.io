@@ -2208,7 +2208,6 @@ body.lightbox-open{overflow:hidden}
   .page-hero .action-row{justify-content:flex-start}
   .lead{font-size:19px;line-height:1.38}
   .stat-value{font-size:40px}
-  .compact-stat .stat-value{font-size:28px}
   .hero .hero-copy,.page-hero,.section-block,.main-shell > .grid-2,.main-shell > .resume-layout,.footer-shell{padding-left:16px;padding-right:16px}
   .profile-card{grid-template-columns:1fr}
   .hero .quick-stats{
@@ -2246,7 +2245,6 @@ body.lightbox-open{overflow:hidden}
   .section-title-wrap h2,.resume-main h2{font-size:30px}
   .lead{font-size:17px;line-height:1.47}
   .stat-value{font-size:36px}
-  .compact-stat .stat-value{font-size:24px}
   .button{width:100%}
   .button.small{
     width:auto;
