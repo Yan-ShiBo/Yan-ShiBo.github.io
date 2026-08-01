@@ -1390,10 +1390,10 @@ test('validateRepository rejects CSS navigation breakpoint drift and comment dec
   replaceOnce(
     rootDir,
     'assets/css/site.css',
-    '@media (max-width:833px){',
+    '@media (max-width:833px){\n  .header-shell',
     '/* @media (max-width:833px){.site-nav{display:none}.menu-toggle{display:inline-flex}} */\n' +
       ':root{--media-decoy:"@media (max-width:833px){.site-nav{display:none}.menu-toggle{display:inline-flex}}"}\n' +
-      '@media (max-width:832px){'
+      '@media (max-width:832px){\n  .header-shell'
   );
 
   const result = validateRepository(rootDir);
