@@ -369,17 +369,17 @@ for (const mutation of structuredProjectCases) {
 const structuredResearchCases = [
   {
     name: 'rejects the wrong research numberOfItems',
-    issue: 'research list numberOfItems must be 4',
+    issue: 'research list numberOfItems must be 3',
     mutate(value) {
-      findStructuredNode(value, 'https://yan-shibo.github.io/research.html#research-directions')
-        .numberOfItems = 3;
+      findStructuredNode(value, 'https://yan-shibo.github.io/research.html#research-topics')
+        .numberOfItems = 4;
     }
   },
   {
     name: 'rejects a missing research list element',
-    issue: 'research list must contain exactly 4 elements',
+    issue: 'research list must contain exactly 3 elements',
     mutate(value) {
-      findStructuredNode(value, 'https://yan-shibo.github.io/research.html#research-directions')
+      findStructuredNode(value, 'https://yan-shibo.github.io/research.html#research-topics')
         .itemListElement.pop();
     }
   },
@@ -389,16 +389,16 @@ const structuredResearchCases = [
     mutate(value) {
       const elements = findStructuredNode(
         value,
-        'https://yan-shibo.github.io/research.html#research-directions'
+        'https://yan-shibo.github.io/research.html#research-topics'
       ).itemListElement;
       [elements[0].item, elements[1].item] = [elements[1].item, elements[0].item];
     }
   },
   {
     name: 'rejects duplicate research positions',
-    issue: 'research list positions must be 1 through 4',
+    issue: 'research list positions must be 1 through 3',
     mutate(value) {
-      findStructuredNode(value, 'https://yan-shibo.github.io/research.html#research-directions')
+      findStructuredNode(value, 'https://yan-shibo.github.io/research.html#research-topics')
         .itemListElement[1].position = 1;
     }
   },

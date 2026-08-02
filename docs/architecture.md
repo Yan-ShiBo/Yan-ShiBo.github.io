@@ -57,7 +57,7 @@ flowchart LR
 | --- | --- | --- | --- | --- |
 | 首页 | `index.html` | `en/index.html` | 研究身份、当前问题、近期状态与个人侧面 | 是 |
 | 档案 | `profile.html` | `en/profile.html` | 时间线、经历、证明材料 | 是 |
-| 研究 | `research.html` | `en/research.html` | 研究背景、核心问题、研究意义与关注方向 | 是 |
+| 研究 | `research.html` | `en/research.html` | 研究背景、形式化问题、研究现状、研究意义与相关成果 | 是 |
 | 项目 | `projects.html` | `en/projects.html` | 持续扩展的研究、工具与工程项目目录 | 是 |
 | 简历 | `resume.html` | `en/resume.html` | 网页简历与公开下载入口 | 是 |
 | 统计 | `analytics.html` | `en/analytics.html` | 站点计数、月度设备估算和本地计数 | 是 |
@@ -234,7 +234,7 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 | 网站 | `https://yan-shibo.github.io/#website` |
 | 人物 | `https://yan-shibo.github.io/#person` |
 | 项目列表 | 当前项目页 canonical URL 加 `#project-list` |
-| 研究方向列表 | 当前研究页 canonical URL 加 `#research-directions` |
+| 研究主题列表 | 当前研究页 canonical URL 加 `#research-topics` |
 
 节点字段使用精确白名单，不允许用额外字段扩展未经批准的公开事实：
 
@@ -246,7 +246,7 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 | `ItemList` | `@type`、`@id`、`numberOfItems`、`itemListElement` |
 | `ListItem` | `@type`、`position`、`item` |
 | `SoftwareSourceCode` | `@type`、`@id`、`name`、`description`、`codeRepository`、`keywords`、`contributor` |
-| 研究方向 `Thing` | `@type`、`@id`、`name`、`description` |
+| 研究主题 `Thing` | `@type`、`@id`、`name`、`description` |
 
 页面节点的 `url` 与 canonical 完全相同；`name` 与 HTML 实体解码、空白规范化后的 `<title>` 完全相同；`description` 同样来自当前页面的 meta description。中文页面节点声明 `inLanguage: zh-CN`，英文页面节点声明 `inLanguage: en`，并通过 `isPartOf` 引用网站。`WebSite` 在每页声明 `inLanguage: ["zh-CN", "en"]` 并以 `creator` 引用人物；语言数组按集合比较。`Person` 保留当前已公开的双语姓名、URL、图片、邮箱、教育与所在地事实，但不声明 `inLanguage`，也不增加新的个人事实。
 
@@ -259,11 +259,11 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 | `/`、`/en/` | `ProfilePage` | `mainEntity` 引用 `/#person` |
 | 中英文档案 | `ProfilePage` | `mainEntity` 引用 `/#person` |
 | 中英文简历 | `ProfilePage` | `mainEntity` 引用 `/#person` |
-| 中英文研究 | `WebPage` | `mainEntity` 引用本页 `#research-directions`，`about` 引用 `/#person` |
+| 中英文研究 | `WebPage` | `mainEntity` 引用本页 `#research-topics`，`about` 引用 `/#person` |
 | 中英文项目 | `CollectionPage` | `mainEntity` 引用本页 `#project-list`，`about` 引用 `/#person` |
 | 中英文统计 | `WebPage` | 仅以 `about` 引用 `/#website` |
 
-统计页不把人物或数据实体声明为主实体。研究和统计页不使用 `AboutPage`；它们分别描述研究方向与站点统计功能，而不是介绍网站本身。
+统计页不把人物或数据实体声明为主实体。研究和统计页不使用 `AboutPage`；它们分别描述研究问题与主题、站点统计功能，而不是介绍网站本身。
 
 ### 8.4 项目图
 
@@ -286,16 +286,15 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 
 ### 8.5 研究图
 
-每个研究页在三个公共节点之外包含一个 `ItemList` 和四个 `Thing`。列表 `numberOfItems` 为 `4`，按页面“关注方向”的可见顺序引用以下跨语言稳定 ID：
+每个研究页在三个公共节点之外包含一个 `ItemList` 和三个 `Thing`。列表 `numberOfItems` 为 `3`，按页面“核心问题”中的可见主题顺序引用以下跨语言稳定 ID：
 
-| 方向 | 稳定 ID |
+| 主题 | 稳定 ID |
 | --- | --- |
-| 安全关键智能系统的可信控制 | `https://yan-shibo.github.io/#research-trustworthy-control` |
-| 随机系统的概率安全与可达性 | `https://yan-shibo.github.io/#research-stochastic-reach-avoid` |
-| 学习型控制策略的形式化验证 | `https://yan-shibo.github.io/#research-learning-enabled-verification` |
-| 复杂系统的可扩展验证 | `https://yan-shibo.github.io/#research-scalable-verification` |
+| 随机系统可达—规避控制 | `https://yan-shibo.github.io/#research-stochastic-reach-avoid-control` |
+| 形式化概率保证 | `https://yan-shibo.github.io/#research-formal-probabilistic-guarantees` |
+| 学习型控制的形式化验证 | `https://yan-shibo.github.io/#research-learning-enabled-formal-verification` |
 
-每个方向只使用稳定 ID、当前语言的可见名称和简短说明。它们是背景与大方向层面的保守描述，不是论文或 `ResearchProject`，不得加入具体算法链、实验结果、概率数值或未发表材料。
+每个主题只使用稳定 ID、当前语言的可见名称和简短说明，并与正文中的研究问题取证一致。它们描述公开研究范围，不是论文或 `ResearchProject`，不得加入具体算法链、实验结果、概率数值或未发表材料；匿名在投稿件不建立独立结构化节点，也不把标题、作者、会议真名、方法或评审信息写入图中。
 
 ### 8.6 统计图的隐私边界
 

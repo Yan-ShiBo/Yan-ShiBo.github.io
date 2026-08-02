@@ -513,10 +513,9 @@ const STRUCTURED_PROJECT_IDS = [
   'https://yan-shibo.github.io/#project-portfolio'
 ];
 const STRUCTURED_RESEARCH_IDS = [
-  'https://yan-shibo.github.io/#research-trustworthy-control',
-  'https://yan-shibo.github.io/#research-stochastic-reach-avoid',
-  'https://yan-shibo.github.io/#research-learning-enabled-verification',
-  'https://yan-shibo.github.io/#research-scalable-verification'
+  'https://yan-shibo.github.io/#research-stochastic-reach-avoid-control',
+  'https://yan-shibo.github.io/#research-formal-probabilistic-guarantees',
+  'https://yan-shibo.github.io/#research-learning-enabled-formal-verification'
 ];
 const STRUCTURED_SCRIPT_PATTERN =
   /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;

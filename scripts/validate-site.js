@@ -18,10 +18,9 @@ const PROJECT_IDS = [
   `${SITE_ORIGIN}/#project-portfolio`
 ];
 const RESEARCH_IDS = [
-  `${SITE_ORIGIN}/#research-trustworthy-control`,
-  `${SITE_ORIGIN}/#research-stochastic-reach-avoid`,
-  `${SITE_ORIGIN}/#research-learning-enabled-verification`,
-  `${SITE_ORIGIN}/#research-scalable-verification`
+  `${SITE_ORIGIN}/#research-stochastic-reach-avoid-control`,
+  `${SITE_ORIGIN}/#research-formal-probabilistic-guarantees`,
+  `${SITE_ORIGIN}/#research-learning-enabled-formal-verification`
 ];
 const EXPECTED_PROJECT_REPOSITORIES = new Map([
   [
@@ -965,38 +964,30 @@ const EXPECTED_PROJECT_FACTS = {
 const EXPECTED_RESEARCH_FACTS = {
   'zh-CN': [
     {
-      name: '安全关键智能系统的可信控制',
-      description: '关注学习型控制在安全关键场景中的可靠性，使策略性能能够与可检查的安全要求共同讨论。'
+      name: '随机系统可达—规避控制',
+      description: '面向非线性随机系统，研究怎样设计控制策略，使闭环系统在随机扰动下获得良好的可达—规避性能。'
     },
     {
-      name: '随机系统的概率安全与可达性',
-      description: '研究系统在随机扰动下到达目标区域并持续避开危险区域时，如何表达和分析概率意义上的保证。'
+      name: '形式化概率保证',
+      description: '研究怎样为整个初始集合证明控制器满足可达—规避要求，并计算具有实际意义的概率下界。'
     },
     {
-      name: '学习型控制策略的形式化验证',
-      description: '连接数据驱动控制的适应能力与形式化方法的可审计性，理解控制策略在给定条件下为何可靠。'
-    },
-    {
-      name: '复杂系统的可扩展验证',
-      description: '面向非线性、更高维和模型不确定的系统，探索能够扩展到更复杂任务的验证思路。'
+      name: '学习型控制的形式化验证',
+      description: '研究怎样协调学习型控制器的表达能力与后续形式化验证的可计算性。'
     }
   ],
   en: [
     {
-      name: 'Trustworthy control for safety-critical intelligent systems',
-      description: 'Study the reliability of learning-enabled control in safety-critical settings so that policy performance and checkable safety requirements can be considered together.'
+      name: 'Reach-Avoid Control for Stochastic Systems',
+      description: 'Design control policies for nonlinear stochastic systems so that the closed-loop system achieves strong reach-avoid performance under stochastic disturbances.'
     },
     {
-      name: 'Probabilistic safety and reachability for stochastic systems',
-      description: 'Study how to express and analyze probabilistic guarantees when a system must reach a target region while continuing to avoid unsafe regions under stochastic disturbances.'
+      name: 'Formal Probabilistic Guarantees',
+      description: 'Certify meaningful lower bounds on reach-avoid satisfaction probabilities for every state in the initial set.'
     },
     {
-      name: 'Formal verification of learning-enabled control policies',
-      description: 'Connect the adaptability of data-driven control with the auditability of formal methods to understand why a policy is reliable under stated conditions.'
-    },
-    {
-      name: 'Scalable verification for complex systems',
-      description: 'Explore verification ideas that can extend to nonlinear, higher-dimensional, and model-uncertain systems and more complex tasks.'
+      name: 'Formal Verification of Learning-Enabled Control',
+      description: 'Balance the expressive power of learning-enabled controllers with the computational tractability of subsequent formal verification.'
     }
   ]
 };
@@ -1870,7 +1861,7 @@ function expectedGraphIds(page) {
   if (page.kind === 'projects') {
     ids.push(`${page.canonical}#project-list`, ...PROJECT_IDS);
   } else if (page.kind === 'research') {
-    ids.push(`${page.canonical}#research-directions`, ...RESEARCH_IDS);
+    ids.push(`${page.canonical}#research-topics`, ...RESEARCH_IDS);
   }
   return ids;
 }
@@ -1937,7 +1928,7 @@ function validateCommonStructuredData(page, html, parsed, issues) {
         addIssue(issues, page.file, 'analytics about must reference WebSite');
       }
     } else {
-      const suffix = page.kind === 'projects' ? '#project-list' : '#research-directions';
+      const suffix = page.kind === 'projects' ? '#project-list' : '#research-topics';
       if (!isExactIdReference(pageNode.mainEntity, `${page.canonical}${suffix}`)) {
         addIssue(issues, page.file, 'mainEntity must reference the page ItemList');
       }
@@ -2110,7 +2101,7 @@ function validateProjectStructuredData(page, html, parsed, issues) {
 }
 
 function validateResearchStructuredData(page, html, parsed, issues) {
-  const list = parsed.nodesById.get(`${page.canonical}#research-directions`);
+  const list = parsed.nodesById.get(`${page.canonical}#research-topics`);
   validateListContract(page, list, RESEARCH_IDS, 'research', issues);
   const visibleText = getVisibleBodyText(html);
   const expectedFacts = EXPECTED_RESEARCH_FACTS[page.lang];
