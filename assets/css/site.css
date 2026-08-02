@@ -1698,6 +1698,10 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
   line-height:1.55;
 }
 
+.project-hero__verb{
+  white-space:nowrap;
+}
+
 .project-public-note i{
   margin-right:6px;
   color:var(--accent);
