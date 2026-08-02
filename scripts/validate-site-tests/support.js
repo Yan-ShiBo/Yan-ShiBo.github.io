@@ -151,7 +151,9 @@ const PROOF_RAIL_DRAG_ISSUE =
 const HOME_HERO_MOBILE_CSS_ISSUE =
   'assets/css/site.css: mobile home hero cards must use the unified full-width dossier rail with wrappable summaries and quick links';
 const PROJECT_GRID_CSS_ISSUE =
-  'assets/css/site.css: project grids must use stable auto-fit columns while one- and two-card groups fill available width';
+  'assets/css/site.css: project showcase and index grids must preserve the approved 55/45 case layout, responsive collapse, and shrink protection';
+const PROJECT_PAGE_STRUCTURE_ISSUE =
+  'project pages must preserve the approved four-section 3/4/2/1 hierarchy, project order, public note, anchor order, tag limits, and project-local fact boundaries';
 const HOME_QUOTE_CSS_ISSUE =
   'assets/css/site.css: home quotation must keep primary quote text brighter than its source';
 const NOT_FOUND_LOCALIZATION_ISSUE =
@@ -516,16 +518,16 @@ function toPosix(value) {
 const STRUCTURED_PERSON_ID = 'https://yan-shibo.github.io/#person';
 const STRUCTURED_WEBSITE_ID = 'https://yan-shibo.github.io/#website';
 const STRUCTURED_PROJECT_IDS = [
-  'https://yan-shibo.github.io/#project-persevere-study',
-  'https://yan-shibo.github.io/#project-mic-family',
   'https://yan-shibo.github.io/#project-vision-obstacle-avoidance-rover',
+  'https://yan-shibo.github.io/#project-personal-knowledge-base',
+  'https://yan-shibo.github.io/#project-portfolio',
   'https://yan-shibo.github.io/#project-local-read-translate',
   'https://yan-shibo.github.io/#project-bilingual-subtitle-pipeline',
   'https://yan-shibo.github.io/#project-photo-selector',
   'https://yan-shibo.github.io/#project-biliclaw-extended',
-  'https://yan-shibo.github.io/#project-personal-knowledge-base',
-  'https://yan-shibo.github.io/#project-codex-skills-kit',
-  'https://yan-shibo.github.io/#project-portfolio'
+  'https://yan-shibo.github.io/#project-persevere-study',
+  'https://yan-shibo.github.io/#project-mic-family',
+  'https://yan-shibo.github.io/#project-codex-skills-kit'
 ];
 const STRUCTURED_RESEARCH_IDS = [
   'https://yan-shibo.github.io/#research-stochastic-reach-avoid-control',
@@ -613,6 +615,7 @@ module.exports = {
   PROOF_RAIL_DRAG_ISSUE,
   HOME_HERO_MOBILE_CSS_ISSUE,
   PROJECT_GRID_CSS_ISSUE,
+  PROJECT_PAGE_STRUCTURE_ISSUE,
   HOME_QUOTE_CSS_ISSUE,
   NOT_FOUND_LOCALIZATION_ISSUE,
   HOME_QUOTE_INVENTORY_ISSUE,

@@ -23,6 +23,7 @@ const {
   PROOF_RAIL_DRAG_ISSUE,
   HOME_HERO_MOBILE_CSS_ISSUE,
   PROJECT_GRID_CSS_ISSUE,
+  PROJECT_PAGE_STRUCTURE_ISSUE,
   HOME_QUOTE_CSS_ISSUE,
   NOT_FOUND_LOCALIZATION_ISSUE,
   HOME_QUOTE_INVENTORY_ISSUE,
@@ -678,7 +679,7 @@ test('resume CCF A facts reject venue-class or author-order drift', (t) => {
   ]);
 });
 
-test('validateRepository accepts approved profile contacts, proof rails, and project grids', (t) => {
+test('validateRepository accepts approved profile contacts, proof rails, and project page contracts', (t) => {
   const rootDir = path.resolve(__dirname, '..', '..');
   const result = validateRepository(rootDir);
 
@@ -689,6 +690,9 @@ test('validateRepository accepts approved profile contacts, proof rails, and pro
   assert.ok(!result.issues.includes(PROOF_RAIL_CSS_ISSUE));
   assert.ok(!result.issues.includes(PROOF_RAIL_DRAG_ISSUE));
   assert.ok(!result.issues.includes(PROJECT_GRID_CSS_ISSUE));
+  for (const file of ['projects.html', 'en/projects.html']) {
+    assert.ok(!result.issues.includes(`${file}: ${PROJECT_PAGE_STRUCTURE_ISSUE}`));
+  }
 
   const fixtureRoot = createRepositoryFixture(t);
   replaceOnce(
@@ -700,15 +704,63 @@ test('validateRepository accepts approved profile contacts, proof rails, and pro
   const fixtureResult = validateRepository(fixtureRoot);
   assert.ok(fixtureResult.issues.includes(PROJECT_GRID_CSS_ISSUE));
 
-  const featuredRoot = createRepositoryFixture(t);
+  const projectCaseRoot = createRepositoryFixture(t);
   replaceOnce(
-    featuredRoot,
+    projectCaseRoot,
     'assets/css/site.css',
-    '.project-grid--featured{\n  --project-card-min:30rem;\n}',
-    '.project-grid--featured{\n  --project-card-min:30rem;\n}\n.project-grid--featured{display:flex;grid-template-columns:none}'
+    'grid-template-columns:minmax(0,11fr) minmax(17rem,9fr)',
+    'grid-template-columns:minmax(0,10fr) minmax(17rem,10fr)'
   );
-  const featuredResult = validateRepository(featuredRoot);
-  assert.ok(featuredResult.issues.includes(PROJECT_GRID_CSS_ISSUE));
+  const projectCaseResult = validateRepository(projectCaseRoot);
+  assert.ok(projectCaseResult.issues.includes(PROJECT_GRID_CSS_ISSUE));
+
+  const projectOrderRoot = createRepositoryFixture(t);
+  replaceOnce(
+    projectOrderRoot,
+    'projects.html',
+    'data-project-id="project-vision-obstacle-avoidance-rover"',
+    'data-project-id="project-portfolio"'
+  );
+  const projectOrderResult = validateRepository(projectOrderRoot);
+  assert.ok(projectOrderResult.issues.includes(
+    `projects.html: ${PROJECT_PAGE_STRUCTURE_ISSUE}`
+  ));
+
+  const projectAnchorRoot = createRepositoryFixture(t);
+  replaceOnce(
+    projectAnchorRoot,
+    'projects.html',
+    'class="anchor-chip" href="#project-list"',
+    'class="anchor-chip" href="#local-tools"'
+  );
+  const projectAnchorResult = validateRepository(projectAnchorRoot);
+  assert.ok(projectAnchorResult.issues.includes(
+    `projects.html: ${PROJECT_PAGE_STRUCTURE_ISSUE}`
+  ));
+
+  const projectTagRoot = createRepositoryFixture(t);
+  replaceOnce(
+    projectTagRoot,
+    'projects.html',
+    '<div class="project-stack"><span>Vue</span><span>Spring Boot</span><span>MyBatis-Plus</span><span>MySQL</span></div>',
+    '<div class="project-stack"><span>Vue</span><span>Spring Boot</span><span>MyBatis-Plus</span><span>MySQL</span><span>Axios</span></div>'
+  );
+  const projectTagResult = validateRepository(projectTagRoot);
+  assert.ok(projectTagResult.issues.includes(
+    `projects.html: ${PROJECT_PAGE_STRUCTURE_ISSUE}`
+  ));
+
+  const projectFactRoot = createRepositoryFixture(t);
+  replaceOnce(
+    projectFactRoot,
+    'projects.html',
+    '<h3>MicFamily：KTV 运营管理系统</h3>',
+    '<h3>MicFamily：前后端分离的 KTV 运营管理系统（uni-app）</h3>'
+  );
+  const projectFactResult = validateRepository(projectFactRoot);
+  assert.ok(projectFactResult.issues.includes(
+    `projects.html: ${PROJECT_PAGE_STRUCTURE_ISSUE}`
+  ));
 });
 
 test('validateRepository rejects a missing campus email in either profile language', (t) => {

@@ -267,22 +267,24 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 
 ### 8.4 项目图
 
-每个项目页在三个公共节点之外包含一个 `ItemList` 和当前项目库存对应的 `SoftwareSourceCode` 节点。列表数量、`ListItem.position` 与页面可见顺序必须一致；新增、删除或重新排序项目时，同步中英文 JSON-LD、验证器批准库存与本节清单。当前库存为：
+每个项目页在三个公共节点之外包含一个 `ItemList` 和当前项目库存对应的 `SoftwareSourceCode` 节点。列表数量、`ListItem.position` 与页面可见顺序必须一致；新增、删除、分组或重新排序项目时，同步中英文 JSON-LD、验证器批准库存与本节清单。当前单一有序库存按“3 个代表案例 + 4 个本地智能与知识工具 + 2 个软件工程实践 + 1 个开发基础设施”展开：
 
-| 项目 | 稳定 ID | `codeRepository` |
-| --- | --- | --- |
-| PersevereStudy | `https://yan-shibo.github.io/#project-persevere-study` | `https://github.com/Yan-ShiBo/PersevereStudy` |
-| MicFamily | `https://yan-shibo.github.io/#project-mic-family` | `https://github.com/Yan-ShiBo/MicFamily` |
-| 视觉强化学习避障小车 | `https://yan-shibo.github.io/#project-vision-obstacle-avoidance-rover` | 无公开仓库 |
-| LocalReadTranslate | `https://yan-shibo.github.io/#project-local-read-translate` | `https://github.com/Yan-ShiBo/LocalReadTranslate` |
-| bilingual-subtitle-pipeline | `https://yan-shibo.github.io/#project-bilingual-subtitle-pipeline` | `https://github.com/Yan-ShiBo/bilingual-subtitle-pipeline` |
-| photo-selector | `https://yan-shibo.github.io/#project-photo-selector` | `https://github.com/Yan-ShiBo/photo-selector` |
-| BiliClaw-Extended | `https://yan-shibo.github.io/#project-biliclaw-extended` | `https://github.com/Yan-ShiBo/BiliClaw-Extended` |
-| PersonalKnowledgeBase | `https://yan-shibo.github.io/#project-personal-knowledge-base` | `https://github.com/Yan-ShiBo/PersonalKnowledgeBase` |
-| codex-skills-kit | `https://yan-shibo.github.io/#project-codex-skills-kit` | `https://github.com/Yan-ShiBo/codex-skills-kit` |
-| 本站 | `https://yan-shibo.github.io/#project-portfolio` | `https://github.com/Yan-ShiBo/Yan-ShiBo.github.io` |
+| 顺序 | 层级 | 项目 | 稳定 ID | `codeRepository` |
+| ---: | --- | --- | --- | --- |
+| 1 | 代表案例 | CBF-Rover | `https://yan-shibo.github.io/#project-vision-obstacle-avoidance-rover` | `https://github.com/Yan-ShiBo/CBF-Rover` |
+| 2 | 代表案例 | Research Memory | `https://yan-shibo.github.io/#project-personal-knowledge-base` | `https://github.com/Yan-ShiBo/PersonalKnowledgeBase` |
+| 3 | 代表案例 | 中英双语个人学术主页 | `https://yan-shibo.github.io/#project-portfolio` | `https://github.com/Yan-ShiBo/Yan-ShiBo.github.io` |
+| 4 | 本地工具 | LocalReadTranslate | `https://yan-shibo.github.io/#project-local-read-translate` | `https://github.com/Yan-ShiBo/LocalReadTranslate` |
+| 5 | 本地工具 | bilingual-subtitle-pipeline | `https://yan-shibo.github.io/#project-bilingual-subtitle-pipeline` | `https://github.com/Yan-ShiBo/bilingual-subtitle-pipeline` |
+| 6 | 本地工具 | photo-selector | `https://yan-shibo.github.io/#project-photo-selector` | `https://github.com/Yan-ShiBo/photo-selector` |
+| 7 | 本地工具 | BiliClaw-Extended | `https://yan-shibo.github.io/#project-biliclaw-extended` | `https://github.com/Yan-ShiBo/BiliClaw-Extended` |
+| 8 | 软件工程 | PersevereStudy | `https://yan-shibo.github.io/#project-persevere-study` | `https://github.com/Yan-ShiBo/PersevereStudy` |
+| 9 | 软件工程 | MicFamily | `https://yan-shibo.github.io/#project-mic-family` | `https://github.com/Yan-ShiBo/MicFamily` |
+| 10 | 开发基础设施 | codex-skills-kit | `https://yan-shibo.github.io/#project-codex-skills-kit` | `https://github.com/Yan-ShiBo/codex-skills-kit` |
 
-项目节点的本地化名称和描述必须与当前页面可见文本一致，`keywords` 来自可见技术标签，`contributor` 只引用 `/#person`。`codeRepository` 是可选字段：只有公开仓库存在时才声明。项目图不使用 `creator`，也不写入奖项或等级、日期、证明图片、测试账号等未批准字段。普通收藏式 fork、无公开说明的研究仓库和未发表材料不进入库存。
+项目节点的本地化名称和描述必须与当前页面可见文本一致，`keywords` 来自可见技术标签且每项最多四个，`contributor` 只引用 `/#person`。`codeRepository` 是可选字段：只有公开仓库存在时才声明。项目图不使用 `creator`，也不写入奖项或等级、日期、证明图片、测试账号等未批准字段。普通收藏式 fork、无公开说明的研究仓库和未发表材料不进入库存。
+
+项目页采用公开实现可核验的事实口径，但该口径不反向覆盖简历或档案中由用户确认的个人履历。MicFamily 在项目页及对应 JSON-LD 中不使用 `uni-app`、精确依赖版本或“严格前后端分离”，而描述为 Spring Boot 单体部署下的前后端分层；简历与档案仍保留用户确认的 `uni-app` 事实。CBF-Rover 项目节点只写数值动力学仿真、Gazebo、在线 CBF 与仍在推进的形式化证书模块，不把内部环境标识 `exact` 或 `q-SBC` 状态写入名称、说明和关键词；简历与档案既有的 readiness 边界继续由各自合同维护。
 
 ### 8.5 研究图
 

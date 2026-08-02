@@ -7,16 +7,16 @@ const SITE_ORIGIN = 'https://yan-shibo.github.io';
 const PERSON_ID = `${SITE_ORIGIN}/#person`;
 const WEBSITE_ID = `${SITE_ORIGIN}/#website`;
 const PROJECT_IDS = [
-  `${SITE_ORIGIN}/#project-persevere-study`,
-  `${SITE_ORIGIN}/#project-mic-family`,
   `${SITE_ORIGIN}/#project-vision-obstacle-avoidance-rover`,
+  `${SITE_ORIGIN}/#project-personal-knowledge-base`,
+  `${SITE_ORIGIN}/#project-portfolio`,
   `${SITE_ORIGIN}/#project-local-read-translate`,
   `${SITE_ORIGIN}/#project-bilingual-subtitle-pipeline`,
   `${SITE_ORIGIN}/#project-photo-selector`,
   `${SITE_ORIGIN}/#project-biliclaw-extended`,
-  `${SITE_ORIGIN}/#project-personal-knowledge-base`,
-  `${SITE_ORIGIN}/#project-codex-skills-kit`,
-  `${SITE_ORIGIN}/#project-portfolio`
+  `${SITE_ORIGIN}/#project-persevere-study`,
+  `${SITE_ORIGIN}/#project-mic-family`,
+  `${SITE_ORIGIN}/#project-codex-skills-kit`
 ];
 const RESEARCH_IDS = [
   `${SITE_ORIGIN}/#research-stochastic-reach-avoid-control`,
@@ -24,6 +24,10 @@ const RESEARCH_IDS = [
   `${SITE_ORIGIN}/#research-learning-enabled-formal-verification`
 ];
 const EXPECTED_PROJECT_REPOSITORIES = new Map([
+  [
+    'https://yan-shibo.github.io/#project-vision-obstacle-avoidance-rover',
+    'https://github.com/Yan-ShiBo/CBF-Rover'
+  ],
   [
     'https://yan-shibo.github.io/#project-persevere-study',
     'https://github.com/Yan-ShiBo/PersevereStudy'
@@ -308,7 +312,9 @@ const PROOF_RAIL_DRAG_ISSUE =
 const HOME_HERO_MOBILE_CSS_ISSUE =
   'mobile home hero cards must use the unified full-width dossier rail with wrappable summaries and quick links';
 const PROJECT_GRID_CSS_ISSUE =
-  'project grids must use stable auto-fit columns while one- and two-card groups fill available width';
+  'project showcase and index grids must preserve the approved 55/45 case layout, responsive collapse, and shrink protection';
+const PROJECT_PAGE_STRUCTURE_ISSUE =
+  'project pages must preserve the approved four-section 3/4/2/1 hierarchy, project order, public note, anchor order, tag limits, and project-local fact boundaries';
 const HOME_QUOTE_CSS_ISSUE =
   'home quotation must keep primary quote text brighter than its source';
 const NOT_FOUND_LOCALIZATION_ISSUE =
@@ -912,170 +918,106 @@ const RESEARCH_ALLOWED_KEYS = ['@type', '@id', 'name', 'description'];
 const EXPECTED_PROJECT_FACTS = {
   'zh-CN': [
     {
-      name: '基于人脸识别技术的多端考勤系统',
-      description: '通过摄像头拍照或上传照片识别到课学生，并生成出勤简表和阶段性报告。',
-      keywords: ['uni-app', 'Spring Boot', 'MySQL', 'Python', 'Android / 小程序 / Web']
-    },
-    {
-      name: '前后端分离的 KTV 管理系统',
-      description: '前端使用 Vue、jQuery、Bootstrap、ACE、ElementUI、font-awesome 和 uni-app；后端使用 Spring Boot，数据库使用 MySQL。',
-      keywords: [
-        'Vue',
-        'jQuery',
-        'Bootstrap',
-        'uni-app',
-        'Spring Boot 2.7.1',
-        'MySQL 8.0.26',
-        'Java 1.8'
-      ]
-    },
-    {
-      name: 'CBF-Rover：面向移动机器人的障碍证书与安全控制仿真',
-      description: '构建移动机器人系统模型、分层仿真架构与在线 CBF 安全过滤，并在 exact 与 Gazebo 环境中完成闭环仿真和经验验证；固定几何 q-SBC 仍处于未就绪状态。',
-      keywords: ['移动机器人', '在线 CBF', 'exact', 'Gazebo', 'q-SBC（未就绪）']
-    },
-    {
-      name: '本地划词听译助手',
-      description: '面向浏览器与文档应用的本地朗读、翻译和公式处理工具，结合 Kokoro TTS 与 Ollama，并由本地服务统一管理运行边界。',
-      keywords: [
-        'Python',
-        'FastAPI',
-        'Kokoro-82M',
-        'Ollama',
-        'Browser Extension',
-        'Word / WPS'
-      ]
-    },
-    {
-      name: '双语字幕生成流水线',
-      description: '从外挂或内封字幕、PGS 图像字幕和 Whisper 语音识别结果生成中英双语 ASS 字幕，并使用 Ollama 完成纠错与翻译。',
-      keywords: ['Python', 'ASS', 'Whisper', 'PGS OCR', 'Ollama', '本地工作流']
-    },
-    {
-      name: '本地 AI 选片工作台',
-      description: '通过本地质量分析与视觉模型完成废片初筛、相似照片分组和双图比较，并把最终取舍保留给用户。',
-      keywords: ['Python', 'Flask', 'Ollama', 'Qwen3-VL', 'DINOv2', 'RAW / HEIC']
-    },
-    {
-      name: 'BiliClaw Extended：本地内容发现系统',
-      description: '基于 OpenBiliClaw 深度定制的本地优先内容理解与推荐系统，将用户可见的多平台信号用于本地画像、检索与推荐。',
-      keywords: [
-        'Python',
-        'FastAPI',
-        'Browser Extension',
-        'ChromaDB',
-        'Ollama',
-        '定制分支'
-      ]
+      name: 'CBF-Rover：移动机器人在线安全控制仿真',
+      description: '面向随机扰动与动态障碍，构建移动机器人动力学、分层仿真与在线 CBF 安全过滤，并在数值动力学仿真和 Gazebo 中检查闭环行为。',
+      keywords: ['移动机器人', '在线 CBF', 'Gazebo Classic', 'ROS 2']
     },
     {
       name: 'Research Memory：本地科研知识检索',
-      description: '将结构化资料、论文笔记、代码记录与实验溯源组织为本地可检索知识层，并通过只读接口连接 Codex 与 uTools。',
-      keywords: ['Python', 'SQLite FTS5', 'OpenVINO', 'MCP', 'uTools', '隐私优先']
+      description: '将结构化资料、论文笔记、代码记录与实验溯源组织为本地可检索知识层，并通过只读接口连接 Codex MCP 与 uTools。',
+      keywords: ['Python', 'SQLite FTS5', 'OpenVINO', 'MCP']
+    },
+    {
+      name: '中英双语个人学术主页',
+      description: '使用原生 HTML、CSS 和 JavaScript 构建双语学术主页，并以结构化数据、零依赖验证器和独立统计服务维护发布质量。',
+      keywords: ['HTML / CSS / JavaScript', 'GitHub Pages', 'Node.js Validation', 'Cloudflare Workers / D1']
+    },
+    {
+      name: 'LocalReadTranslate：本地划词听译助手',
+      description: '在浏览器、Word 与 WPS 中捕获用户主动选择的文字，经本地服务完成朗读、翻译和公式处理，并返回可复制结果。',
+      keywords: ['FastAPI', 'Browser Client', 'Kokoro TTS', 'Ollama']
+    },
+    {
+      name: '双语字幕生成流水线',
+      description: '从外挂或内封字幕、PGS 图像字幕和 Whisper 转写中选择来源，经过纠错、翻译与时间轴校验生成中英双语 ASS。',
+      keywords: ['Python', 'FFmpeg / Whisper', 'PGS OCR', 'Ollama']
+    },
+    {
+      name: '本地 AI 选片工作台',
+      description: '通过质量预筛、相似照片聚类和双图比较提供本地选片建议，并把最终取舍保留给用户确认。',
+      keywords: ['Flask', 'Ollama / Qwen', 'DINOv2', 'RAW / HEIC']
+    },
+    {
+      name: 'BiliClaw Extended：本地内容发现系统',
+      description: '基于 OpenBiliClaw 定制本地优先的多平台内容发现流程，补充账号隔离、可恢复索引、标签页复用和画像更新控制。',
+      keywords: ['FastAPI', 'Browser Extension', 'SQLite / ChromaDB', 'Ollama']
+    },
+    {
+      name: '基于人脸识别技术的多端考勤系统',
+      description: '通过摄像头拍照或上传照片识别到课学生，并在 Android、微信小程序和 Web 端生成考勤记录、出勤简表与阶段性报告。',
+      keywords: ['uni-app', 'Spring Boot', 'MySQL', 'Python']
+    },
+    {
+      name: 'MicFamily：KTV 运营管理系统',
+      description: '面向 KTV 日常运营，集中管理员工、会员、包房、订单、商品与公告；用户端支持订单查询、包房预订、在线结算和商品购买。',
+      keywords: ['Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL']
     },
     {
       name: 'Codex Skills 可复现配置工具包',
       description: '记录 Codex Skills 与插件的来源、锁定版本和状态，并提供跨平台安装、校验与恢复流程。',
-      keywords: ['Python', 'PowerShell', 'Codex Skills', '可复现性', '安装器', 'CI']
-    },
-    {
-      name: '中英双语个人学术主页',
-      description: '使用原生 HTML、CSS 和 JavaScript 构建的双语学术主页，包含响应式交互、双语 SEO、访问统计和零依赖站点验证。',
-      keywords: [
-        'HTML',
-        'CSS',
-        'JavaScript',
-        'GitHub Pages',
-        'Cloudflare Workers / D1',
-        '双语 SEO'
-      ]
+      keywords: ['Python', 'PowerShell', 'Codex Skills', 'CI']
     }
   ],
   en: [
     {
-      name: 'Multi-Platform Attendance System Using Face Recognition',
-      description: 'The system identifies students in attendance from camera-captured or uploaded images and generates attendance summaries and periodic reports.',
-      keywords: [
-        'uni-app',
-        'Spring Boot',
-        'MySQL',
-        'Python',
-        'Android / WeChat Mini Program / Web'
-      ]
+      name: 'CBF-Rover: Online Safety-Control Simulation for Mobile Robots',
+      description: 'For mobile robots under stochastic disturbances and dynamic obstacles, this project combines robot dynamics, layered simulation, and online CBF safety filtering, then checks closed-loop behavior in numerical dynamics simulation and Gazebo.',
+      keywords: ['Mobile Robots', 'Online CBF', 'Gazebo Classic', 'ROS 2']
     },
     {
-      name: 'KTV Management System with a Decoupled Front-End/Back-End Architecture',
-      description: 'The front end uses Vue, jQuery, Bootstrap, ACE, Element UI, Font Awesome, and uni-app; the back end uses Spring Boot with MySQL.',
-      keywords: [
-        'Vue',
-        'jQuery',
-        'Bootstrap',
-        'uni-app',
-        'Spring Boot 2.7.1',
-        'MySQL 8.0.26',
-        'Java 1.8'
-      ]
+      name: 'Research Memory: Local Research Knowledge Retrieval',
+      description: 'This local knowledge layer organizes structured sources, paper notes, code records, and experiment provenance, then exposes read-only retrieval to Codex MCP and uTools.',
+      keywords: ['Python', 'SQLite FTS5', 'OpenVINO', 'MCP']
     },
     {
-      name: 'CBF-Rover: Barrier-Certificate and Safe-Control Simulation for Mobile Robots',
-      description: 'Built the mobile-robot system model, layered simulation architecture, and online CBF safety filter, with closed-loop simulation and empirical validation in exact and Gazebo environments; the fixed-geometry q-SBC remains not ready.',
-      keywords: ['Mobile Robots', 'Online CBF', 'exact', 'Gazebo', 'q-SBC (not ready)']
+      name: 'Bilingual Academic Portfolio',
+      description: 'Built with vanilla HTML, CSS, and JavaScript, this bilingual academic portfolio uses structured data, a zero-dependency validator, and a separate analytics service to keep releases maintainable.',
+      keywords: ['HTML / CSS / JavaScript', 'GitHub Pages', 'Node.js Validation', 'Cloudflare Workers / D1']
     },
     {
-      name: 'Local Selection Read & Translate',
-      description: 'A local reading, translation, and formula-processing tool for browsers and document apps, combining Kokoro TTS with Ollama behind a locally managed service.',
-      keywords: [
-        'Python',
-        'FastAPI',
-        'Kokoro-82M',
-        'Ollama',
-        'Browser Extension',
-        'Word / WPS'
-      ]
+      name: 'LocalReadTranslate: Local Selection Read & Translate',
+      description: 'Across browsers, Word, and WPS, the tool captures only text the user selects, sends it through a local service for reading, translation, and formula handling, and returns reusable results.',
+      keywords: ['FastAPI', 'Browser Client', 'Kokoro TTS', 'Ollama']
     },
     {
       name: 'Bilingual Subtitle Pipeline',
-      description: 'Generates Chinese–English ASS subtitles from sidecar or embedded subtitles, PGS OCR, or Whisper transcription, followed by Ollama-assisted correction and translation.',
-      keywords: ['Python', 'ASS', 'Whisper', 'PGS OCR', 'Ollama', 'Local workflow']
+      description: 'The pipeline selects from sidecar or embedded subtitles, PGS image subtitles, and Whisper transcription, then produces Chinese–English ASS after correction, translation, and timeline validation.',
+      keywords: ['Python', 'FFmpeg / Whisper', 'PGS OCR', 'Ollama']
     },
     {
       name: 'Local AI Photo Selection Workbench',
-      description: 'Uses local image analysis and vision models to reject clear failures, group similar photos, and support side-by-side human selection.',
-      keywords: ['Python', 'Flask', 'Ollama', 'Qwen3-VL', 'DINOv2', 'RAW / HEIC']
+      description: 'The workbench combines quality pre-screening, similar-photo clustering, and pairwise comparison to provide local selection guidance while reserving final decisions for the user.',
+      keywords: ['Flask', 'Ollama / Qwen', 'DINOv2', 'RAW / HEIC']
     },
     {
       name: 'BiliClaw Extended: Local-First Content Discovery',
-      description: 'A customized fork of OpenBiliClaw for local-first multi-platform content understanding, profile building, retrieval, and recommendation.',
-      keywords: [
-        'Python',
-        'FastAPI',
-        'Browser Extension',
-        'ChromaDB',
-        'Ollama',
-        'Customized fork'
-      ]
+      description: 'Built as a customized OpenBiliClaw fork, this local-first multi-platform discovery flow adds account isolation, recoverable indexing, tab reuse, and explicit profile-update control.',
+      keywords: ['FastAPI', 'Browser Extension', 'SQLite / ChromaDB', 'Ollama']
     },
     {
-      name: 'Research Memory: Local Research Evidence & Knowledge Retrieval',
-      description: 'Organizes structured sources, paper notes, code records, and experiment provenance into a searchable local knowledge layer exposed to Codex and uTools through read-only interfaces.',
-      keywords: ['Python', 'SQLite FTS5', 'OpenVINO', 'MCP', 'uTools', 'Privacy-first']
+      name: 'Multi-Platform Attendance System Using Face Recognition',
+      description: 'The system identifies students from camera-captured or uploaded images and produces attendance records, summaries, and periodic reports across Android, WeChat Mini Program, and Web clients.',
+      keywords: ['uni-app', 'Spring Boot', 'MySQL', 'Python']
+    },
+    {
+      name: 'MicFamily: KTV Operations Management System',
+      description: 'For day-to-day KTV operations, the system centralizes staff, member, room, order, product, and notice management; customers can look up orders, reserve rooms, settle online, and purchase products.',
+      keywords: ['Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL']
     },
     {
       name: 'Reproducible Codex Skills Kit',
       description: 'Tracks Codex Skill and plugin provenance, pinned versions, and states, with cross-platform installation, validation, and recovery workflows.',
-      keywords: ['Python', 'PowerShell', 'Codex Skills', 'Reproducibility', 'Installer', 'CI']
-    },
-    {
-      name: 'Bilingual Academic Portfolio',
-      description: 'A bilingual academic portfolio built with vanilla web technologies, including responsive interaction, bilingual SEO, analytics, and zero-dependency site validation.',
-      keywords: [
-        'HTML',
-        'CSS',
-        'JavaScript',
-        'GitHub Pages',
-        'Cloudflare Workers / D1',
-        'Bilingual SEO'
-      ]
+      keywords: ['Python', 'PowerShell', 'Codex Skills', 'CI']
     }
   ]
 };
@@ -1660,6 +1602,147 @@ function validateHomeStructure(rootDir, issues) {
       !hasExpectedSectionSequence
     ) {
       addIssue(issues, file, HOME_SECTION_SEQUENCE_ISSUE);
+    }
+  }
+}
+
+function validateProjectPageStructure(rootDir, issues) {
+  const expectedSections = [
+    { id: 'project-list', projectCount: 3, value: 'representative' },
+    { id: 'local-tools', projectCount: 4, value: 'tools' },
+    { id: 'software-engineering', projectCount: 2, value: 'software-engineering' },
+    { id: 'open-engineering', projectCount: 1, value: 'infrastructure' }
+  ];
+  const expectedAnchorHrefs = expectedSections.map(({ id }) => `#${id}`);
+  const expectedProjectIds = PROJECT_IDS.map((id) => id.split('#').at(-1));
+
+  for (const file of ['projects.html', 'en/projects.html']) {
+    const absolutePath = path.join(rootDir, file);
+    if (!fs.existsSync(absolutePath)) continue;
+    const html = readUtf8(rootDir, file);
+    const elements = collectActiveHtmlElements(html);
+    const descendantsOf = (ancestor) => elements.filter((element) => (
+      ancestor && hasHtmlAncestor(element, ancestor)
+    ));
+    const isHidden = (element) => {
+      for (let current = element; current; current = current.parent) {
+        if (
+          Object.hasOwn(current.attributes, 'hidden') ||
+          String(current.attributes['aria-hidden'] || '').toLowerCase() === 'true' ||
+          hasClass(current.attributes, 'visually-hidden')
+        ) {
+          return true;
+        }
+      }
+      return false;
+    };
+    const elementText = (element) => {
+      if (!element) return '';
+      const closingTag = findHtmlClosingTag(html, element.name, element.end);
+      if (!closingTag) return '';
+      return normalizeHtmlText(
+        removeHtmlComments(html.slice(element.end, closingTag.index))
+          .replace(/<br\b[^>]*>/gi, ' ')
+          .replace(/<[^>]*>/g, ' ')
+      );
+    };
+
+    const mainElements = elements.filter((element) => (
+      element.name === 'main' &&
+      element.attributes.id === 'main-content' &&
+      hasClass(element.attributes, 'main-shell')
+    ));
+    const mainElement = mainElements.length === 1 ? mainElements[0] : null;
+    const mainChildren = mainElement
+      ? elements.filter((element) => element.parent === mainElement)
+      : [];
+    const heroSections = mainChildren.filter((element) => (
+      element.name === 'section' && hasClass(element.attributes, 'project-hero')
+    ));
+    const heroSection = heroSections.length === 1 ? heroSections[0] : null;
+    const publicNotes = descendantsOf(heroSection).filter((element) => (
+      element.name === 'p' &&
+      hasClass(element.attributes, 'project-public-note') &&
+      !isHidden(element) &&
+      elementText(element).length > 0
+    ));
+
+    const anchorBars = mainChildren.filter((element) => (
+      element.name === 'nav' && hasClass(element.attributes, 'anchor-bar')
+    ));
+    const anchorBar = anchorBars.length === 1 ? anchorBars[0] : null;
+    const anchorHrefs = descendantsOf(anchorBar)
+      .filter((element) => element.name === 'a' && !isHidden(element))
+      .map((element) => element.attributes.href);
+
+    const projectSections = mainChildren.filter((element) => (
+      element.name === 'section' && Object.hasOwn(element.attributes, 'data-project-section')
+    ));
+    const contentSections = mainChildren.filter((element) => (
+      element.name === 'section' && element !== heroSection
+    ));
+    const hasExpectedSections = projectSections.length === expectedSections.length &&
+      contentSections.length === expectedSections.length &&
+      projectSections.every((section, index) => {
+        const expected = expectedSections[index];
+        const projects = descendantsOf(section).filter((element) => (
+          Object.hasOwn(element.attributes, 'data-project-id') && !isHidden(element)
+        ));
+        return section.attributes.id === expected.id &&
+          section.attributes['data-project-section'] === expected.value &&
+          projects.length === expected.projectCount;
+      });
+
+    const visibleProjects = elements.filter((element) => (
+      Object.hasOwn(element.attributes, 'data-project-id') && !isHidden(element)
+    ));
+    const visibleProjectIds = visibleProjects.map((element) => (
+      element.attributes['data-project-id']
+    ));
+    const hasValidProjectTags = visibleProjects.every((project) => {
+      if (project.name !== 'article') return false;
+      const projectStacks = descendantsOf(project).filter((element) => (
+        hasClass(element.attributes, 'project-stack')
+      ));
+      if (projectStacks.length !== 1) return false;
+      const tags = elements.filter((element) => (
+        element.name === 'span' && element.parent === projectStacks[0] && !isHidden(element)
+      ));
+      return tags.length > 0 && tags.length <= 4;
+    });
+
+    const micFamily = visibleProjects.find((element) => (
+      element.attributes['data-project-id'] === 'project-mic-family'
+    ));
+    const micFamilyText = elementText(micFamily);
+    const hasForbiddenMicFamilyFact = [
+      /uni[\s-]?app/i,
+      /前后端分离/i,
+      /(?:decoupled|separated)\s+front[\s-]?end\s*(?:and|\/|[–—-])\s*back[\s-]?end/i,
+      /front[\s-]?end\s*(?:and|\/|[–—-])\s*back[\s-]?end\s+(?:decoupling|separation)/i,
+      /(?:spring\s*boot|mysql|mybatis(?:-plus)?|vue)\s+(?:v(?:ersion)?\s*)?\d+(?:\.\d+)+/i,
+      /\bjava\s+(?:1\.)?8\b/i
+    ].some((pattern) => pattern.test(micFamilyText));
+    const cbfRover = visibleProjects.find((element) => (
+      element.attributes['data-project-id'] === 'project-vision-obstacle-avoidance-rover'
+    ));
+    const cbfRoverText = elementText(cbfRover);
+    const hasForbiddenCbfFact = /\bexact\b/i.test(cbfRoverText) ||
+      /q[\s‑–—-]*sbc/i.test(cbfRoverText);
+
+    if (
+      !mainElement ||
+      !heroSection ||
+      publicNotes.length !== 1 ||
+      anchorBars.length !== 1 ||
+      stableCanonicalJson(anchorHrefs) !== stableCanonicalJson(expectedAnchorHrefs) ||
+      !hasExpectedSections ||
+      stableCanonicalJson(visibleProjectIds) !== stableCanonicalJson(expectedProjectIds) ||
+      !hasValidProjectTags ||
+      hasForbiddenMicFamilyFact ||
+      hasForbiddenCbfFact
+    ) {
+      addIssue(issues, file, PROJECT_PAGE_STRUCTURE_ISSUE);
     }
   }
 }
@@ -5564,69 +5647,96 @@ function hasStableProjectGridCss(rootDir) {
   if (!fs.existsSync(absolutePath)) return false;
 
   const source = readUtf8(rootDir, file);
-  const executableSource = maskedSource(source, buildCssCodeMask(source));
+  const codeMask = buildCssCodeMask(source);
+  const executableSource = maskedSource(source, codeMask);
   const ruleEntries = collectCssRuleEntries(executableSource);
-  const contracts = [
-    [
+  const desktopColumns = effectiveDirectCssProperty(
+    executableSource,
+    '.project-case',
+    'grid-template-columns',
+    ruleEntries
+  );
+  const desktopColumnMatch = /^minmax\(0,([0-9]*\.?[0-9]+)fr\)\s+minmax\(17rem,([0-9]*\.?[0-9]+)fr\)$/.exec(
+    desktopColumns || ''
+  );
+  const hasFiftyFiveFortyFiveColumns = Boolean(desktopColumnMatch) && (() => {
+    const left = Number(desktopColumnMatch[1]);
+    const right = Number(desktopColumnMatch[2]);
+    return left > 0 && right > 0 && Math.abs(left / (left + right) - 0.55) < 1e-9;
+  })();
+  const isSingleColumn = (value) => value === '1fr' || value === 'minmax(0,1fr)';
+  const desktopContractsHold =
+    effectiveDirectCssProperty(
+      executableSource,
+      '.project-showcase',
+      'display',
+      ruleEntries
+    ) === 'grid' &&
+    isSingleColumn(effectiveDirectCssProperty(
+      executableSource,
+      '.project-showcase',
+      'grid-template-columns',
+      ruleEntries
+    )) &&
+    effectiveDirectCssProperty(
+      executableSource,
+      '.project-case',
+      'display',
+      ruleEntries
+    ) === 'grid' &&
+    hasFiftyFiveFortyFiveColumns &&
+    effectiveDirectCssProperty(
+      executableSource,
+      '.project-case > *',
+      'min-width',
+      ruleEntries
+    ) === '0' &&
+    effectiveDirectCssProperty(
+      executableSource,
+      '.project-grid--index',
+      '--project-card-min',
+      ruleEntries
+    ) === '30rem' &&
+    effectiveDirectCssProperty(
+      executableSource,
       '.project-grid',
-      [['--project-card-min', '22.5rem']],
-      '.project-grid:not(.project-grid--featured)'
-    ],
-    [
+      'display',
+      ruleEntries
+    ) === 'grid' &&
+    effectiveDirectCssProperty(
+      executableSource,
       '.project-grid',
-      [
-        ['display', 'grid'],
-        [
-          'grid-template-columns',
-          'repeat(auto-fit,minmax(min(100%,var(--project-card-min)),1fr))'
-        ],
-        ['gap', '20px'],
-        ['align-items', 'stretch']
-      ],
-      '.project-grid:not(.project-grid--featured)'
-    ],
-    [
-      '.project-grid',
-      [
-        ['display', 'grid'],
-        [
-          'grid-template-columns',
-          'repeat(auto-fit,minmax(min(100%,var(--project-card-min)),1fr))'
-        ],
-        ['gap', '20px'],
-        ['align-items', 'stretch']
-      ],
-      '.project-grid.project-grid--featured'
-    ],
-    [
-      '.project-grid--featured',
-      [['--project-card-min', '30rem']],
-      '.project-grid--featured'
-    ],
-    [
-      '.project-grid > .project-card',
-      [['min-width', '0']],
-      '#main-content .project-grid > article.project-card'
-    ]
-  ];
-
-  return contracts.every(([selector, declarations, overlapSelector]) => (
-    declarations.every(([property, expectedValue]) => (
+      'grid-template-columns',
+      ruleEntries
+    ) === 'repeat(auto-fit,minmax(min(100%,var(--project-card-min)),1fr))' &&
+    (
       effectiveDirectCssProperty(
         executableSource,
-        selector,
-        property,
+        '.project-card',
+        'min-width',
         ruleEntries
-      ) === expectedValue
-    )) &&
-    !hasConflictingCssPropertyRule(
-      executableSource,
-      selector,
-      declarations,
-      ruleEntries,
-      overlapSelector
-    )
-  ));
+      ) === '0' ||
+      effectiveDirectCssProperty(
+        executableSource,
+        '.project-grid > .project-card',
+        'min-width',
+        ruleEntries
+      ) === '0'
+    );
+  if (!desktopContractsHold) return false;
+
+  const mediaPattern = new RegExp(
+    `@media\\s*\\(\\s*max-width\\s*:\\s*${MOBILE_BREAKPOINT_PX}px\\s*\\)\\s*\\{`
+  );
+  return extractCssMediaBlocks(source, codeMask, mediaPattern).some((block) => {
+    const executableBlock = maskedSource(block.source, block.codeMask);
+    return isSingleColumn(effectiveDirectCssProperty(
+      executableBlock,
+      '.project-case',
+      'grid-template-columns',
+      collectCssRuleEntries(executableBlock)
+    ));
+  });
 }
 
 function hasHomeQuoteHierarchyCss(rootDir) {
@@ -6697,6 +6807,7 @@ function validateRepository(rootDir) {
   validateStructuredDataConsistency(structuredDataRecords, issues);
   validateHomeQuotationCopies(absoluteRoot, issues);
   validateHomeStructure(absoluteRoot, issues);
+  validateProjectPageStructure(absoluteRoot, issues);
   validateEnglishTerminology(absoluteRoot, issues);
   validateProfileContacts(absoluteRoot, issues);
   validateProfileModelingAward(absoluteRoot, issues);
