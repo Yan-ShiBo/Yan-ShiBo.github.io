@@ -106,6 +106,7 @@ const FIXTURE_CONTENT_FILES = new Set([
   'assets/js/site.js',
   'assets/js/stats.js',
   'assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css',
+  'docs/Shibo-Yan-Resume.pdf',
   'manifest.en.webmanifest',
   'manifest.webmanifest',
   'robots.txt',
@@ -127,8 +128,22 @@ const RESUME_OVERFLOW_CSS_ISSUE =
   'assets/css/site.css: resume cards, contact values, keyword tags, and long actions must remain shrinkable on narrow viewports';
 const PROFILE_CONTACTS_ISSUE =
   'profile contact panel must list both approved email links and exclude phone and WeChat details';
+const PROFILE_MODELING_AWARD_ISSUE =
+  'profile must identify the 2020 modeling honor as the Certificate Authority Cup, never MCM/ICM';
 const PROFILE_CONTACT_CSS_ISSUE =
   'assets/css/site.css: profile email links and summary tags must remain shrinkable and wrappable on narrow viewports';
+const RESUME_KTV_CONTRACT_ISSUE =
+  'resume KTV entry must match the approved concise internship summary and visibly include Spring Boot, MySQL, and uni-app';
+const RESUME_AWARDS_CONTRACT_ISSUE =
+  'resume awards must preserve the approved PDF-aligned selection, order, and Certificate Authority Cup identity';
+const RESUME_CCF_A_CONTRACT_ISSUE =
+  'resume CCF Class A entry must preserve the full title, author order, and submitted status';
+const RESUME_SERVICE_CONTRACT_ISSUE =
+  'resume organization and practice section must preserve the five approved entries, dates, roles, and PDF order';
+const RESUME_TYPOGRAPHY_CSS_ISSUE =
+  'resume typography must use the smaller page scale and normal-weight organization and practice entries';
+const RESUME_PDF_SOURCE_CONTRACT_ISSUE =
+  'downloadable resume PDF must remain byte-identical to the user-provided one-page source file';
 const PROOF_RAIL_CSS_ISSUE =
   'assets/css/site.css: proof rails must use one card size and expose grab and dragging states';
 const PROOF_RAIL_DRAG_ISSUE =
@@ -586,7 +601,14 @@ module.exports = {
   MOBILE_CSS_BREAKPOINT_ISSUE,
   RESUME_OVERFLOW_CSS_ISSUE,
   PROFILE_CONTACTS_ISSUE,
+  PROFILE_MODELING_AWARD_ISSUE,
   PROFILE_CONTACT_CSS_ISSUE,
+  RESUME_KTV_CONTRACT_ISSUE,
+  RESUME_AWARDS_CONTRACT_ISSUE,
+  RESUME_CCF_A_CONTRACT_ISSUE,
+  RESUME_SERVICE_CONTRACT_ISSUE,
+  RESUME_TYPOGRAPHY_CSS_ISSUE,
+  RESUME_PDF_SOURCE_CONTRACT_ISSUE,
   PROOF_RAIL_CSS_ISSUE,
   PROOF_RAIL_DRAG_ISSUE,
   HOME_HERO_MOBILE_CSS_ISSUE,

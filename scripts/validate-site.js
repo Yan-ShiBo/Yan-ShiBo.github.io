@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const crypto = require('node:crypto');
 const path = require('node:path');
 const vm = require('node:vm');
 
@@ -182,8 +183,124 @@ const PROFILE_CONTACT_EMAILS = [
 ];
 const PROFILE_CONTACTS_ISSUE =
   'profile contact panel must list both approved email links and exclude phone and WeChat details';
+const PROFILE_MODELING_AWARD_ISSUE =
+  'profile must identify the 2020 modeling honor as the Certificate Authority Cup, never MCM/ICM';
+const PROFILE_KTV_CONTRACT_ISSUE =
+  'profile KTV record must bind uni-app, the internship period, and the project-development period to the same experience';
 const PROFILE_CONTACT_CSS_ISSUE =
   'profile email links and summary tags must remain shrinkable and wrappable on narrow viewports';
+const RESUME_ANCHOR_CONTRACT_ISSUE =
+  'resume anchor bar must link once, in order, to the six stable heading IDs';
+const RESUME_MATERIALS_CONTRACT_ISSUE =
+  'resume materials must expose only the PDF resume, transcript PDF, and profile links without previews or lightbox media';
+const RESUME_ACADEMIC_FACTS_ISSUE =
+  'resume must show degree GPA 3.95 / 5.00 and degree-required course rank 8 / 120, never 8 / 124';
+const RESUME_KTV_CONTRACT_ISSUE =
+  'resume KTV entry must match the approved concise internship summary and visibly include Spring Boot, MySQL, and uni-app';
+const RESUME_CBF_ROVER_CONTRACT_ISSUE =
+  'resume CBF-Rover entry must name exact and Gazebo validation and state that fixed-geometry q-SBC is not ready';
+const RESUME_AWARDS_CONTRACT_ISSUE =
+  'resume awards must preserve the approved PDF-aligned selection, order, and Certificate Authority Cup identity';
+const RESUME_CCF_A_CONTRACT_ISSUE =
+  'resume CCF Class A entry must preserve the full title, author order, and submitted status';
+const RESUME_SERVICE_CONTRACT_ISSUE =
+  'resume organization and practice section must preserve the five approved entries, dates, roles, and PDF order';
+const RESUME_TYPOGRAPHY_CSS_ISSUE =
+  'resume typography must use the smaller page scale and normal-weight organization and practice entries';
+const RESUME_PDF_SOURCE_CONTRACT_ISSUE =
+  'downloadable resume PDF must remain byte-identical to the user-provided one-page source file';
+const RESUME_PDF_SOURCE_SHA256 =
+  '0656540eecf90265d7bb451d4e91b337d34d2988c7922d3f3bd3d01da9b12f36';
+const RESUME_HEADING_IDS = [
+  'resume-education-title',
+  'resume-research-title',
+  'resume-projects-title',
+  'resume-awards-title',
+  'resume-service-title',
+  'resume-materials-title'
+];
+const RESUME_PAGE_CONTRACTS = [
+  {
+    file: 'resume.html',
+    materials: [
+      './docs/Shibo-Yan-Resume.pdf',
+      './docs/Shibo-Yan-Undergraduate-Transcript.pdf',
+      'profile.html#graduate'
+    ],
+    serviceHeading: '组织与实践经历',
+    serviceEntries: [
+      ['2022.05—2024.05', '清华社全国高等学校计算机与产业实践资源建设专家委员会（TIPCC）', '聘请志愿者'],
+      ['2021.09—2022.08', '沙坪坝区基层服务青年优才', '宣传策划组组长', '校级 2021—2022 年度优秀项目'],
+      ['2019.09—2020.05', '计算机与信息科学学院 软件学院学生会', '学习科技部', '干事'],
+      ['2023.06—2024.06', '西南大学计算机与信息科学学院 软件学院', '科研助理'],
+      ['2021.09—2022.12', '百度松果菁英班', '优秀结课学员', '总积分排名第 2']
+    ],
+    gpaPattern: /学位(?:平均分)?绩点\s*3\.95\s*\/\s*5\.00/,
+    rankPattern: /学位课程排名\s*8\s*\/\s*120/,
+    ccfAStatus: '在投',
+    ccfAVenue: 'CCF A 类会议',
+    ccfAAuthor: '第二作者（导师第一作者）',
+    ktvDate: '2022.06—2022.08',
+    ktvSummaryFragments: ['协调团队完成系统开发与联调', 'Spring Boot', 'MySQL', 'uni-app', '实习评分 94 分'],
+    cbfReadiness: '固定几何 q-SBC 仍处于未就绪状态',
+    cbfForbiddenPatterns: [
+      /完成(?:了)?(?:固定几何\s*)?q-SBC/i,
+      /q-SBC\s*(?:已)?(?:完成|就绪)/i,
+      /完成障碍证书合成/
+    ],
+    modelingAward: '第九届“认证杯”国际数学建模竞赛',
+    forbiddenAwards: [
+      ['2024', '研究生学业奖学金二等奖']
+    ],
+    awards: [
+      ['2024', '“华为杯”', '第二十一届', '二等奖'],
+      ['2020', '“认证杯”', 'Honorable Mention'],
+      ['2021—2022', '第十三、十四届', '二等奖'],
+      ['2019—2022', '本科期间其他荣誉', '本科二等奖学金', '三好学生', '精神文明奖', '优秀共青团员'],
+      ['2024—2025', '研究生期间其他荣誉', '学术科技创新先进个人', '研究生学业奖学金一等奖']
+    ]
+  },
+  {
+    file: 'en/resume.html',
+    materials: [
+      '../docs/Shibo-Yan-Resume.pdf',
+      '../docs/Shibo-Yan-Undergraduate-Transcript.pdf',
+      'profile.html#graduate'
+    ],
+    serviceHeading: 'Organizational and practical experience',
+    serviceEntries: [
+      ['2022.05—2024.05', 'Tsinghua University Press National Expert Committee for University Computing and Industry Practice Resources (TIPCC)', 'Invited volunteer'],
+      ['2021.09—2022.08', 'Shapingba District Grassroots Service Young Talent Program', 'Publicity planning team lead', 'University-level outstanding project, 2021—2022'],
+      ['2019.09—2020.05', 'Student Union, School of Computer and Information Science / School of Software', 'Learning and Technology Department', 'Officer'],
+      ['2023.06—2024.06', 'School of Computer and Information Science / School of Software, Southwest University', 'Research assistant'],
+      ['2021.09—2022.12', 'Baidu Pinecone Elite Program', 'Outstanding graduate', 'Ranked 2nd overall']
+    ],
+    gpaPattern: /Degree GPA\s*:?\s*3\.95\s*\/\s*5\.00/i,
+    rankPattern: /Degree-required course rank\s*:?\s*8\s*\/\s*120/i,
+    ccfAStatus: 'Submitted',
+    ccfAVenue: 'CCF Class A conference',
+    ccfAAuthor: 'Second author (advisor first)',
+    ktvDate: '2022.06—2022.08',
+    ktvSummaryFragments: ['Coordinated the team through system development and integration', 'Spring Boot', 'MySQL', 'uni-app', 'internship score of 94'],
+    cbfReadiness: 'the fixed-geometry q-SBC remains not ready',
+    cbfForbiddenPatterns: [
+      /completed (?:the )?(?:fixed-geometry )?q-SBC/i,
+      /q-SBC (?:is )?(?:complete|ready)/i,
+      /completed barrier-certificate synthesis/i
+    ],
+    modelingAward: 'Certificate Authority Cup International Mathematical Contest in Modeling',
+    forbiddenAwards: [
+      ['2024', 'Second-Class Graduate Academic Scholarship']
+    ],
+    awards: [
+      ['2024', '21st', '“Huawei Cup”', 'Second Prize'],
+      ['2020', 'Certificate Authority Cup', 'Honorable Mention'],
+      ['2021—2022', '13th and 14th', 'Second Prize'],
+      ['2019—2022', 'Additional undergraduate honors', 'Second-Class Scholarship', 'Merit Student', 'Spiritual Civilization Award', 'Outstanding Communist Youth League Member'],
+      ['2024—2025', 'Additional graduate honors', 'Outstanding Individual in Academic, Scientific, and Technological Innovation', 'First-Class Graduate Academic Scholarship']
+    ]
+  }
+];
 const PROOF_RAIL_CSS_ISSUE =
   'proof rails must use one card size and expose grab and dragging states';
 const PROOF_RAIL_DRAG_ISSUE =
@@ -801,20 +918,21 @@ const EXPECTED_PROJECT_FACTS = {
     },
     {
       name: '前后端分离的 KTV 管理系统',
-      description: '前端使用 Vue、jQuery、Bootstrap、ACE、ElementUI 和 font-awesome；后端使用 Spring Boot，数据库使用 MySQL。',
+      description: '前端使用 Vue、jQuery、Bootstrap、ACE、ElementUI、font-awesome 和 uni-app；后端使用 Spring Boot，数据库使用 MySQL。',
       keywords: [
         'Vue',
         'jQuery',
         'Bootstrap',
+        'uni-app',
         'Spring Boot 2.7.1',
         'MySQL 8.0.26',
         'Java 1.8'
       ]
     },
     {
-      name: '基于视觉的端到端强化学习避障小车',
-      description: '设计结合强化学习与 CBF / CLF 安全约束的端到端视觉控制系统，使小车能够依据相机观测生成控制动作，并面向嵌入式硬件完成闭环验证。',
-      keywords: ['强化学习', 'CBF / CLF', '视觉控制']
+      name: 'CBF-Rover：面向移动机器人的障碍证书与安全控制仿真',
+      description: '构建移动机器人系统模型、分层仿真架构与在线 CBF 安全过滤，并在 exact 与 Gazebo 环境中完成闭环仿真和经验验证；固定几何 q-SBC 仍处于未就绪状态。',
+      keywords: ['移动机器人', '在线 CBF', 'exact', 'Gazebo', 'q-SBC（未就绪）']
     },
     {
       name: '本地划词听译助手',
@@ -887,20 +1005,21 @@ const EXPECTED_PROJECT_FACTS = {
     },
     {
       name: 'KTV Management System with a Decoupled Front-End/Back-End Architecture',
-      description: 'The front end uses Vue, jQuery, Bootstrap, ACE, Element UI, and Font Awesome; the back end uses Spring Boot with MySQL.',
+      description: 'The front end uses Vue, jQuery, Bootstrap, ACE, Element UI, Font Awesome, and uni-app; the back end uses Spring Boot with MySQL.',
       keywords: [
         'Vue',
         'jQuery',
         'Bootstrap',
+        'uni-app',
         'Spring Boot 2.7.1',
         'MySQL 8.0.26',
         'Java 1.8'
       ]
     },
     {
-      name: 'Vision-Based End-to-End Reinforcement Learning for an Obstacle-Avoidance Robot Car',
-      description: 'Developing an end-to-end vision-based control system that combines reinforcement learning with CBF / CLF safety constraints, maps camera observations to control actions, and supports closed-loop validation on embedded hardware.',
-      keywords: ['Reinforcement Learning', 'CBF / CLF', 'Vision Control']
+      name: 'CBF-Rover: Barrier-Certificate and Safe-Control Simulation for Mobile Robots',
+      description: 'Built the mobile-robot system model, layered simulation architecture, and online CBF safety filter, with closed-loop simulation and empirical validation in exact and Gazebo environments; the fixed-geometry q-SBC remains not ready.',
+      keywords: ['Mobile Robots', 'Online CBF', 'exact', 'Gazebo', 'q-SBC (not ready)']
     },
     {
       name: 'Local Selection Read & Translate',
@@ -1141,6 +1260,13 @@ function collectActiveHtmlElements(html) {
 function hasHtmlAncestor(element, ancestor) {
   for (let parent = element && element.parent; parent; parent = parent.parent) {
     if (parent === ancestor) return true;
+  }
+  return false;
+}
+
+function hasHtmlAncestorClass(element, className) {
+  for (let parent = element && element.parent; parent; parent = parent.parent) {
+    if (hasClass(parent.attributes, className)) return true;
   }
   return false;
 }
@@ -1588,6 +1714,77 @@ function validateProfileContacts(rootDir, issues) {
   }
 }
 
+function validateProfileModelingAward(rootDir, issues) {
+  const contracts = [
+    {
+      file: 'profile.html',
+      required: '第九届“认证杯”国际数学建模竞赛'
+    },
+    {
+      file: 'en/profile.html',
+      required: 'Certificate Authority Cup'
+    }
+  ];
+
+  for (const contract of contracts) {
+    const absolutePath = path.join(rootDir, contract.file);
+    if (!fs.existsSync(absolutePath)) continue;
+    const visibleText = getVisibleBodyText(fs.readFileSync(absolutePath, 'utf8'));
+    if (!visibleText.includes(contract.required) || visibleText.includes('MCM/ICM')) {
+      addIssue(issues, contract.file, PROFILE_MODELING_AWARD_ISSUE);
+    }
+  }
+}
+
+function validateProfileKtvFacts(rootDir, issues) {
+  const contracts = [
+    {
+      file: 'profile.html',
+      containerClass: 'profile-project-item',
+      requiredPatterns: [
+        /uni-app/,
+        /项目开发期\s*：?\s*2022\.06\s*-\s*2022\.07/,
+        /实习期\s*：?\s*2022\.06\s*-\s*2022\.08/
+      ]
+    },
+    {
+      file: 'en/profile.html',
+      containerClass: 'info-card',
+      requiredPatterns: [
+        /uni-app/,
+        /internship period\s*:\s*June–August 2022/i,
+        /project development period\s*:\s*June–July 2022/i
+      ]
+    }
+  ];
+
+  for (const contract of contracts) {
+    const absolutePath = path.join(rootDir, contract.file);
+    if (!fs.existsSync(absolutePath)) continue;
+    const html = fs.readFileSync(absolutePath, 'utf8');
+    const elements = collectActiveHtmlElements(html);
+    const getContainerText = (container) => normalizeHtmlText([
+      getActiveElementText(html, container),
+      ...elements
+        .filter((element) => hasHtmlAncestor(element, container))
+        .map((element) => getActiveElementText(html, element))
+    ].join(' '));
+    const containers = elements.filter((element) => (
+      hasClass(element.attributes, contract.containerClass) &&
+      getContainerText(element).includes('KTV')
+    ));
+    const containerText = containers.length === 1
+      ? getContainerText(containers[0])
+      : '';
+    if (
+      containers.length !== 1 ||
+      !contract.requiredPatterns.every((pattern) => pattern.test(containerText))
+    ) {
+      addIssue(issues, contract.file, PROFILE_KTV_CONTRACT_ISSUE);
+    }
+  }
+}
+
 function getDocumentTitle(html) {
   const match = removeHtmlComments(html).match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
   if (!match) return '';
@@ -1671,6 +1868,216 @@ function getVisibleBodyText(html) {
   }
   if (hiddenDepth === 0) visibleParts.push(bodyHtml.slice(cursor));
   return normalizeHtmlText(visibleParts.join(' '));
+}
+
+function getActiveElementText(html, element) {
+  if (!element) return '';
+  const closingTag = findHtmlClosingTag(html, element.name, element.end);
+  if (!closingTag) return '';
+  return getVisibleBodyText(`<body>${html.slice(element.end, closingTag.index)}</body>`);
+}
+
+function validateResumeContentContract(rootDir, issues) {
+  const ccfATitle =
+    'Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning';
+
+  for (const contract of RESUME_PAGE_CONTRACTS) {
+    const absolutePath = path.join(rootDir, contract.file);
+    if (!fs.existsSync(absolutePath)) continue;
+
+    const html = fs.readFileSync(absolutePath, 'utf8');
+    const elements = collectActiveHtmlElements(html);
+    const descendantsOf = (ancestor) => elements.filter((element) => (
+      ancestor && hasHtmlAncestor(element, ancestor)
+    ));
+    const mainElement = elements.find((element) => (
+      element.name === 'main' && element.attributes.id === 'main-content'
+    ));
+    const mainText = getActiveElementText(html, mainElement);
+
+    const anchorBars = elements.filter((element) => (
+      element.name === 'nav' && hasClass(element.attributes, 'resume-anchor-bar')
+    ));
+    const anchorBar = anchorBars.length === 1 ? anchorBars[0] : null;
+    const anchorHrefs = descendantsOf(anchorBar)
+      .filter((element) => element.name === 'a')
+      .map((element) => element.attributes.href || '');
+    const expectedAnchorHrefs = RESUME_HEADING_IDS.map((id) => `#${id}`);
+    const headingsAreStable = RESUME_HEADING_IDS.every((id, index) => {
+      const matches = elements.filter((element) => element.attributes.id === id);
+      if (matches.length !== 1 || matches[0].name !== 'h2') return false;
+      const expectedClass = index === RESUME_HEADING_IDS.length - 1
+        ? 'resume-materials'
+        : 'resume-ledger-section';
+      return hasHtmlAncestorClass(matches[0], expectedClass);
+    });
+    const serviceHeading = elements.find((element) => (
+      element.name === 'h2' && element.attributes.id === 'resume-service-title'
+    ));
+    if (
+      anchorBars.length !== 1 ||
+      stableCanonicalJson(anchorHrefs) !== stableCanonicalJson(expectedAnchorHrefs) ||
+      !headingsAreStable ||
+      getActiveElementText(html, serviceHeading) !== contract.serviceHeading
+    ) {
+      addIssue(issues, contract.file, RESUME_ANCHOR_CONTRACT_ISSUE);
+    }
+
+    const serviceSections = elements.filter((element) => (
+      element.name === 'section' && hasClass(element.attributes, 'resume-service-section')
+    ));
+    const serviceEntries = serviceSections.length === 1
+      ? descendantsOf(serviceSections[0]).filter((element) => (
+        element.name === 'article' && hasClass(element.attributes, 'resume-entry')
+      ))
+      : [];
+    const serviceEntryTexts = serviceEntries.map((element) => (
+      getActiveElementText(html, element)
+    ));
+    const serviceEntriesMatch =
+      serviceEntryTexts.length === contract.serviceEntries.length &&
+      contract.serviceEntries.every((required, index) => (
+        required.every((fragment) => serviceEntryTexts[index].includes(fragment))
+      ));
+    if (serviceSections.length !== 1 || !serviceEntriesMatch) {
+      addIssue(issues, contract.file, RESUME_SERVICE_CONTRACT_ISSUE);
+    }
+
+    const materialSections = elements.filter((element) => (
+      element.name === 'section' && hasClass(element.attributes, 'resume-materials')
+    ));
+    const materialSection = materialSections.length === 1 ? materialSections[0] : null;
+    const materialElements = descendantsOf(materialSection);
+    const materialHrefs = materialElements
+      .filter((element) => element.name === 'a')
+      .map((element) => element.attributes.href || '');
+    const hasForbiddenMaterial = materialElements.some((element) => (
+      element.name === 'img' ||
+      hasClass(element.attributes, 'doc-preview') ||
+      hasClass(element.attributes, 'proof-grid') ||
+      Object.hasOwn(element.attributes, 'data-lightbox')
+    ));
+    if (
+      materialSections.length !== 1 ||
+      stableCanonicalJson(materialHrefs) !== stableCanonicalJson(contract.materials) ||
+      hasForbiddenMaterial
+    ) {
+      addIssue(issues, contract.file, RESUME_MATERIALS_CONTRACT_ISSUE);
+    }
+
+    if (
+      !contract.gpaPattern.test(mainText) ||
+      !contract.rankPattern.test(mainText) ||
+      /8\s*\/\s*124/.test(mainText)
+    ) {
+      addIssue(issues, contract.file, RESUME_ACADEMIC_FACTS_ISSUE);
+    }
+
+    const resumeEntries = elements.filter((element) => (
+      element.name === 'article' && hasClass(element.attributes, 'resume-entry')
+    ));
+    const entryTexts = resumeEntries.map((element) => getActiveElementText(html, element));
+    const ktvEntries = resumeEntries.filter((element) => (
+      getActiveElementText(html, element).includes('KTV')
+    ));
+    const ktvEntry = ktvEntries.length === 1 ? ktvEntries[0] : null;
+    const ktvText = getActiveElementText(html, ktvEntry);
+    const ktvDateTexts = descendantsOf(ktvEntry)
+      .filter((element) => hasClass(element.attributes, 'resume-entry__date'))
+      .map((element) => getActiveElementText(html, element));
+    const ktvParagraphTexts = descendantsOf(ktvEntry)
+      .filter((element) => element.name === 'p')
+      .map((element) => getActiveElementText(html, element));
+    if (
+      ktvEntries.length !== 1 ||
+      !ktvText.includes('uni-app') ||
+      stableCanonicalJson(ktvDateTexts) !== stableCanonicalJson([contract.ktvDate]) ||
+      ktvParagraphTexts.length !== 1 ||
+      !contract.ktvSummaryFragments.every((fragment) => (
+        ktvParagraphTexts[0].includes(fragment)
+      ))
+    ) {
+      addIssue(issues, contract.file, RESUME_KTV_CONTRACT_ISSUE);
+    }
+
+    const cbfEntries = entryTexts.filter((text) => text.includes('CBF-Rover'));
+    if (
+      cbfEntries.length !== 1 ||
+      !cbfEntries[0].includes('exact') ||
+      !cbfEntries[0].includes('Gazebo') ||
+      !cbfEntries[0].includes(contract.cbfReadiness) ||
+      contract.cbfForbiddenPatterns.some((pattern) => pattern.test(cbfEntries[0]))
+    ) {
+      addIssue(issues, contract.file, RESUME_CBF_ROVER_CONTRACT_ISSUE);
+    }
+
+    const awardLists = elements.filter((element) => (
+      element.name === 'ul' && hasClass(element.attributes, 'resume-award-list')
+    ));
+    const awardItems = awardLists.length === 1
+      ? descendantsOf(awardLists[0]).filter((element) => element.name === 'li')
+      : [];
+    const awardTexts = awardItems.map((element) => getActiveElementText(html, element));
+    const hasApprovedAwards =
+      awardLists.length === 1 &&
+      awardTexts.length === contract.awards.length &&
+      contract.awards.every((required, index) => (
+        required.every((fragment) => awardTexts[index].includes(fragment))
+      )) &&
+      awardTexts.some((text) => text.includes(contract.modelingAward)) &&
+      !contract.forbiddenAwards.some((forbidden) => (
+        awardTexts.some((text) => forbidden.every((fragment) => text.includes(fragment)))
+      ));
+    const hasForbiddenModelingAlias = awardTexts.some((text) => (
+      /\bMCM\s*\/\s*ICM\b/i.test(text)
+    ));
+    if (!hasApprovedAwards || hasForbiddenModelingAlias) {
+      addIssue(issues, contract.file, RESUME_AWARDS_CONTRACT_ISSUE);
+    }
+
+    const publicationContainers = elements.filter((element) => (
+      hasClass(element.attributes, 'resume-publications')
+    ));
+    const publicationItems = publicationContainers.length === 1
+      ? descendantsOf(publicationContainers[0]).filter((element) => element.name === 'li')
+      : [];
+    const ccfAItems = publicationItems.filter((item) => (
+      descendantsOf(item).some((element) => (
+        element.name === 'cite' && getActiveElementText(html, element) === ccfATitle
+      ))
+    ));
+    const ccfAItem = ccfAItems.length === 1 ? ccfAItems[0] : null;
+    const ccfAText = getActiveElementText(html, ccfAItem);
+    const ccfAStatuses = descendantsOf(ccfAItem)
+      .filter((element) => hasClass(element.attributes, 'resume-status'))
+      .map((element) => getActiveElementText(html, element));
+    if (
+      publicationContainers.length !== 1 ||
+      ccfAItems.length !== 1 ||
+      stableCanonicalJson(ccfAStatuses) !== stableCanonicalJson([contract.ccfAStatus]) ||
+      !ccfAText.includes(contract.ccfAVenue) ||
+      !ccfAText.includes(contract.ccfAAuthor)
+    ) {
+      addIssue(issues, contract.file, RESUME_CCF_A_CONTRACT_ISSUE);
+    }
+  }
+}
+
+function validateResumePdfSourceContract(rootDir, issues) {
+  const file = 'docs/Shibo-Yan-Resume.pdf';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
+    addIssue(issues, file, RESUME_PDF_SOURCE_CONTRACT_ISSUE);
+    return;
+  }
+
+  const digest = crypto
+    .createHash('sha256')
+    .update(fs.readFileSync(absolutePath))
+    .digest('hex');
+  if (digest !== RESUME_PDF_SOURCE_SHA256) {
+    addIssue(issues, file, RESUME_PDF_SOURCE_CONTRACT_ISSUE);
+  }
 }
 
 function isAbsoluteUrl(value) {
@@ -5033,6 +5440,30 @@ function hasResumeOverflowProtectionCss(rootDir) {
   ));
 }
 
+function hasResumeTypographyCss(rootDir) {
+  const file = 'assets/css/site.css';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return false;
+
+  const source = readUtf8(rootDir, file);
+  const executableSource = maskedSource(source, buildCssCodeMask(source));
+  const ruleEntries = collectCssRuleEntries(executableSource);
+  const contracts = [
+    ['.resume-page', 'font-size', '16px'],
+    ['.resume-service-section .resume-entry__heading h3', 'font-weight', '400'],
+    ['.resume-service-section .resume-entry__heading > span', 'font-weight', '400']
+  ];
+
+  return contracts.every(([selector, property, expectedValue]) => (
+    effectiveDirectCssProperty(
+      executableSource,
+      selector,
+      property,
+      ruleEntries
+    ) === expectedValue
+  ));
+}
+
 function hasUniformProofRailCss(rootDir) {
   const file = 'assets/css/site.css';
   const absolutePath = path.join(rootDir, file);
@@ -5875,6 +6306,12 @@ function validateResumeOverflowCssContract(rootDir, issues) {
   }
 }
 
+function validateResumeTypographyCssContract(rootDir, issues) {
+  if (!hasResumeTypographyCss(rootDir)) {
+    addIssue(issues, 'assets/css/site.css', RESUME_TYPOGRAPHY_CSS_ISSUE);
+  }
+}
+
 function validateProofRailCssContract(rootDir, issues) {
   if (!hasUniformProofRailCss(rootDir)) {
     addIssue(issues, 'assets/css/site.css', PROOF_RAIL_CSS_ISSUE);
@@ -6262,6 +6699,10 @@ function validateRepository(rootDir) {
   validateHomeStructure(absoluteRoot, issues);
   validateEnglishTerminology(absoluteRoot, issues);
   validateProfileContacts(absoluteRoot, issues);
+  validateProfileModelingAward(absoluteRoot, issues);
+  validateProfileKtvFacts(absoluteRoot, issues);
+  validateResumeContentContract(absoluteRoot, issues);
+  validateResumePdfSourceContract(absoluteRoot, issues);
 
   for (const page of NOT_FOUND_PAGES) {
     if (!existingHtml.has(page.file)) continue;
@@ -6312,6 +6753,7 @@ function validateRepository(rootDir) {
   validateStatsJavaScriptContracts(absoluteRoot, issues);
   validateMobileNavigationCssContract(absoluteRoot, issues);
   validateResumeOverflowCssContract(absoluteRoot, issues);
+  validateResumeTypographyCssContract(absoluteRoot, issues);
   validateProfileContactCssContract(absoluteRoot, issues);
   validateProofRailCssContract(absoluteRoot, issues);
   validateProjectGridCssContract(absoluteRoot, issues);

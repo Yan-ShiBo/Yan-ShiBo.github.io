@@ -11,7 +11,14 @@ const {
   MOBILE_CSS_BREAKPOINT_ISSUE,
   RESUME_OVERFLOW_CSS_ISSUE,
   PROFILE_CONTACTS_ISSUE,
+  PROFILE_MODELING_AWARD_ISSUE,
   PROFILE_CONTACT_CSS_ISSUE,
+  RESUME_KTV_CONTRACT_ISSUE,
+  RESUME_AWARDS_CONTRACT_ISSUE,
+  RESUME_CCF_A_CONTRACT_ISSUE,
+  RESUME_SERVICE_CONTRACT_ISSUE,
+  RESUME_TYPOGRAPHY_CSS_ISSUE,
+  RESUME_PDF_SOURCE_CONTRACT_ISSUE,
   PROOF_RAIL_CSS_ISSUE,
   PROOF_RAIL_DRAG_ISSUE,
   HOME_HERO_MOBILE_CSS_ISSUE,
@@ -315,6 +322,360 @@ test('validateRepository accepts the checked-in site baseline', () => {
   assert.equal(result.summary.htmlFiles, 14);
   assert.equal(result.summary.indexablePages, 12);
   assert.equal(result.summary.sitemapUrls, 12);
+});
+
+function assertContentMutationsRejected(t, issue, mutations) {
+  for (const mutation of mutations) {
+    const rootDir = createRepositoryFixture(t);
+    mutation.mutate(rootDir);
+
+    const result = validateRepository(rootDir);
+
+    assert.ok(
+      result.issues.includes(`${mutation.file}: ${issue}`),
+      `${mutation.name}; received:\n${result.issues.join('\n')}`
+    );
+  }
+}
+
+test('resume synchronized content rejects KTV, organization, or typography drift', (t) => {
+  assertContentMutationsRejected(t, RESUME_KTV_CONTRACT_ISSUE, [
+    {
+      name: 'Chinese KTV entry without uni-app',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, 'Spring Boot、MySQL 与 uni-app', 'Spring Boot 与 MySQL');
+      }
+    },
+    {
+      name: 'English KTV entry without uni-app',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, 'Spring Boot, MySQL, and uni-app', 'Spring Boot and MySQL');
+      }
+    },
+    {
+      name: 'Chinese KTV entry with the wrong internship period',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '<div class="resume-entry__date">2022.06—2022.08</div>',
+          '<div class="resume-entry__date">2022.06—2022.07</div>'
+        );
+      }
+    },
+    {
+      name: 'English KTV entry with the wrong internship period',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '<div class="resume-entry__date">2022.06—2022.08</div>',
+          '<div class="resume-entry__date">2022.06—2022.07</div>'
+        );
+      }
+    }
+  ]);
+
+  assertContentMutationsRejected(t, RESUME_SERVICE_CONTRACT_ISSUE, [
+    {
+      name: 'Chinese organization section without the Student Union entry',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, '计算机与信息科学学院 软件学院学生会', '计算机与信息科学学院 软件学院');
+      }
+    },
+    {
+      name: 'English organization section without the research-assistant role',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, '<span>Research assistant</span>', '<span>Assistant</span>');
+      }
+    }
+  ]);
+
+  assertContentMutationsRejected(t, RESUME_AWARDS_CONTRACT_ISSUE, [
+    {
+      name: 'Chinese resume restores an extra 2025 honor outside the PDF selection',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '<ul class="resume-award-list">',
+          '<ul class="resume-award-list"><li><time datetime="2025">2025</time><span>“华为杯”第二十二届中国研究生数学建模竞赛三等奖</span></li>'
+        );
+      }
+    },
+    {
+      name: 'English resume changes the PDF-selected graduate scholarship class',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'Additional graduate honors: Outstanding Individual in Academic, Scientific, and Technological Innovation and First-Class Graduate Academic Scholarship',
+          'Additional graduate honors: Outstanding Individual in Academic, Scientific, and Technological Innovation and Second-Class Graduate Academic Scholarship'
+        );
+      }
+    }
+  ]);
+
+  assertContentMutationsRejected(t, RESUME_TYPOGRAPHY_CSS_ISSUE, [
+    {
+      name: 'Resume page base type scale returns to 17px',
+      file: 'assets/css/site.css',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '.resume-page{\n  --resume-anchor-h:52px;\n  font-size:16px;',
+          '.resume-page{\n  --resume-anchor-h:52px;\n  font-size:17px;'
+        );
+      }
+    },
+    {
+      name: 'Organization and practice entries become bold again',
+      file: 'assets/css/site.css',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '.resume-service-section .resume-entry__heading h3,\n.resume-service-section .resume-entry__heading > span{\n  font-weight:400;',
+          '.resume-service-section .resume-entry__heading h3,\n.resume-service-section .resume-entry__heading > span{\n  font-weight:600;'
+        );
+      }
+    }
+  ]);
+
+  assertContentMutationsRejected(t, RESUME_PDF_SOURCE_CONTRACT_ISSUE, [
+    {
+      name: 'Downloadable resume is replaced by a generated PDF',
+      file: 'docs/Shibo-Yan-Resume.pdf',
+      mutate(rootDir) {
+        fs.writeFileSync(
+          path.join(rootDir, this.file),
+          Buffer.from('%PDF-1.7\n% generated replacement\n', 'ascii')
+        );
+      }
+    }
+  ]);
+});
+
+test('modeling award requires the approved Certificate Authority Cup identity', (t) => {
+  assertContentMutationsRejected(t, PROFILE_MODELING_AWARD_ISSUE, [
+    {
+      name: 'Chinese profile without the approved competition identity',
+      file: 'profile.html',
+      mutate(rootDir) {
+        replaceMatching(
+          rootDir,
+          this.file,
+          /第九届“认证杯”国际数学建模竞赛/g,
+          '第九届国际数学建模竞赛'
+        );
+      }
+    },
+    {
+      name: 'English profile without the approved competition identity',
+      file: 'en/profile.html',
+      mutate(rootDir) {
+        replaceMatching(
+          rootDir,
+          this.file,
+          /Certificate Authority Cup/g,
+          'International Modeling Contest'
+        );
+      }
+    }
+  ]);
+
+  assertContentMutationsRejected(t, RESUME_AWARDS_CONTRACT_ISSUE, [
+    {
+      name: 'Chinese resume without the approved competition identity',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '第九届“认证杯”国际数学建模竞赛（小美赛）',
+          '2020 国际数学建模竞赛'
+        );
+      }
+    },
+    {
+      name: 'English resume without the approved competition identity',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'Certificate Authority Cup International Mathematical Contest in Modeling',
+          'International Mathematical Contest in Modeling'
+        );
+      }
+    }
+  ]);
+});
+
+test('modeling award rejects MCM/ICM aliases even when approved wording remains', (t) => {
+  assertContentMutationsRejected(t, PROFILE_MODELING_AWARD_ISSUE, [
+    {
+      name: 'Chinese profile with an MCM/ICM alias beside the approved identity',
+      file: 'profile.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '<main class="main-shell" id="main-content">',
+          '<main class="main-shell" id="main-content"><p>MCM/ICM</p>'
+        );
+      }
+    },
+    {
+      name: 'English profile with an MCM/ICM alias beside the approved identity',
+      file: 'en/profile.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '<main class="main-shell" id="main-content">',
+          '<main class="main-shell" id="main-content"><p>MCM/ICM</p>'
+        );
+      }
+    }
+  ]);
+
+  assertContentMutationsRejected(t, RESUME_AWARDS_CONTRACT_ISSUE, [
+    {
+      name: 'Chinese resume with an MCM/ICM alias beside the approved identity',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '第九届“认证杯”国际数学建模竞赛（小美赛）Honorable Mention（荣誉奖）',
+          '第九届“认证杯”国际数学建模竞赛（小美赛）Honorable Mention（荣誉奖，MCM/ICM）'
+        );
+      }
+    },
+    {
+      name: 'English resume with an MCM/ICM alias beside the approved identity',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'Honorable Mention, 2020 Certificate Authority Cup International Mathematical Contest in Modeling',
+          'Honorable Mention, 2020 Certificate Authority Cup International Mathematical Contest in Modeling (MCM/ICM)'
+        );
+      }
+    }
+  ]);
+});
+
+test('resume CCF A facts reject full-title or submission-status drift', (t) => {
+  const title =
+    'Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning';
+  const shortenedTitle =
+    'Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Neural-Symbolic Learning';
+
+  assertContentMutationsRejected(t, RESUME_CCF_A_CONTRACT_ISSUE, [
+    {
+      name: 'Chinese resume with a shortened CCF A title',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, title, shortenedTitle);
+      }
+    },
+    {
+      name: 'English resume with a shortened CCF A title',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, title, shortenedTitle);
+      }
+    },
+    {
+      name: 'Chinese resume with an in-review CCF A status',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          `<span class="resume-status">在投</span><div><cite>${title}`,
+          `<span class="resume-status">在审</span><div><cite>${title}`
+        );
+      }
+    },
+    {
+      name: 'English resume with an under-review CCF A status',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          `<span class="resume-status">Submitted</span><div><cite>${title}`,
+          `<span class="resume-status">Under review</span><div><cite>${title}`
+        );
+      }
+    }
+  ]);
+});
+
+test('resume CCF A facts reject venue-class or author-order drift', (t) => {
+  assertContentMutationsRejected(t, RESUME_CCF_A_CONTRACT_ISSUE, [
+    {
+      name: 'Chinese resume with CCF B venue classification',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'CCF A 类会议 · 第二作者（导师第一作者）',
+          'CCF B 类会议 · 第二作者（导师第一作者）'
+        );
+      }
+    },
+    {
+      name: 'English resume with CCF Class B venue classification',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'CCF Class A conference · Second author (advisor first)',
+          'CCF Class B conference · Second author (advisor first)'
+        );
+      }
+    },
+    {
+      name: 'Chinese resume with first-author CCF A attribution',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'CCF A 类会议 · 第二作者（导师第一作者）',
+          'CCF A 类会议 · 第一作者'
+        );
+      }
+    },
+    {
+      name: 'English resume with first-author CCF A attribution',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'CCF Class A conference · Second author (advisor first)',
+          'CCF Class A conference · First author'
+        );
+      }
+    }
+  ]);
 });
 
 test('validateRepository accepts approved profile contacts, proof rails, and project grids', (t) => {

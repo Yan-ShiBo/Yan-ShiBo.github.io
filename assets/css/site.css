@@ -1883,7 +1883,7 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
   max-width:none;
   color:var(--ink-muted-48);
   font-family:var(--font-sans);
-  font-size:17px;
+  font-size:16px;
   font-weight:400;
   line-height:1.47;
   letter-spacing:0;
@@ -1892,7 +1892,14 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 .resume-main .button.small{max-width:100%;white-space:normal}
 
 /* Resume dossier */
+.resume-page{
+  --resume-anchor-h:52px;
+  font-size:16px;
+}
+
 .resume-hero{
+  padding-top:clamp(56px, 6vw, 64px);
+  padding-bottom:clamp(56px, 6vw, 64px);
   padding-left:max(24px, calc((100vw - var(--max-width)) / 2));
   padding-right:max(24px, calc((100vw - var(--max-width)) / 2));
 }
@@ -1914,15 +1921,15 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 
 .resume-hero h1{
   margin:18px 0 12px;
-  font-size:clamp(56px, 6.4vw, 88px);
-  line-height:.94;
+  font-size:clamp(46px, 4.8vw, 68px);
+  line-height:1;
   letter-spacing:-.045em;
 }
 
 .resume-hero__role{
   margin:0;
   color:var(--accent);
-  font-size:18px;
+  font-size:17px;
   font-weight:600;
   line-height:1.45;
 }
@@ -1930,6 +1937,7 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 .resume-hero .lead{
   max-width:820px;
   margin:18px 0 0;
+  font-size:19px;
 }
 
 .resume-hero__actions{
@@ -1950,7 +1958,12 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 
 .resume-page .resume-sidebar{
   position:sticky;
-  top:calc(var(--header-h) + 20px);
+  top:calc(var(--header-h) + var(--resume-anchor-h) + 20px);
+}
+
+.resume-page .resume-ledger-heading h2[id],
+.resume-page .resume-materials h2[id]{
+  scroll-margin-top:calc(var(--header-h) + var(--resume-anchor-h) + 20px);
 }
 
 .resume-portrait{
@@ -1978,7 +1991,7 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 .resume-portrait figcaption strong{
   color:var(--text);
   font-family:var(--font-display);
-  font-size:22px;
+  font-size:21px;
   font-weight:600;
   line-height:1.2;
 }
@@ -1993,7 +2006,7 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
   margin:0 0 14px;
   color:var(--text);
   font-family:var(--font-display);
-  font-size:17px;
+  font-size:16px;
   font-weight:600;
   line-height:1.25;
 }
@@ -2121,7 +2134,7 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 
 .resume-ledger-heading h2{
   margin:0;
-  font-size:clamp(30px, 3vw, 40px);
+  font-size:clamp(28px, 2.7vw, 36px);
 }
 
 .resume-entry-list{
@@ -2165,7 +2178,7 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
   margin:0;
   color:var(--text);
   font-family:var(--font-display);
-  font-size:19px;
+  font-size:18px;
   font-weight:600;
   line-height:1.35;
   overflow-wrap:anywhere;
@@ -2207,7 +2220,7 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
   margin:0 0 12px;
   color:var(--text);
   font-family:var(--font-display);
-  font-size:18px;
+  font-size:17px;
   font-weight:600;
 }
 
@@ -2220,7 +2233,7 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 .resume-publications li{
   min-width:0;
   display:grid;
-  grid-template-columns:86px minmax(0, 1fr);
+  grid-template-columns:76px minmax(0, 1fr);
   gap:16px;
   padding:18px 0;
   border-top:1px solid var(--hairline);
@@ -2230,9 +2243,9 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
   display:block;
   color:var(--text);
   font-family:var(--font-display);
-  font-size:17px;
+  font-size:16px;
   font-style:normal;
-  font-weight:600;
+  font-weight:500;
   line-height:1.45;
   overflow-wrap:anywhere;
 }
@@ -2306,15 +2319,34 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 }
 
 .resume-entry-list--compact .resume-entry__heading h3{
-  font-size:17px;
+  font-size:16px;
 }
 
-.resume-materials .doc-card{
-  min-height:100%;
+.resume-service-section .resume-entry__heading h3,
+.resume-service-section .resume-entry__heading > span{
+  font-weight:400;
 }
 
-.resume-materials .doc-preview{
-  aspect-ratio:16 / 11;
+.resume-materials{
+  padding-top:48px;
+  padding-bottom:48px;
+}
+
+.resume-materials__inner{
+  width:100%;
+  max-width:var(--text-width);
+  margin-inline:auto;
+}
+
+.resume-materials__actions{
+  margin-top:24px;
+}
+
+.resume-materials__actions .button{
+  min-height:44px;
+  max-width:100%;
+  white-space:normal;
+  text-wrap:balance;
 }
 
 html.reveal-ready [data-reveal]{
@@ -2677,6 +2709,7 @@ body.lightbox-open{overflow:hidden}
   .pdf-preview{min-height:62vh}
   .lightbox{padding:12px}
   .lightbox-image{max-height:calc(100vh - 96px)}
+  .resume-hero{padding-top:48px;padding-bottom:48px}
   .resume-hero__inner{gap:22px}
   .resume-page .resume-sidebar .surface-inner{display:flex;gap:18px}
   .resume-page .resume-portrait{
@@ -2704,7 +2737,9 @@ body.lightbox-open{overflow:hidden}
   .header-actions{gap:4px}
   .hero h1,.page-hero h1{font-size:28px}
   .section-title-wrap h2,.resume-main h2{font-size:30px}
+  .resume-page .resume-main h2{font-size:28px}
   .lead{font-size:17px;line-height:1.47}
+  .resume-page .resume-hero .lead{font-size:16px}
   .stat-value{font-size:36px}
   .button{width:100%}
   .button.small{
@@ -2719,6 +2754,8 @@ body.lightbox-open{overflow:hidden}
   .resume-page .resume-portrait img{width:88px}
   .resume-portrait figcaption strong{font-size:19px}
   .resume-hero__actions{display:grid;grid-template-columns:1fr}
+  .resume-materials__actions{display:grid;grid-template-columns:1fr}
+  .resume-materials__actions .button.small{width:100%}
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -4060,4 +4097,148 @@ body.lightbox-open{overflow:hidden}
 
 @media (max-width:419px){
   .research-page .research-hero h1{font-size:28px}
+}
+
+@page resume-cv{
+  size:A4;
+  margin:12mm;
+}
+
+@media print{
+  .resume-page{
+    page:resume-cv;
+    --canvas:#fff;
+    --canvas-parchment:#fff;
+    --surface-pearl:#fff;
+    --text:#111;
+    --ink:#111;
+    --ink-muted-48:#444;
+    --hairline:#bbb;
+    background:#fff !important;
+    color:#111 !important;
+    font-size:9.5pt;
+  }
+
+  .resume-page .site-header,
+  .resume-page .drawer,
+  .resume-page .drawer-backdrop,
+  .resume-page .resume-anchor-bar,
+  .resume-page .footer-shell,
+  .resume-page .back-to-top,
+  .resume-page .resume-hero__actions,
+  .resume-page .resume-ledger-section > .action-row,
+  .resume-page .resume-materials{
+    display:none !important;
+  }
+
+  .resume-page [data-reveal]{
+    opacity:1 !important;
+    transform:none !important;
+    animation:none !important;
+    transition:none !important;
+  }
+
+  .resume-page .main-shell{
+    width:100%;
+    overflow:visible;
+    background:#fff !important;
+  }
+
+  .resume-page .page-hero,
+  .resume-page .section-block{
+    padding:0;
+    background:#fff !important;
+  }
+
+  .resume-page .resume-hero{
+    margin-bottom:8mm;
+    padding-bottom:5mm;
+    border:0;
+    border-bottom:1px solid #bbb;
+    border-radius:0;
+    box-shadow:none;
+  }
+
+  .resume-page .resume-hero__inner{
+    display:block;
+  }
+
+  .resume-page .resume-hero h1{
+    font-size:26pt;
+  }
+
+  .resume-page .resume-layout{
+    grid-template-columns:44mm minmax(0, 1fr);
+    gap:8mm;
+  }
+
+  .resume-page .resume-sidebar{
+    position:static;
+  }
+
+  .resume-page .resume-sidebar,
+  .resume-page .resume-main{
+    padding:0;
+    overflow:visible;
+    border:0;
+    border-radius:0;
+    background:#fff;
+    box-shadow:none;
+  }
+
+  .resume-page .resume-sidebar .surface-inner{
+    display:flex;
+  }
+
+  .resume-page .resume-portrait{
+    display:grid;
+  }
+
+  .resume-page .resume-portrait img{
+    width:36mm;
+  }
+
+  .resume-page .resume-portrait figcaption{
+    display:none;
+  }
+
+  .resume-page .resume-contact-list li{
+    display:block;
+  }
+
+  .resume-page .resume-contact-list li strong,
+  .resume-page .resume-contact-list li a{
+    display:block;
+  }
+
+  .resume-page .resume-contact-list li a{
+    margin-top:1mm;
+    font-size:7.5pt;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+
+  .resume-page .resume-entry__heading{
+    display:block;
+  }
+
+  .resume-page .resume-entry__heading > span{
+    display:block;
+    max-width:none;
+    padding-top:1mm;
+    text-align:left;
+  }
+
+  .resume-page .resume-entry,
+  .resume-page .resume-publications li,
+  .resume-page .resume-award-list li{
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+
+  .resume-page h2,
+  .resume-page h3{
+    break-after:avoid;
+    page-break-after:avoid;
+  }
 }
