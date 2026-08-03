@@ -3,7 +3,7 @@
 <html dir="ltr" lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Online Resume &amp; Materials · ShiBo Yan</title>
   <meta name="description" content="ShiBo Yan's online academic resume covers software engineering study at Southwest University, research on reach-avoid controller synthesis for stochastic systems, publications, projects, honors, and public materials."/>
   <meta name="theme-color" content="#ececee"/>
@@ -26,9 +26,9 @@
   <meta name="twitter:description" content="ShiBo Yan's online academic resume covers software engineering study at Southwest University, research on reach-avoid controller synthesis for stochastic systems, publications, projects, honors, and public materials."/>
   <meta name="twitter:image" content="https://yan-shibo.github.io/assets/profile/photo.jpg"/>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"ProfilePage","@id":"https://yan-shibo.github.io/en/resume.html#webpage","url":"https://yan-shibo.github.io/en/resume.html","name":"Online Resume & Materials · ShiBo Yan","description":"ShiBo Yan's online academic resume covers software engineering study at Southwest University, research on reach-avoid controller synthesis for stochastic systems, publications, projects, honors, and public materials.","inLanguage":"en","isPartOf":{"@id":"https://yan-shibo.github.io/#website"},"mainEntity":{"@id":"https://yan-shibo.github.io/#person"}},{"@type":"WebSite","@id":"https://yan-shibo.github.io/#website","url":"https://yan-shibo.github.io/","name":"ShiBo Yan","inLanguage":["zh-CN","en"],"creator":{"@id":"https://yan-shibo.github.io/#person"}},{"@type":"Person","@id":"https://yan-shibo.github.io/#person","name":"ShiBo Yan","alternateName":"闫士博","url":"https://yan-shibo.github.io/","image":"https://yan-shibo.github.io/assets/profile/photo.jpg","email":"mailto:y423314860@163.com","alumniOf":{"@type":"CollegeOrUniversity","name":"Southwest University"},"homeLocation":{"@type":"Place","name":"Chongqing, China"}}]}</script>
+  <script src="../assets/js/site.js"></script>
   <link href="../assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
   <link href="../assets/css/site.css" rel="stylesheet"/>
-  <script defer="" src="../assets/js/site.js"></script>
 </head>
 <body class="resume-page">
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -115,7 +115,11 @@
     <aside class="surface resume-sidebar">
       <div class="surface-inner">
         <figure class="resume-portrait">
-          <img alt="Formal portrait of ShiBo Yan" decoding="async" fetchpriority="high" height="2000" loading="eager" src="../assets/profile/resume-photo.jpg" width="1500"/>
+          <picture>
+            <source sizes="(max-width: 419px) 88px, (max-width: 760px) 104px, (max-width: 1068px) 240px, 320px" srcset="../assets/profile/resume-photo-240.avif 240w, ../assets/profile/resume-photo-480.avif 480w, ../assets/profile/resume-photo-960.avif 960w" type="image/avif"/>
+            <source sizes="(max-width: 419px) 88px, (max-width: 760px) 104px, (max-width: 1068px) 240px, 320px" srcset="../assets/profile/resume-photo-240.webp 240w, ../assets/profile/resume-photo-480.webp 480w, ../assets/profile/resume-photo-960.webp 960w" type="image/webp"/>
+            <img alt="Formal portrait of ShiBo Yan" decoding="async" fetchpriority="high" height="2000" loading="eager" sizes="(max-width: 419px) 88px, (max-width: 760px) 104px, (max-width: 1068px) 240px, 320px" src="../assets/profile/resume-photo.jpg" width="1500"/>
+          </picture>
           <figcaption><strong>闫士博 / ShiBo Yan</strong><span>Master's student in Software Engineering at Southwest University</span></figcaption>
         </figure>
         <section class="meta-card resume-sidebar__section" aria-labelledby="resume-contact-title">
@@ -174,7 +178,7 @@
         <div class="resume-entry-list">
           <article class="resume-entry"><div class="resume-entry__date">2025.03—Present</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>CBF-Rover: Barrier-Certificate-Based Safe-Control Simulation for Mobile Robots</h3><span>Independent developer</span></div><p>For scenarios with stochastic disturbances and dynamic obstacles, I designed the system model, top-level architecture, and safety constraints and implemented online control-barrier-function (CBF) filtering. Closed-loop empirical validation is complete in exact and Gazebo environments; the fixed-geometry q-SBC remains not ready.</p></div></article>
           <article class="resume-entry"><div class="resume-entry__date">2022.12—2023.06</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>Multi-Platform Attendance System Using Face Recognition</h3><span>Undergraduate capstone · Second Prize for Outstanding Undergraduate Thesis (Design)</span></div><p>Designed and implemented a multi-platform attendance system using face detection and recognition. It identifies students from camera captures or uploaded images and generates attendance summaries.</p></div></article>
-          <article class="resume-entry"><div class="resume-entry__date">2022.06—2022.08</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>Chongqing Chinasoft International · KTV Management System</h3><span>Technical lead &amp; project manager · Outstanding intern</span></div><p>Coordinated the team through system development and integration using Spring Boot, MySQL, and uni-app. Received an internship score of 94, with the code published on <a class="link-inline" href="https://github.com/Yan-ShiBo/MicFamily" rel="noopener noreferrer" target="_blank">GitHub</a>.</p></div></article>
+          <article class="resume-entry"><div class="resume-entry__date">2022.06—2022.08</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>Chongqing Chinasoft International · MicFamily: KTV Operations Management System</h3><span>Project Manager &amp; Technical Manager · Outstanding intern</span></div><p>Coordinated the team through system development and integration using Vue, Spring Boot, MyBatis-Plus, and MySQL. Received an internship score of 94, with the code published on <a class="link-inline" href="https://github.com/Yan-ShiBo/MicFamily" rel="noopener noreferrer" target="_blank">GitHub</a>.</p></div></article>
         </div>
         <div class="action-row"><a class="button small subtle" href="projects.html"><i aria-hidden="true" class="fa fa-folder-open-o"></i> View project directory</a><a class="button small subtle" href="https://github.com/Yan-ShiBo" rel="noopener noreferrer" target="_blank"><i aria-hidden="true" class="fa fa-github"></i> View GitHub</a></div>
       </section>

@@ -99,6 +99,8 @@ flowchart TB
 - `sitemap.xml` 和两个维护脚本中的页面清单；
 - 验证器测试与项目文档。
 
+14 个页面的 viewport 都包含 `viewport-fit=cover`。共享 `assets/js/site.js` 在首张阻塞样式表之前同步加载且不带 `defer`/`async`，用同一文件完成绘制前主题解析；其余交互仍等待 `DOMContentLoaded`。统计页额外加载的 `assets/js/stats.js` 继续使用 `defer`，且只存在于中英文统计页。页面不得用内联可执行脚本复制主题初始化，两个 404 的既有无内联脚本边界保持不变。
+
 ### 4.2 共享样式
 
 `assets/css/site.css` 是唯一全站样式入口，负责设计令牌、布局、组件、响应式规则、主题状态和可访问性样式。当前移动导航边界是：
@@ -112,8 +114,9 @@ CSS 中的媒体查询按实际级联需要分布在多个位置，并非严格�
 
 `assets/js/site.js` 负责：
 
-- 主题初始化、切换和持久化；
+- 首次绘制前的主题解析，以及后续切换和持久化；
 - 移动抽屉开启、关闭、`inert`、焦点陷阱、Escape 关闭和焦点归还；
+- 横向章节锚点的当前状态与可视区跟随；
 - 证明图滑轨的鼠标拖动、拖动状态与点击隔离；
 - 图片 Lightbox 的打开、键盘导航、关闭和焦点管理；
 - 页面渐入等增强效果。
@@ -202,12 +205,12 @@ sequenceDiagram
 - `assets/fonts/`：本地 Inter 字体；
 - `assets/icons/`：品牌标识、manifest 安装 PNG 与 HTML favicon；
 - `assets/images/`：项目、档案与证明图；
-- `assets/profile/`：全站共享头像与简历页专用正式照片；
+- `assets/profile/`：全站共享头像、简历页专用正式照片，以及由原 JPEG 派生的 240/480/960 像素宽 AVIF/WebP 响应式资源；
 - `worker/`：统计 Worker 源码、Wrangler 配置、D1 迁移与后端测试；
 - `assets/vendor/`：本地 Font Awesome 样式与字体；
 - `docs/`：项目文档以及明确允许公开的简历、成绩单材料。
 
-HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原图必须保持有效路径。外链新窗口必须带安全 `rel`。资源文件名区分大小写，因为 Pages 运行于大小写敏感环境。
+HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原图必须保持有效路径。使用宽度描述符的 `<picture><source>` 必须各自带与实际布局一致的 `sizes`，不能只把 `sizes` 写在无 `srcset` 的回退 `<img>` 上。外链新窗口必须带安全 `rel`。资源文件名区分大小写，因为 Pages 运行于大小写敏感环境。
 
 ## 8. SEO 与可索引边界
 
@@ -284,7 +287,7 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 
 项目节点的本地化名称和描述必须与当前页面可见文本一致，`keywords` 来自可见技术标签且每项最多四个，`contributor` 只引用 `/#person`。`codeRepository` 是可选字段：只有公开仓库存在时才声明。项目图不使用 `creator`，也不写入奖项或等级、日期、证明图片、测试账号等未批准字段。普通收藏式 fork、无公开说明的研究仓库和未发表材料不进入库存。
 
-项目页采用公开实现可核验的事实口径，但该口径不反向覆盖简历或档案中由用户确认的个人履历。MicFamily 在项目页及对应 JSON-LD 中不使用 `uni-app`、精确依赖版本或“严格前后端分离”，而描述为 Spring Boot 单体部署下的前后端分层；简历与档案仍保留用户确认的 `uni-app` 事实。CBF-Rover 项目节点只写数值动力学仿真、Gazebo、在线 CBF 与仍在推进的形式化证书模块，不把内部环境标识 `exact` 或 `q-SBC` 状态写入名称、说明和关键词；简历与档案既有的 readiness 边界继续由各自合同维护。
+项目页采用公开实现可核验的事实口径。根据后续用户授权，MicFamily 在项目页、在线简历和个人档案中统一使用 Vue / Spring Boot / MyBatis-Plus / MySQL 口径，不使用 `uni-app`、精确依赖版本或“严格前后端分离”，并描述为 Spring Boot 单体部署下的前后端分层；这一局部合同不影响 PersevereStudy 考勤项目及个人技能中已有依据的 `uni-app` 事实。CBF-Rover 项目节点只写数值动力学仿真、Gazebo、在线 CBF 与仍在推进的形式化证书模块，不把内部环境标识 `exact` 或 `q-SBC` 状态写入名称、说明和关键词；简历与档案既有的 readiness 边界继续由各自合同维护。
 
 ### 8.5 研究图
 

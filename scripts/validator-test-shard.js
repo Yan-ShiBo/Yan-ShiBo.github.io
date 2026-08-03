@@ -1,4 +1,4 @@
-const EXPECTED_VALIDATOR_TEST_COUNT = 318;
+const EXPECTED_VALIDATOR_TEST_COUNT = 320;
 const VALIDATOR_TEST_SHARD_COUNT = 4;
 
 function parseValidatorTestShard(value) {

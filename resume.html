@@ -3,7 +3,7 @@
 <html dir="ltr" lang="zh-CN">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>在线简历与材料 · 闫士博</title>
   <meta name="description" content="闫士博的在线学术简历，记录西南大学软件工程本硕经历、随机系统可达—规避控制器合成研究、论文、项目、荣誉与公开材料。"/>
   <meta name="theme-color" content="#ececee"/>
@@ -26,9 +26,9 @@
   <meta name="twitter:description" content="闫士博的在线学术简历，记录西南大学软件工程本硕经历、随机系统可达—规避控制器合成研究、论文、项目、荣誉与公开材料。"/>
   <meta name="twitter:image" content="https://yan-shibo.github.io/assets/profile/photo.jpg"/>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"ProfilePage","@id":"https://yan-shibo.github.io/resume.html#webpage","url":"https://yan-shibo.github.io/resume.html","name":"在线简历与材料 · 闫士博","description":"闫士博的在线学术简历，记录西南大学软件工程本硕经历、随机系统可达—规避控制器合成研究、论文、项目、荣誉与公开材料。","inLanguage":"zh-CN","isPartOf":{"@id":"https://yan-shibo.github.io/#website"},"mainEntity":{"@id":"https://yan-shibo.github.io/#person"}},{"@type":"WebSite","@id":"https://yan-shibo.github.io/#website","url":"https://yan-shibo.github.io/","name":"闫士博","inLanguage":["zh-CN","en"],"creator":{"@id":"https://yan-shibo.github.io/#person"}},{"@type":"Person","@id":"https://yan-shibo.github.io/#person","name":"闫士博","alternateName":"ShiBo Yan","url":"https://yan-shibo.github.io/","image":"https://yan-shibo.github.io/assets/profile/photo.jpg","email":"mailto:y423314860@163.com","alumniOf":{"@type":"CollegeOrUniversity","name":"Southwest University"},"homeLocation":{"@type":"Place","name":"Chongqing, China"}}]}</script>
+  <script src="./assets/js/site.js"></script>
   <link href="./assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
   <link href="./assets/css/site.css" rel="stylesheet"/>
-  <script defer="" src="./assets/js/site.js"></script>
 </head>
 <body class="resume-page">
 <a class="skip-link" href="#main-content">跳到正文</a>
@@ -115,7 +115,11 @@
     <aside class="surface resume-sidebar">
       <div class="surface-inner">
         <figure class="resume-portrait">
-          <img alt="闫士博正式证件照" decoding="async" fetchpriority="high" height="2000" loading="eager" src="./assets/profile/resume-photo.jpg" width="1500"/>
+          <picture>
+            <source sizes="(max-width: 419px) 88px, (max-width: 760px) 104px, (max-width: 1068px) 240px, 320px" srcset="./assets/profile/resume-photo-240.avif 240w, ./assets/profile/resume-photo-480.avif 480w, ./assets/profile/resume-photo-960.avif 960w" type="image/avif"/>
+            <source sizes="(max-width: 419px) 88px, (max-width: 760px) 104px, (max-width: 1068px) 240px, 320px" srcset="./assets/profile/resume-photo-240.webp 240w, ./assets/profile/resume-photo-480.webp 480w, ./assets/profile/resume-photo-960.webp 960w" type="image/webp"/>
+            <img alt="闫士博正式证件照" decoding="async" fetchpriority="high" height="2000" loading="eager" sizes="(max-width: 419px) 88px, (max-width: 760px) 104px, (max-width: 1068px) 240px, 320px" src="./assets/profile/resume-photo.jpg" width="1500"/>
+          </picture>
           <figcaption><strong>闫士博 / ShiBo Yan</strong><span>西南大学软件工程硕士研究生</span></figcaption>
         </figure>
         <section class="meta-card resume-sidebar__section" aria-labelledby="resume-contact-title">
@@ -174,7 +178,7 @@
         <div class="resume-entry-list">
           <article class="resume-entry"><div class="resume-entry__date">2025.03—至今</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>CBF-Rover：基于障碍证书的移动机器人安全控制仿真</h3><span>独立开发</span></div><p>面向随机扰动与动态障碍场景，负责系统建模、顶层架构与安全约束设计，并实现基于控制障碍函数（CBF）的在线安全过滤；当前在 exact 与 Gazebo 环境中完成闭环经验验证，固定几何 q-SBC 仍处于未就绪状态。</p></div></article>
           <article class="resume-entry"><div class="resume-entry__date">2022.12—2023.06</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>基于人脸识别的多端考勤系统</h3><span>本科毕业设计 · 校优秀毕业论文二等奖</span></div><p>设计并实现基于人脸检测与识别的多端考勤系统，通过拍照或图片上传识别到课学生，并生成出勤简表。</p></div></article>
-          <article class="resume-entry"><div class="resume-entry__date">2022.06—2022.08</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>重庆中软国际信息技术有限公司 · 前后端分离的 KTV 管理系统</h3><span>项目组技术负责人兼项目经理 · 优秀实习生</span></div><p>协调团队完成系统开发与联调，采用 Spring Boot、MySQL 与 uni-app；实习评分 94 分，代码开源于 <a class="link-inline" href="https://github.com/Yan-ShiBo/MicFamily" rel="noopener noreferrer" target="_blank">GitHub</a>。</p></div></article>
+          <article class="resume-entry"><div class="resume-entry__date">2022.06—2022.08</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>重庆中软国际信息技术有限公司 · MicFamily：KTV 运营管理系统</h3><span>项目经理兼技术经理 · 优秀实习生</span></div><p>协调团队完成系统开发与联调，采用 Vue、Spring Boot、MyBatis-Plus 与 MySQL；实习评分 94 分，代码开源于 <a class="link-inline" href="https://github.com/Yan-ShiBo/MicFamily" rel="noopener noreferrer" target="_blank">GitHub</a>。</p></div></article>
         </div>
         <div class="action-row"><a class="button small subtle" href="projects.html"><i aria-hidden="true" class="fa fa-folder-open-o"></i> 查看项目目录</a><a class="button small subtle" href="https://github.com/Yan-ShiBo" rel="noopener noreferrer" target="_blank"><i aria-hidden="true" class="fa fa-github"></i> 查看 GitHub</a></div>
       </section>

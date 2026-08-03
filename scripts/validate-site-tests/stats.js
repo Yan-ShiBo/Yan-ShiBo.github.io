@@ -76,8 +76,8 @@ test('validateRepository rejects the stats client on the home page', (t) => {
   replaceOnce(
     rootDir,
     'index.html',
-    '  <script defer="" src="./assets/js/site.js"></script>',
-    '  <script defer="" src="./assets/js/site.js"></script>\n' +
+    '  <script src="./assets/js/site.js"></script>',
+    '  <script src="./assets/js/site.js"></script>\n' +
       '  <script defer="" src="./assets/js/stats.js"></script>'
   );
   const result = validateRepository(rootDir);

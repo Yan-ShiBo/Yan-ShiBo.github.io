@@ -103,6 +103,12 @@ const FIXTURE_CONTENT_FILES = new Set([
   'assets/icons/app-icon-512.png',
   'assets/icons/brand-mark.png',
   'assets/icons/site.ico',
+  'assets/profile/resume-photo-240.avif',
+  'assets/profile/resume-photo-240.webp',
+  'assets/profile/resume-photo-480.avif',
+  'assets/profile/resume-photo-480.webp',
+  'assets/profile/resume-photo-960.avif',
+  'assets/profile/resume-photo-960.webp',
   'assets/js/site.js',
   'assets/js/stats.js',
   'assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css',
@@ -124,16 +130,26 @@ const MENU_CLEANUP_ISSUE =
   'assets/js/site.js: mobile menu cleanup must share the (max-width: 833px) breakpoint predicate';
 const MOBILE_CSS_BREAKPOINT_ISSUE =
   'assets/css/site.css: mobile navigation and 44px touch-target rules must share one (max-width: 833px) media block';
+const MOBILE_BOOTSTRAP_ISSUE =
+  'every page must use viewport-fit=cover and load the shared theme bootstrap before blocking stylesheets';
+const MOBILE_FOUNDATION_CSS_ISSUE =
+  'assets/css/site.css: shared mobile CSS must preserve safe-area offsets, readable muted text, compact sticky navigation, and the 760px resume sidebar transition';
+const ANCHOR_FOLLOW_ISSUE =
+  'assets/js/site.js: anchor navigation must visibly mark the current location and scroll the real horizontal rail into view';
+const RESUME_RESPONSIVE_IMAGE_ISSUE =
+  'both resume pages must use the approved responsive AVIF and WebP portrait sources with the original JPEG fallback';
 const RESUME_OVERFLOW_CSS_ISSUE =
   'assets/css/site.css: resume cards, contact values, keyword tags, and long actions must remain shrinkable on narrow viewports';
 const PROFILE_CONTACTS_ISSUE =
   'profile contact panel must list both approved email links and exclude phone and WeChat details';
 const PROFILE_MODELING_AWARD_ISSUE =
   'profile must identify the 2020 modeling honor as the Certificate Authority Cup, never MCM/ICM';
+const PROFILE_KTV_CONTRACT_ISSUE =
+  'profile KTV record must use the approved MicFamily web stack, preserve both date ranges, and exclude legacy uni-app or decoupled-architecture claims';
 const PROFILE_CONTACT_CSS_ISSUE =
   'assets/css/site.css: profile email links and summary tags must remain shrinkable and wrappable on narrow viewports';
 const RESUME_KTV_CONTRACT_ISSUE =
-  'resume KTV entry must match the approved concise internship summary and visibly include Spring Boot, MySQL, and uni-app';
+  'resume KTV entry must match the approved MicFamily web-stack summary and exclude legacy uni-app or decoupled-architecture claims';
 const RESUME_AWARDS_CONTRACT_ISSUE =
   'resume awards must preserve the approved PDF-aligned selection, order, and Certificate Authority Cup identity';
 const RESUME_CCF_A_CONTRACT_ISSUE =
@@ -601,9 +617,14 @@ module.exports = {
   validateRepository,
   MENU_CLEANUP_ISSUE,
   MOBILE_CSS_BREAKPOINT_ISSUE,
+  MOBILE_BOOTSTRAP_ISSUE,
+  MOBILE_FOUNDATION_CSS_ISSUE,
+  ANCHOR_FOLLOW_ISSUE,
+  RESUME_RESPONSIVE_IMAGE_ISSUE,
   RESUME_OVERFLOW_CSS_ISSUE,
   PROFILE_CONTACTS_ISSUE,
   PROFILE_MODELING_AWARD_ISSUE,
+  PROFILE_KTV_CONTRACT_ISSUE,
   PROFILE_CONTACT_CSS_ISSUE,
   RESUME_KTV_CONTRACT_ISSUE,
   RESUME_AWARDS_CONTRACT_ISSUE,

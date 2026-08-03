@@ -4,6 +4,7 @@
   root.classList.add('reveal-ready');
   var themeMeta = document.querySelector('meta[name="theme-color"]');
   var THEME_KEY = 'ysb-theme';
+  initializeThemeBeforePaint();
   var FOCUSABLE_SELECTOR = [
     'a[href]',
     'area[href]',
@@ -110,6 +111,27 @@
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
+  function getStoredTheme() {
+    try {
+      var saved = localStorage.getItem(THEME_KEY);
+      return saved === 'dark' || saved === 'light' ? saved : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function resolveInitialTheme() {
+    return getStoredTheme() || (prefersDark() ? 'dark' : 'light');
+  }
+
+  function initializeThemeBeforePaint() {
+    var theme = resolveInitialTheme();
+    root.setAttribute('data-theme', theme);
+    if (themeMeta) {
+      themeMeta.setAttribute('content', theme === 'dark' ? '#000000' : '#ececee');
+    }
+  }
+
   function applyTheme(theme, persist) {
     root.setAttribute('data-theme', theme);
     if (themeMeta) {
@@ -138,13 +160,7 @@
   }
 
   function initTheme() {
-    var saved = null;
-    try {
-      saved = localStorage.getItem(THEME_KEY);
-    } catch (err) {
-      saved = null;
-    }
-    applyTheme(saved || (prefersDark() ? 'dark' : 'light'), false);
+    applyTheme(resolveInitialTheme(), false);
 
     document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -156,12 +172,7 @@
     if (window.matchMedia) {
       var mq = window.matchMedia('(prefers-color-scheme: dark)');
       var listener = function (event) {
-        var stored = null;
-        try {
-          stored = localStorage.getItem(THEME_KEY);
-        } catch (err) {
-          stored = null;
-        }
+        var stored = getStoredTheme();
         if (!stored) {
           applyTheme(event.matches ? 'dark' : 'light', false);
         }
@@ -367,6 +378,7 @@
   function initAnchorNav() {
     var links = Array.prototype.slice.call(document.querySelectorAll('.anchor-chip[href^="#"]'));
     if (!links.length || !('IntersectionObserver' in window)) return;
+    var activeLink = null;
 
     var sections = links
       .map(function (link) {
@@ -376,14 +388,45 @@
       .filter(Boolean);
 
     function setCurrent(id) {
+      var current = null;
+
       links.forEach(function (link) {
         if (link.getAttribute('href') === '#' + id) {
-          link.setAttribute('aria-current', 'true');
+          link.setAttribute('aria-current', 'location');
+          current = link;
         } else {
           link.removeAttribute('aria-current');
         }
       });
+
+      if (!current || current === activeLink) return;
+      activeLink = current;
+
+      var rail = current.closest('.anchor-bar');
+      if (!rail || rail.scrollWidth <= rail.clientWidth + 1) return;
+
+      var railRect = rail.getBoundingClientRect();
+      var currentRect = current.getBoundingClientRect();
+      var targetLeft = rail.scrollLeft + currentRect.left - railRect.left -
+        (rail.clientWidth - currentRect.width) / 2;
+      var maxLeft = Math.max(0, rail.scrollWidth - rail.clientWidth);
+      var nextLeft = Math.max(0, Math.min(maxLeft, targetLeft));
+      var reduced = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (typeof rail.scrollTo === 'function') {
+        rail.scrollTo({ left: nextLeft, behavior: reduced ? 'auto' : 'smooth' });
+      } else {
+        rail.scrollLeft = nextLeft;
+      }
     }
+
+    links.forEach(function (link) {
+      link.addEventListener('click', function () {
+        var id = link.getAttribute('href').slice(1);
+        if (id) setCurrent(id);
+      });
+    });
 
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {

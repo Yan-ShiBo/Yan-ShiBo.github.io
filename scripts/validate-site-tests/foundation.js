@@ -9,9 +9,14 @@ const {
   validateRepository,
   MENU_CLEANUP_ISSUE,
   MOBILE_CSS_BREAKPOINT_ISSUE,
+  MOBILE_BOOTSTRAP_ISSUE,
+  MOBILE_FOUNDATION_CSS_ISSUE,
+  ANCHOR_FOLLOW_ISSUE,
+  RESUME_RESPONSIVE_IMAGE_ISSUE,
   RESUME_OVERFLOW_CSS_ISSUE,
   PROFILE_CONTACTS_ISSUE,
   PROFILE_MODELING_AWARD_ISSUE,
+  PROFILE_KTV_CONTRACT_ISSUE,
   PROFILE_CONTACT_CSS_ISSUE,
   RESUME_KTV_CONTRACT_ISSUE,
   RESUME_AWARDS_CONTRACT_ISSUE,
@@ -339,20 +344,54 @@ function assertContentMutationsRejected(t, issue, mutations) {
   }
 }
 
-test('resume synchronized content rejects KTV, organization, or typography drift', (t) => {
+test('resume and profile synchronized content rejects KTV, organization, or typography drift', (t) => {
   assertContentMutationsRejected(t, RESUME_KTV_CONTRACT_ISSUE, [
     {
-      name: 'Chinese KTV entry without uni-app',
+      name: 'Chinese KTV entry restores legacy uni-app',
       file: 'resume.html',
       mutate(rootDir) {
-        replaceOnce(rootDir, this.file, 'Spring Boot、MySQL 与 uni-app', 'Spring Boot 与 MySQL');
+        replaceOnce(
+          rootDir,
+          this.file,
+          'Vue、Spring Boot、MyBatis-Plus 与 MySQL',
+          'Vue、Spring Boot、MyBatis-Plus、MySQL 与 uni-app'
+        );
       }
     },
     {
-      name: 'English KTV entry without uni-app',
+      name: 'English KTV entry restores legacy uni-app',
       file: 'en/resume.html',
       mutate(rootDir) {
-        replaceOnce(rootDir, this.file, 'Spring Boot, MySQL, and uni-app', 'Spring Boot and MySQL');
+        replaceOnce(
+          rootDir,
+          this.file,
+          'Vue, Spring Boot, MyBatis-Plus, and MySQL',
+          'Vue, Spring Boot, MyBatis-Plus, MySQL, and uni-app'
+        );
+      }
+    },
+    {
+      name: 'Chinese KTV entry restores a decoupled-architecture claim',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'MicFamily：KTV 运营管理系统',
+          'MicFamily：前后端分离的 KTV 运营管理系统'
+        );
+      }
+    },
+    {
+      name: 'English KTV entry restores a decoupled-architecture claim',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'MicFamily: KTV Operations Management System',
+          'MicFamily: Decoupled Front-End/Back-End KTV Operations Management System'
+        );
       }
     },
     {
@@ -376,6 +415,53 @@ test('resume synchronized content rejects KTV, organization, or typography drift
           this.file,
           '<div class="resume-entry__date">2022.06—2022.08</div>',
           '<div class="resume-entry__date">2022.06—2022.07</div>'
+        );
+      }
+    }
+  ]);
+
+  assertContentMutationsRejected(t, PROFILE_KTV_CONTRACT_ISSUE, [
+    {
+      name: 'Chinese profile KTV card restores legacy uni-app',
+      file: 'profile.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          '<span>Vue</span><span>Spring Boot</span><span>MyBatis-Plus</span><span>MySQL</span>',
+          '<span>Vue</span><span>Spring Boot</span><span>MyBatis-Plus</span><span>MySQL</span><span>uni-app</span>'
+        );
+      }
+    },
+    {
+      name: 'English profile KTV card restores legacy uni-app',
+      file: 'en/profile.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'The browser UI uses Vue;',
+          'The browser UI uses Vue and uni-app;'
+        );
+      }
+    },
+    {
+      name: 'Chinese profile KTV card omits MyBatis-Plus',
+      file: 'profile.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, '<span>MyBatis-Plus</span>', '');
+        replaceOnce(rootDir, this.file, 'Spring Boot、MyBatis-Plus 与 MySQL', 'Spring Boot 与 MySQL');
+      }
+    },
+    {
+      name: 'English profile KTV card restores a decoupled-architecture claim',
+      file: 'en/profile.html',
+      mutate(rootDir) {
+        replaceOnce(
+          rootDir,
+          this.file,
+          'Project: MicFamily: KTV Operations Management System.',
+          'Project: MicFamily KTV Management System with a Decoupled Front-End/Back-End Architecture.'
         );
       }
     }
@@ -433,8 +519,8 @@ test('resume synchronized content rejects KTV, organization, or typography drift
         replaceOnce(
           rootDir,
           this.file,
-          '.resume-page{\n  --resume-anchor-h:52px;\n  font-size:16px;',
-          '.resume-page{\n  --resume-anchor-h:52px;\n  font-size:17px;'
+          '.resume-page{\n  --resume-anchor-h:var(--anchor-h);\n  font-size:16px;',
+          '.resume-page{\n  --resume-anchor-h:var(--anchor-h);\n  font-size:17px;'
         );
       }
     },
@@ -944,7 +1030,8 @@ test('mobile home hero rejects the old full-width card spacing', (t) => {
   replaceOnce(
     rootDir,
     'assets/css/site.css',
-    '    --hero-rail-card:calc(100% - 56px);\n    --hero-rail-gutter:28px;',
+    '    --hero-rail-gutter:max(28px, var(--safe-left), var(--safe-right));\n' +
+      '    --hero-rail-card:calc(100% - var(--hero-rail-gutter) - var(--hero-rail-gutter));',
     '    --hero-rail-card:calc(100vw - 32px);\n    --hero-rail-gutter:16px;'
   );
 
@@ -966,8 +1053,12 @@ test('mobile home hero rejects the old full-width card spacing', (t) => {
   replaceOnce(
     splitRuleRoot,
     'assets/css/site.css',
-    '    --hero-rail-gutter:28px;\n    display:flex;\n    flex-direction:row;',
-    '    --hero-rail-gutter:28px;\n    flex-direction:row;'
+    '    --hero-rail-gutter:max(28px, var(--safe-left), var(--safe-right));\n' +
+      '    --hero-rail-card:calc(100% - var(--hero-rail-gutter) - var(--hero-rail-gutter));\n' +
+      '    display:flex;\n    flex-direction:row;',
+    '    --hero-rail-gutter:max(28px, var(--safe-left), var(--safe-right));\n' +
+      '    --hero-rail-card:calc(100% - var(--hero-rail-gutter) - var(--hero-rail-gutter));\n' +
+      '    flex-direction:row;'
   );
   replaceOnce(
     splitRuleRoot,
@@ -1803,10 +1894,10 @@ test('validateRepository rejects CSS navigation breakpoint drift and comment dec
   replaceOnce(
     rootDir,
     'assets/css/site.css',
-    '@media (max-width:833px){\n  .header-shell',
+    '@media (max-width:833px){\n  .site-header,\n  .anchor-bar',
     '/* @media (max-width:833px){.site-nav{display:none}.menu-toggle{display:inline-flex}} */\n' +
       ':root{--media-decoy:"@media (max-width:833px){.site-nav{display:none}.menu-toggle{display:inline-flex}}"}\n' +
-      '@media (max-width:832px){\n  .header-shell'
+      '@media (max-width:832px){\n  .site-header,\n  .anchor-bar'
   );
 
   const result = validateRepository(rootDir);
@@ -1819,8 +1910,8 @@ test('validateRepository rejects a mobile media block nested inside an outer sup
   replaceOnce(
     rootDir,
     'assets/css/site.css',
-    '@media (max-width:833px){\n  .header-shell',
-    '@supports (display:grid){\n@media (max-width:833px){\n  .header-shell'
+    '@media (max-width:833px){\n  .site-header,\n  .anchor-bar',
+    '@supports (display:grid){\n@media (max-width:833px){\n  .site-header,\n  .anchor-bar'
   );
   replaceOnce(
     rootDir,
@@ -2487,6 +2578,158 @@ test('validateRepository requires modal restoration after reading the inert snap
   }));
 
   assert.ok(result.issues.includes(MODAL_INERT_RESTORE_ISSUE));
+});
+
+test('validateRepository protects the shared mobile foundation and anchor follow behavior', (t) => {
+  const mutations = [
+    {
+      file: 'index.html',
+      search: 'width=device-width, initial-scale=1.0, viewport-fit=cover',
+      replacement: 'width=device-width, initial-scale=1.0',
+      issue: `index.html: ${MOBILE_BOOTSTRAP_ISSUE}`
+    },
+    {
+      file: 'index.html',
+      search: '<script src="./assets/js/site.js"></script>',
+      replacement: '<script defer="" src="./assets/js/site.js"></script>',
+      issue: `index.html: ${MOBILE_BOOTSTRAP_ISSUE}`
+    },
+    {
+      file: 'assets/css/site.css',
+      search: '  --safe-top:env(safe-area-inset-top, 0px);',
+      replacement: '  --safe-top:0px;',
+      issue: MOBILE_FOUNDATION_CSS_ISSUE
+    },
+    {
+      file: 'assets/css/site.css',
+      search: '  padding:48px max(24px, var(--safe-right), calc((100vw - 1180px) / 2))\n' +
+        '    48px max(24px, var(--safe-left), calc((100vw - 1180px) / 2));',
+      replacement: '  padding:48px max(24px, calc((100vw - 1180px) / 2));',
+      issue: MOBILE_FOUNDATION_CSS_ISSUE
+    },
+    {
+      file: 'assets/css/site.css',
+      search: '  padding-left:max(24px, var(--safe-left), calc((100vw - var(--max-width)) / 2));\n' +
+        '  padding-right:max(24px, var(--safe-right), calc((100vw - var(--max-width)) / 2));\n}\n\n.timeline-stage + .timeline-stage',
+      replacement: '  padding-left:24px;\n  padding-right:24px;\n}\n\n.timeline-stage + .timeline-stage',
+      issue: MOBILE_FOUNDATION_CSS_ISSUE
+    },
+    {
+      file: 'assets/css/site.css',
+      search: '.anchor-chip[aria-current="location"]',
+      replacement: '.anchor-chip[aria-current="page"]',
+      issue: MOBILE_FOUNDATION_CSS_ISSUE
+    },
+    {
+      file: 'assets/js/site.js',
+      search: "      var rail = current.closest('.anchor-bar');",
+      replacement: "      var rail = current.closest('.anchor-scroll');",
+      issue: ANCHOR_FOLLOW_ISSUE
+    },
+    {
+      file: 'assets/js/site.js',
+      search: '  initializeThemeBeforePaint();',
+      replacement: '',
+      issue: `assets/js/site.js: ${MOBILE_BOOTSTRAP_ISSUE}`
+    },
+    {
+      file: 'assets/css/site.css',
+      search: '@media (max-width:760px){\n  .resume-page .resume-sidebar .surface-inner{\n    display:flex;',
+      replacement: '@media (max-width:760px){\n  .resume-page .resume-sidebar .surface-inner{\n    display:grid;',
+      issue: MOBILE_FOUNDATION_CSS_ISSUE
+    }
+  ];
+
+  for (const mutation of mutations) {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(
+      rootDir,
+      mutation.file,
+      mutation.search,
+      mutation.replacement
+    );
+    const result = validateRepository(rootDir);
+    assert.ok(
+      result.issues.includes(mutation.issue),
+      `${mutation.file} mutation must report ${mutation.issue}`
+    );
+  }
+});
+
+test('validateRepository protects responsive resume portrait sources and budgets', (t) => {
+  const markupMutations = [
+    {
+      file: 'resume.html',
+      search: '<source sizes="(max-width: 419px) 88px, (max-width: 760px) 104px, (max-width: 1068px) 240px, 320px" srcset="./assets/profile/resume-photo-240.avif',
+      replacement: '<source srcset="./assets/profile/resume-photo-240.avif'
+    },
+    {
+      file: 'en/resume.html',
+      search: 'type="image/webp"',
+      replacement: 'type="image/jpeg"'
+    },
+    {
+      file: 'resume.html',
+      search: './assets/profile/resume-photo-480.avif 480w',
+      replacement: './assets/profile/resume-photo-480.avif 240w'
+    },
+    {
+      file: 'en/resume.html',
+      search: 'sizes="(max-width: 419px) 88px, (max-width: 760px) 104px, (max-width: 1068px) 240px, 320px" src="../assets/profile/resume-photo.jpg"',
+      replacement: 'sizes="100vw" src="../assets/profile/resume-photo.jpg"'
+    }
+  ];
+
+  for (const mutation of markupMutations) {
+    const rootDir = createRepositoryFixture(t);
+    replaceOnce(rootDir, mutation.file, mutation.search, mutation.replacement);
+    const result = validateRepository(rootDir);
+    assert.ok(
+      result.issues.includes(`${mutation.file}: ${RESUME_RESPONSIVE_IMAGE_ISSUE}`)
+    );
+  }
+
+  const missingAssetRoot = createRepositoryFixture(t);
+  fs.unlinkSync(path.join(
+    missingAssetRoot,
+    'assets',
+    'profile',
+    'resume-photo-240.avif'
+  ));
+  const missingAssetResult = validateRepository(missingAssetRoot);
+  assert.ok(missingAssetResult.issues.includes(
+    `resume.html: ${RESUME_RESPONSIVE_IMAGE_ISSUE}`
+  ));
+
+  const emptyAssetRoot = createRepositoryFixture(t);
+  fs.writeFileSync(
+    path.join(
+      emptyAssetRoot,
+      'assets',
+      'profile',
+      'resume-photo-480.avif'
+    ),
+    Buffer.alloc(0)
+  );
+  const emptyAssetResult = validateRepository(emptyAssetRoot);
+  assert.ok(emptyAssetResult.issues.includes(
+    `resume.html: ${RESUME_RESPONSIVE_IMAGE_ISSUE}`
+  ));
+
+  const oversizedAssetRoot = createRepositoryFixture(t);
+  fs.writeFileSync(
+    path.join(
+      oversizedAssetRoot,
+      'assets',
+      'profile',
+      'resume-photo-240.webp'
+    ),
+    Buffer.alloc(20 * 1024 + 1)
+  );
+  const oversizedAssetResult = validateRepository(oversizedAssetRoot);
+  assert.ok(oversizedAssetResult.issues.includes(
+    `en/resume.html: ${RESUME_RESPONSIVE_IMAGE_ISSUE}`
+  ));
 });
 
 test('validateRepository does not depend on the current working directory', () => {

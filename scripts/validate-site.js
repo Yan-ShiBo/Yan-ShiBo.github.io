@@ -178,6 +178,14 @@ const MOBILE_MENU_CLEANUP_ISSUE =
   `mobile menu cleanup must share the (max-width: ${MOBILE_BREAKPOINT_PX}px) breakpoint predicate`;
 const MOBILE_CSS_BREAKPOINT_ISSUE =
   `mobile navigation and 44px touch-target rules must share one (max-width: ${MOBILE_BREAKPOINT_PX}px) media block`;
+const MOBILE_BOOTSTRAP_ISSUE =
+  'every page must use viewport-fit=cover and load the shared theme bootstrap before blocking stylesheets';
+const MOBILE_FOUNDATION_CSS_ISSUE =
+  'shared mobile CSS must preserve safe-area offsets, readable muted text, compact sticky navigation, and the 760px resume sidebar transition';
+const ANCHOR_FOLLOW_ISSUE =
+  'anchor navigation must visibly mark the current location and scroll the real horizontal rail into view';
+const RESUME_RESPONSIVE_IMAGE_ISSUE =
+  'both resume pages must use the approved responsive AVIF and WebP portrait sources with the original JPEG fallback';
 const RESUME_OVERFLOW_CSS_ISSUE =
   'resume cards, contact values, keyword tags, and long actions must remain shrinkable on narrow viewports';
 const PROFILE_CONTACT_FILES = ['profile.html', 'en/profile.html'];
@@ -190,7 +198,7 @@ const PROFILE_CONTACTS_ISSUE =
 const PROFILE_MODELING_AWARD_ISSUE =
   'profile must identify the 2020 modeling honor as the Certificate Authority Cup, never MCM/ICM';
 const PROFILE_KTV_CONTRACT_ISSUE =
-  'profile KTV record must bind uni-app, the internship period, and the project-development period to the same experience';
+  'profile KTV record must use the approved MicFamily web stack, preserve both date ranges, and exclude legacy uni-app or decoupled-architecture claims';
 const PROFILE_CONTACT_CSS_ISSUE =
   'profile email links and summary tags must remain shrinkable and wrappable on narrow viewports';
 const RESUME_ANCHOR_CONTRACT_ISSUE =
@@ -200,7 +208,7 @@ const RESUME_MATERIALS_CONTRACT_ISSUE =
 const RESUME_ACADEMIC_FACTS_ISSUE =
   'resume must show degree GPA 3.95 / 5.00 and degree-required course rank 8 / 120, never 8 / 124';
 const RESUME_KTV_CONTRACT_ISSUE =
-  'resume KTV entry must match the approved concise internship summary and visibly include Spring Boot, MySQL, and uni-app';
+  'resume KTV entry must match the approved MicFamily web-stack summary and exclude legacy uni-app or decoupled-architecture claims';
 const RESUME_CBF_ROVER_CONTRACT_ISSUE =
   'resume CBF-Rover entry must name exact and Gazebo validation and state that fixed-geometry q-SBC is not ready';
 const RESUME_AWARDS_CONTRACT_ISSUE =
@@ -245,7 +253,8 @@ const RESUME_PAGE_CONTRACTS = [
     ccfAVenue: 'CCF A 类会议',
     ccfAAuthor: '第二作者（导师第一作者）',
     ktvDate: '2022.06—2022.08',
-    ktvSummaryFragments: ['协调团队完成系统开发与联调', 'Spring Boot', 'MySQL', 'uni-app', '实习评分 94 分'],
+    ktvSummaryFragments: ['协调团队完成系统开发与联调', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', '实习评分 94 分'],
+    ktvForbiddenPatterns: [/uni-app/i, /前后端分离/],
     cbfReadiness: '固定几何 q-SBC 仍处于未就绪状态',
     cbfForbiddenPatterns: [
       /完成(?:了)?(?:固定几何\s*)?q-SBC/i,
@@ -285,7 +294,8 @@ const RESUME_PAGE_CONTRACTS = [
     ccfAVenue: 'CCF Class A conference',
     ccfAAuthor: 'Second author (advisor first)',
     ktvDate: '2022.06—2022.08',
-    ktvSummaryFragments: ['Coordinated the team through system development and integration', 'Spring Boot', 'MySQL', 'uni-app', 'internship score of 94'],
+    ktvSummaryFragments: ['Coordinated the team through system development and integration', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', 'internship score of 94'],
+    ktvForbiddenPatterns: [/uni-app/i, /decoupled front-end\/back-end/i],
     cbfReadiness: 'the fixed-geometry q-SBC remains not ready',
     cbfForbiddenPatterns: [
       /completed (?:the )?(?:fixed-geometry )?q-SBC/i,
@@ -728,6 +738,43 @@ function validateDocumentStructure(
 
   const links = extractTags(html, 'link');
   const scripts = extractTags(html, 'script');
+  const viewportTokens = viewports.length === 1
+    ? String(viewports[0].attributes.content || '')
+        .split(',')
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean)
+    : [];
+  const expectedViewportTokens = [
+    'width=device-width',
+    'initial-scale=1.0',
+    'viewport-fit=cover'
+  ];
+  const siteScripts = scripts.filter((tag) => {
+    const resolved = resolveLocalReference(
+      rootDir,
+      file,
+      tag.attributes.src,
+      fileSystemCache
+    );
+    return resolved.kind === 'local' && resolved.relativePath === 'assets/js/site.js';
+  });
+  const stylesheetLinks = links.filter((tag) => (
+    String(tag.attributes.rel || '').toLowerCase().split(/\s+/).includes('stylesheet')
+  ));
+  const siteScriptIndex = siteScripts.length === 1 ? html.indexOf(siteScripts[0].raw) : -1;
+  const firstStylesheetIndex = stylesheetLinks.length > 0
+    ? Math.min(...stylesheetLinks.map((tag) => html.indexOf(tag.raw)).filter((index) => index >= 0))
+    : -1;
+  const hasMobileBootstrap =
+    viewportTokens.length === expectedViewportTokens.length &&
+    expectedViewportTokens.every((token) => viewportTokens.includes(token)) &&
+    siteScripts.length === 1 &&
+    !Object.hasOwn(siteScripts[0].attributes, 'defer') &&
+    !Object.hasOwn(siteScripts[0].attributes, 'async') &&
+    siteScriptIndex >= 0 &&
+    firstStylesheetIndex >= 0 &&
+    siteScriptIndex < firstStylesheetIndex;
+  if (!hasMobileBootstrap) addIssue(issues, file, MOBILE_BOOTSTRAP_ISSUE);
   const expectedResources = [
     'assets/icons/site.ico',
     'assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css',
@@ -1825,19 +1872,29 @@ function validateProfileKtvFacts(rootDir, issues) {
       file: 'profile.html',
       containerClass: 'profile-project-item',
       requiredPatterns: [
-        /uni-app/,
+        /MicFamily/,
+        /Vue/,
+        /Spring Boot/,
+        /MyBatis-Plus/,
+        /MySQL/,
         /项目开发期\s*：?\s*2022\.06\s*-\s*2022\.07/,
         /实习期\s*：?\s*2022\.06\s*-\s*2022\.08/
-      ]
+      ],
+      forbiddenPatterns: [/uni-app/i, /前后端分离/]
     },
     {
       file: 'en/profile.html',
       containerClass: 'info-card',
       requiredPatterns: [
-        /uni-app/,
+        /MicFamily/,
+        /Vue/,
+        /Spring Boot/,
+        /MyBatis-Plus/,
+        /MySQL/,
         /internship period\s*:\s*June–August 2022/i,
         /project development period\s*:\s*June–July 2022/i
-      ]
+      ],
+      forbiddenPatterns: [/uni-app/i, /decoupled front-end\/back-end/i]
     }
   ];
 
@@ -1861,7 +1918,8 @@ function validateProfileKtvFacts(rootDir, issues) {
       : '';
     if (
       containers.length !== 1 ||
-      !contract.requiredPatterns.every((pattern) => pattern.test(containerText))
+      !contract.requiredPatterns.every((pattern) => pattern.test(containerText)) ||
+      contract.forbiddenPatterns.some((pattern) => pattern.test(containerText))
     ) {
       addIssue(issues, contract.file, PROFILE_KTV_CONTRACT_ISSUE);
     }
@@ -2073,12 +2131,12 @@ function validateResumeContentContract(rootDir, issues) {
       .map((element) => getActiveElementText(html, element));
     if (
       ktvEntries.length !== 1 ||
-      !ktvText.includes('uni-app') ||
       stableCanonicalJson(ktvDateTexts) !== stableCanonicalJson([contract.ktvDate]) ||
       ktvParagraphTexts.length !== 1 ||
       !contract.ktvSummaryFragments.every((fragment) => (
         ktvParagraphTexts[0].includes(fragment)
-      ))
+      )) ||
+      contract.ktvForbiddenPatterns.some((pattern) => pattern.test(ktvText))
     ) {
       addIssue(issues, contract.file, RESUME_KTV_CONTRACT_ISSUE);
     }
@@ -2142,6 +2200,83 @@ function validateResumeContentContract(rootDir, issues) {
       !ccfAText.includes(contract.ccfAAuthor)
     ) {
       addIssue(issues, contract.file, RESUME_CCF_A_CONTRACT_ISSUE);
+    }
+  }
+}
+
+function validateResumeResponsivePortraits(rootDir, issues) {
+  const derivatives = new Map([
+    ['assets/profile/resume-photo-240.avif', 20 * 1024],
+    ['assets/profile/resume-photo-480.avif', 40 * 1024],
+    ['assets/profile/resume-photo-960.avif', 80 * 1024],
+    ['assets/profile/resume-photo-240.webp', 20 * 1024],
+    ['assets/profile/resume-photo-480.webp', 40 * 1024],
+    ['assets/profile/resume-photo-960.webp', 100 * 1024]
+  ]);
+  let assetsValid = true;
+  for (const [file, maxBytes] of derivatives) {
+    const absolutePath = path.join(rootDir, file);
+    if (
+      !fs.existsSync(absolutePath) ||
+      fs.statSync(absolutePath).size === 0 ||
+      fs.statSync(absolutePath).size > maxBytes
+    ) {
+      assetsValid = false;
+    }
+  }
+
+  const contracts = [
+    { file: 'resume.html', prefix: './' },
+    { file: 'en/resume.html', prefix: '../' }
+  ];
+  const sizes = '(max-width: 419px) 88px, (max-width: 760px) 104px, ' +
+    '(max-width: 1068px) 240px, 320px';
+
+  for (const contract of contracts) {
+    const absolutePath = path.join(rootDir, contract.file);
+    if (!fs.existsSync(absolutePath)) continue;
+    const elements = collectActiveHtmlElements(readUtf8(rootDir, contract.file));
+    const portraits = elements.filter((element) => (
+      element.name === 'figure' && hasClass(element.attributes, 'resume-portrait')
+    ));
+    const portrait = portraits.length === 1 ? portraits[0] : null;
+    const pictures = portrait
+      ? elements.filter((element) => element.name === 'picture' && element.parent === portrait)
+      : [];
+    const picture = pictures.length === 1 ? pictures[0] : null;
+    const children = picture
+      ? elements.filter((element) => element.parent === picture)
+      : [];
+    const avifSource = children[0];
+    const webpSource = children[1];
+    const image = children[2];
+    const avifSrcset = [240, 480, 960]
+      .map((width) => `${contract.prefix}assets/profile/resume-photo-${width}.avif ${width}w`)
+      .join(', ');
+    const webpSrcset = [240, 480, 960]
+      .map((width) => `${contract.prefix}assets/profile/resume-photo-${width}.webp ${width}w`)
+      .join(', ');
+    const validMarkup =
+      pictures.length === 1 &&
+      children.length === 3 &&
+      avifSource?.name === 'source' &&
+      avifSource.attributes.type === 'image/avif' &&
+      avifSource.attributes.sizes === sizes &&
+      avifSource.attributes.srcset === avifSrcset &&
+      webpSource?.name === 'source' &&
+      webpSource.attributes.type === 'image/webp' &&
+      webpSource.attributes.sizes === sizes &&
+      webpSource.attributes.srcset === webpSrcset &&
+      image?.name === 'img' &&
+      image.attributes.src === `${contract.prefix}assets/profile/resume-photo.jpg` &&
+      image.attributes.sizes === sizes &&
+      image.attributes.width === '1500' &&
+      image.attributes.height === '2000' &&
+      image.attributes.loading === 'eager' &&
+      image.attributes.fetchpriority === 'high';
+
+    if (!assetsValid || !validMarkup) {
+      addIssue(issues, contract.file, RESUME_RESPONSIVE_IMAGE_ISSUE);
     }
   }
 }
@@ -4988,7 +5123,7 @@ function splitTopLevelCssDeclarations(source) {
 function effectiveCssPropertyInBody(body, property) {
   const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const propertyPattern = new RegExp(
-    `^\\s*${escapedProperty}\\s*:\\s*(.+?)\\s*$`,
+    `^\\s*${escapedProperty}\\s*:\\s*([\\s\\S]+?)\\s*$`,
     'i'
   );
   let effectiveDeclaration = null;
@@ -5414,6 +5549,265 @@ function hasConflictingCssPropertyRule(
       return rule.sourceIndex > baseline.sourceIndex;
     });
   }));
+}
+
+function parseHexColor(value) {
+  const match = /^#([0-9a-f]{6})$/i.exec(value || '');
+  if (!match) return null;
+  return [0, 2, 4].map((offset) => Number.parseInt(match[1].slice(offset, offset + 2), 16));
+}
+
+function relativeLuminance(rgb) {
+  if (!rgb) return null;
+  const channels = rgb.map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(foreground, background) {
+  const foregroundLuminance = relativeLuminance(parseHexColor(foreground));
+  const backgroundLuminance = relativeLuminance(parseHexColor(background));
+  if (foregroundLuminance === null || backgroundLuminance === null) return 0;
+  const lighter = Math.max(foregroundLuminance, backgroundLuminance);
+  const darker = Math.min(foregroundLuminance, backgroundLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function hasMobileFoundationCss(rootDir) {
+  const file = 'assets/css/site.css';
+  const absolutePath = path.join(rootDir, file);
+  if (!fs.existsSync(absolutePath)) return false;
+
+  const source = readUtf8(rootDir, file);
+  const codeMask = buildCssCodeMask(source);
+  const executableSource = maskedSource(source, codeMask);
+  const ruleEntries = collectCssRuleEntries(executableSource);
+  const getBase = (selector, property) => effectiveDirectCssProperty(
+    executableSource,
+    selector,
+    property,
+    ruleEntries
+  );
+  const includesAll = (value, fragments) => (
+    typeof value === 'string' && fragments.every((fragment) => value.includes(fragment))
+  );
+
+  const rootContracts = [
+    ['--anchor-h', '52px'],
+    ['--safe-top', 'env(safe-area-inset-top, 0px)'],
+    ['--safe-right', 'env(safe-area-inset-right, 0px)'],
+    ['--safe-bottom', 'env(safe-area-inset-bottom, 0px)'],
+    ['--safe-left', 'env(safe-area-inset-left, 0px)'],
+    ['--header-total-h', 'calc(var(--header-h) + var(--safe-top))']
+  ];
+  if (!rootContracts.every(([property, expected]) => getBase(':root', property) === expected)) {
+    return false;
+  }
+  if (contrastRatio(getBase(':root', '--ink-muted-48'), getBase(':root', '--canvas-parchment')) < 4.5) {
+    return false;
+  }
+
+  const baseContracts = [
+    ['.site-header', 'padding-top', 'var(--safe-top)'],
+    ['.anchor-bar', 'top', 'var(--header-total-h)'],
+    ['.anchor-bar', 'height', 'var(--anchor-h)'],
+    ['.main-shell > section', 'scroll-margin-top', 'var(--header-total-h)'],
+    [
+      '.section-block[id]',
+      'scroll-margin-top',
+      'calc(var(--header-total-h) + var(--anchor-h) + 12px)'
+    ],
+    ['.back-to-top', 'right', 'calc(22px + var(--safe-right))'],
+    ['.back-to-top', 'bottom', 'calc(22px + var(--safe-bottom))'],
+    [
+      '.resume-page .resume-sidebar',
+      'top',
+      'calc(var(--header-total-h) + var(--resume-anchor-h) + 20px)'
+    ],
+    [
+      '.resume-page .resume-ledger-heading h2[id]',
+      'scroll-margin-top',
+      'calc(var(--header-total-h) + var(--resume-anchor-h) + 20px)'
+    ],
+    [
+      '#overview',
+      'scroll-margin-top',
+      'calc(var(--header-total-h) + var(--anchor-h) + 14px)'
+    ],
+    ['.redirect-shell', 'min-height', 'calc(100svh - var(--header-total-h))']
+  ];
+  if (!baseContracts.every(([selector, property, expected]) => (
+    getBase(selector, property) === expected
+  ))) {
+    return false;
+  }
+  const hasCurrentAnchorStyle = hasExecutableMatch(
+    source,
+    codeMask,
+    /\.anchor-chip:hover\s*,\s*\.anchor-chip\[aria-current\s*=\s*(['"])location\1\]\s*\{[\s\S]*?\bcolor\s*:\s*var\(--primary\)\s*;[\s\S]*?\bborder-color\s*:\s*var\(--primary\)\s*;/
+  );
+  if (!hasCurrentAnchorStyle) return false;
+
+  const safeAreaConsumers = [
+    ['.header-shell', 'padding', ['var(--safe-left)', 'var(--safe-right)']],
+    ['.drawer', 'padding', [
+      'var(--safe-top)',
+      'var(--safe-right)',
+      'var(--safe-bottom)',
+      'var(--safe-left)'
+    ]],
+    ['.anchor-bar', 'padding-left', ['var(--safe-left)']],
+    ['.anchor-bar', 'padding-right', ['var(--safe-right)']],
+    ['.footer-shell', 'padding', [
+      'var(--safe-left)',
+      'var(--safe-right)',
+      'var(--safe-bottom)'
+    ]],
+    ['.resume-hero', 'padding-left', ['var(--safe-left)']],
+    ['.resume-hero', 'padding-right', ['var(--safe-right)']],
+    ['.page-hero', 'padding', ['var(--safe-left)', 'var(--safe-right)']],
+    ['.section-block', 'padding', ['var(--safe-left)', 'var(--safe-right)']],
+    ['.main-shell > .grid-2', 'padding', ['var(--safe-left)', 'var(--safe-right)']],
+    ['.timeline-stage', 'padding-left', ['var(--safe-left)']],
+    ['.timeline-stage', 'padding-right', ['var(--safe-right)']],
+    ['.main-shell > .resume-layout', 'padding', ['var(--safe-left)', 'var(--safe-right)']],
+    ['.research-page .research-hero', 'padding', ['var(--safe-left)', 'var(--safe-right)']],
+    ['.redirect-shell', 'padding', ['var(--safe-left)', 'var(--safe-right)']],
+    ['.lightbox', 'padding', [
+      'var(--safe-top)',
+      'var(--safe-right)',
+      'var(--safe-bottom)',
+      'var(--safe-left)'
+    ]]
+  ];
+  if (!safeAreaConsumers.every(([selector, property, fragments]) => (
+    includesAll(getBase(selector, property), fragments)
+  ))) {
+    return false;
+  }
+
+  const mobilePattern = new RegExp(
+    `@media\\s*\\(\\s*max-width\\s*:\\s*${MOBILE_BREAKPOINT_PX}px\\s*\\)\\s*\\{`
+  );
+  const executableMobileCss = extractCssMediaBlocks(source, codeMask, mobilePattern)
+    .map((block) => maskedSource(block.source, block.codeMask))
+    .join('\n');
+  const mobileRules = collectCssRuleEntries(executableMobileCss);
+  const getMobile = (selector, property) => effectiveDirectCssProperty(
+    executableMobileCss,
+    selector,
+    property,
+    mobileRules
+  );
+  const mobileContracts = [
+    [':root', '--anchor-h', '48px'],
+    ['.anchor-chip', 'min-height', '44px'],
+    ['.site-header', 'backdrop-filter', 'none'],
+    ['.site-header', '-webkit-backdrop-filter', 'none'],
+    ['.anchor-bar', 'backdrop-filter', 'none'],
+    ['.anchor-bar', '-webkit-backdrop-filter', 'none'],
+    ['.site-header', 'background', '#000'],
+    ['.anchor-bar', 'background', 'var(--canvas-parchment)']
+  ];
+  if (!mobileContracts.every(([selector, property, expected]) => (
+    getMobile(selector, property) === expected
+  ))) {
+    return false;
+  }
+  if (
+    !includesAll(getMobile('.header-shell', 'padding'), ['var(--safe-left)', 'var(--safe-right)']) ||
+    !includesAll(getMobile('.anchor-bar', 'padding'), ['var(--safe-left)', 'var(--safe-right)']) ||
+    !includesAll(
+      getMobile('.research-page .research-hero', 'padding'),
+      ['var(--safe-left)', 'var(--safe-right)']
+    )
+  ) {
+    return false;
+  }
+
+  const compactPattern = /@media\s*\(\s*max-width\s*:\s*760px\s*\)\s*\{/;
+  const executableCompactCss = extractCssMediaBlocks(source, codeMask, compactPattern)
+    .map((block) => maskedSource(block.source, block.codeMask))
+    .join('\n');
+  const compactRules = collectCssRuleEntries(executableCompactCss);
+  const getCompact = (selector, property) => effectiveDirectCssProperty(
+    executableCompactCss,
+    selector,
+    property,
+    compactRules
+  );
+  const compactContracts = [
+    ['.resume-page .resume-sidebar .surface-inner', 'display', 'flex'],
+    ['.resume-page .resume-sidebar .surface-inner', 'flex-direction', 'column'],
+    [
+      '.resume-page .resume-portrait',
+      'grid-template-columns',
+      '104px minmax(0, 1fr)'
+    ],
+    ['.resume-page .resume-portrait img', 'width', '104px'],
+    ['.resume-page .resume-sidebar__section:last-child', 'grid-column', 'auto']
+  ];
+  if (!compactContracts.every(([selector, property, expected]) => (
+    getCompact(selector, property) === expected
+  ))) {
+    return false;
+  }
+
+  const narrowPattern = /@media\s*\(\s*max-width\s*:\s*640px\s*\)\s*\{/;
+  const executableNarrowCss = extractCssMediaBlocks(source, codeMask, narrowPattern)
+    .map((block) => maskedSource(block.source, block.codeMask))
+    .join('\n');
+  const narrowRules = collectCssRuleEntries(executableNarrowCss);
+  const getNarrow = (selector, property) => effectiveDirectCssProperty(
+    executableNarrowCss,
+    selector,
+    property,
+    narrowRules
+  );
+  if (
+    !includesAll(getNarrow('.anchor-bar', 'padding-left'), ['var(--safe-left)']) ||
+    !includesAll(getNarrow('.anchor-bar', 'padding-right'), ['var(--safe-right)']) ||
+    !includesAll(getNarrow('.timeline-stage', 'padding-left'), ['var(--safe-left)']) ||
+    !includesAll(getNarrow('.timeline-stage', 'padding-right'), ['var(--safe-right)']) ||
+    !includesAll(getNarrow('.main-shell > .resume-layout', 'padding-left'), ['var(--safe-left)']) ||
+    !includesAll(getNarrow('.main-shell > .resume-layout', 'padding-right'), ['var(--safe-right)']) ||
+    !includesAll(
+      getNarrow('.research-page .research-hero', 'padding'),
+      ['var(--safe-left)', 'var(--safe-right)']
+    ) ||
+    !includesAll(getNarrow('.lightbox', 'padding'), [
+      'var(--safe-top)',
+      'var(--safe-right)',
+      'var(--safe-bottom)',
+      'var(--safe-left)'
+    ]) ||
+    !includesAll(getNarrow('.hero .hero-side', '--hero-rail-gutter'), [
+      'var(--safe-left)',
+      'var(--safe-right)'
+    ]) ||
+    getNarrow('.quote-text', 'font-size') !== '24px'
+  ) {
+    return false;
+  }
+
+  const phonePattern = /@media\s*\(\s*max-width\s*:\s*419px\s*\)\s*\{/;
+  const executablePhoneCss = extractCssMediaBlocks(source, codeMask, phonePattern)
+    .map((block) => maskedSource(block.source, block.codeMask))
+    .join('\n');
+  const phoneRules = collectCssRuleEntries(executablePhoneCss);
+  const getPhone = (selector, property) => effectiveDirectCssProperty(
+    executablePhoneCss,
+    selector,
+    property,
+    phoneRules
+  );
+  return includesAll(getPhone('.header-shell', 'padding-left'), ['var(--safe-left)']) &&
+    includesAll(getPhone('.header-shell', 'padding-right'), ['var(--safe-right)']) &&
+    getPhone('.quote-text', 'font-size') === '21px';
 }
 
 function hasSharedMobileNavigationCss(rootDir) {
@@ -5844,8 +6238,11 @@ function hasPolishedMobileHomeHeroCss(rootDir) {
     [
       '.hero .hero-side',
       [
-        ['--hero-rail-card', 'calc(100% - 56px)'],
-        ['--hero-rail-gutter', '28px'],
+        [
+          '--hero-rail-card',
+          'calc(100% - var(--hero-rail-gutter) - var(--hero-rail-gutter))'
+        ],
+        ['--hero-rail-gutter', 'max(28px, var(--safe-left), var(--safe-right))'],
         ['display', 'flex'],
         ['flex-direction', 'row'],
         ['align-items', 'stretch'],
@@ -6410,6 +6807,12 @@ function validateMobileNavigationCssContract(rootDir, issues) {
   }
 }
 
+function validateMobileFoundationCssContract(rootDir, issues) {
+  if (!hasMobileFoundationCss(rootDir)) {
+    addIssue(issues, 'assets/css/site.css', MOBILE_FOUNDATION_CSS_ISSUE);
+  }
+}
+
 function validateResumeOverflowCssContract(rootDir, issues) {
   if (!hasResumeOverflowProtectionCss(rootDir)) {
     addIssue(issues, 'assets/css/site.css', RESUME_OVERFLOW_CSS_ISSUE);
@@ -6586,6 +6989,7 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
 
   const source = readUtf8(rootDir, file);
   const codeMask = buildJavaScriptCodeMask(source);
+  const executableSource = maskedSource(source, codeMask);
   const handler = extractNamedFunctionBody(
     source,
     codeMask,
@@ -6621,6 +7025,102 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     'initProofRails',
     true
   );
+  const earlyThemeHandler = extractNamedFunctionBody(
+    source,
+    codeMask,
+    'initializeThemeBeforePaint',
+    true
+  );
+  const anchorNavHandler = extractNamedFunctionBody(
+    source,
+    codeMask,
+    'initAnchorNav',
+    true
+  );
+  const setCurrentHandler = anchorNavHandler
+    ? extractNamedFunctionBody(
+        anchorNavHandler.source,
+        anchorNavHandler.codeMask,
+        'setCurrent',
+        true
+      )
+    : null;
+  const earlyThemeCalls = Array.from(
+    executableSource.matchAll(/\binitializeThemeBeforePaint\s*\(\s*\)\s*;/g)
+  );
+  const domReadyMatch = findExecutableMatch(
+    source,
+    codeMask,
+    /\bdocument\.addEventListener\(\s*(['"])DOMContentLoaded\1/
+  );
+  const hasEarlyThemeCall = earlyThemeCalls.length === 1 &&
+    domReadyMatch !== null &&
+    earlyThemeCalls[0].index < domReadyMatch.index &&
+    executableBraceDepthAt(source, codeMask, earlyThemeCalls[0].index) === 1;
+  const hasEarlyThemeBehavior = earlyThemeHandler !== null &&
+    hasExecutableMatch(
+      earlyThemeHandler.source,
+      earlyThemeHandler.codeMask,
+      /\bvar\s+theme\s*=\s*resolveInitialTheme\(\s*\)\s*;/
+    ) &&
+    hasExecutableMatch(
+      earlyThemeHandler.source,
+      earlyThemeHandler.codeMask,
+      /\broot\.setAttribute\(\s*(['"])data-theme\1\s*,\s*theme\s*\)\s*;/
+    ) &&
+    hasExecutableMatch(
+      earlyThemeHandler.source,
+      earlyThemeHandler.codeMask,
+      /\bthemeMeta\.setAttribute\(\s*(['"])content\1\s*,\s*theme\s*===\s*(['"])dark\2\s*\?\s*(['"])#000000\3\s*:\s*(['"])#ececee\4\s*\)\s*;/
+    );
+  if (!hasEarlyThemeCall || !hasEarlyThemeBehavior) {
+    addIssue(issues, file, MOBILE_BOOTSTRAP_ISSUE);
+  }
+
+  const hasAnchorFollowBehavior = setCurrentHandler !== null &&
+    hasExecutableMatch(
+      setCurrentHandler.source,
+      setCurrentHandler.codeMask,
+      /\blink\.setAttribute\(\s*(['"])aria-current\1\s*,\s*(['"])location\2\s*\)/
+    ) &&
+    hasExecutableMatch(
+      setCurrentHandler.source,
+      setCurrentHandler.codeMask,
+      /\bcurrent\.closest\(\s*(['"])\.anchor-bar\1\s*\)/
+    ) &&
+    hasExecutableMatch(
+      setCurrentHandler.source,
+      setCurrentHandler.codeMask,
+      /\brail\.scrollWidth\s*<=\s*rail\.clientWidth\s*\+\s*1/
+    ) &&
+    hasExecutableMatch(
+      setCurrentHandler.source,
+      setCurrentHandler.codeMask,
+      /\bMath\.max\(\s*0\s*,\s*rail\.scrollWidth\s*-\s*rail\.clientWidth\s*\)/
+    ) &&
+    hasExecutableMatch(
+      setCurrentHandler.source,
+      setCurrentHandler.codeMask,
+      /\bMath\.max\(\s*0\s*,\s*Math\.min\(\s*maxLeft\s*,\s*targetLeft\s*\)\s*\)/
+    ) &&
+    hasExecutableMatch(
+      setCurrentHandler.source,
+      setCurrentHandler.codeMask,
+      /\bwindow\.matchMedia\(\s*(['"])\(prefers-reduced-motion:\s*reduce\)\1\s*\)\.matches/
+    ) &&
+    hasExecutableMatch(
+      setCurrentHandler.source,
+      setCurrentHandler.codeMask,
+      /\brail\.scrollTo\(\s*\{\s*left:\s*nextLeft\s*,\s*behavior:\s*reduced\s*\?\s*(['"])auto\1\s*:\s*(['"])smooth\2\s*\}\s*\)/
+    ) &&
+    hasExecutableMatch(
+      setCurrentHandler.source,
+      setCurrentHandler.codeMask,
+      /\brail\.scrollLeft\s*=\s*nextLeft\s*;/
+    );
+  if (!hasAnchorFollowBehavior) {
+    addIssue(issues, file, ANCHOR_FOLLOW_ISSUE);
+  }
   const hasMobileMenuQuery = hasExecutableMatch(
     source,
     codeMask,
@@ -6686,7 +7186,6 @@ function validateSiteJavaScriptContracts(rootDir, issues) {
     addIssue(issues, file, MOBILE_MENU_CLEANUP_ISSUE);
   }
 
-  const executableSource = maskedSource(source, codeMask);
   const notFoundCalls = Array.from(
     executableSource.matchAll(/\binitNotFoundPage\s*\(\s*\)\s*;/g)
   );
@@ -6813,6 +7312,7 @@ function validateRepository(rootDir) {
   validateProfileModelingAward(absoluteRoot, issues);
   validateProfileKtvFacts(absoluteRoot, issues);
   validateResumeContentContract(absoluteRoot, issues);
+  validateResumeResponsivePortraits(absoluteRoot, issues);
   validateResumePdfSourceContract(absoluteRoot, issues);
 
   for (const page of NOT_FOUND_PAGES) {
@@ -6863,6 +7363,7 @@ function validateRepository(rootDir) {
   validateJavaScriptSyntax(absoluteRoot, issues);
   validateStatsJavaScriptContracts(absoluteRoot, issues);
   validateMobileNavigationCssContract(absoluteRoot, issues);
+  validateMobileFoundationCssContract(absoluteRoot, issues);
   validateResumeOverflowCssContract(absoluteRoot, issues);
   validateResumeTypographyCssContract(absoluteRoot, issues);
   validateProfileContactCssContract(absoluteRoot, issues);

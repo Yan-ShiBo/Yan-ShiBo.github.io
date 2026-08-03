@@ -396,7 +396,7 @@ test('runCli validates one requested CI shard through the same runner', async ()
 
   assert.equal(status, 0);
   assert.deepEqual(spawnedShards, ['3/4']);
-  assert.ok(logLines.includes('Validator test shard 3/4 passed: 79 tests.'));
+  assert.ok(logLines.includes('Validator test shard 3/4 passed: 80 tests.'));
 });
 
 test('runCli keeps successful four-shard output compact', async () => {
@@ -423,9 +423,9 @@ test('runCli keeps successful four-shard output compact', async () => {
   assert.deepEqual(logLines, [
     'Validator test shard 1/4 passed: 80 tests.',
     'Validator test shard 2/4 passed: 80 tests.',
-    'Validator test shard 3/4 passed: 79 tests.',
-    'Validator test shard 4/4 passed: 79 tests.',
-    'Validator test shards passed: 318 tests across 4 shards.'
+    'Validator test shard 3/4 passed: 80 tests.',
+    'Validator test shard 4/4 passed: 80 tests.',
+    'Validator test shards passed: 320 tests across 4 shards.'
   ]);
 });
 
