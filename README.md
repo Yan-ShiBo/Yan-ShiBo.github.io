@@ -85,7 +85,8 @@ http://127.0.0.1:8000/en/
 │   ├── testing.md              # 自动与人工测试
 │   ├── operations.md           # 发布、缓存与回滚
 │   ├── maintenance.md          # 当前偏差与回归历史
-│   ├── Shibo-Yan-Resume.pdf
+│   ├── Shibo-Yan-Resume.pdf     # 中文简历原文件
+│   ├── Shibo-Yan-Resume-EN.pdf  # 英文简历原文件
 │   └── Shibo-Yan-Undergraduate-Transcript.pdf
 ├── scripts/
 │   ├── generate-sitemap.js

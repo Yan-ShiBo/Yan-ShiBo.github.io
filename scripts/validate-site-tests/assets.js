@@ -829,6 +829,7 @@ test('fixture inventory is isolated and validation does not modify it', (t) => {
     'assets/icons/site.ico',
     'assets/images/baidu-elite-certificate.png',
     'docs/Shibo-Yan-Resume.pdf',
+    'docs/Shibo-Yan-Resume-EN.pdf',
     'scripts/run-validator-tests.js',
     'worker/src/index.mjs'
   ]) {

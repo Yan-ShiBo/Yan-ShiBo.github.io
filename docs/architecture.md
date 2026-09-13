@@ -210,6 +210,8 @@ sequenceDiagram
 - `assets/vendor/`：本地 Font Awesome 样式与字体；
 - `docs/`：项目文档以及明确允许公开的简历、成绩单材料。
 
+中文简历 PDF 继续使用稳定地址 `docs/Shibo-Yan-Resume.pdf`，英文简历使用独立地址 `docs/Shibo-Yan-Resume-EN.pdf`。两份文件均直接保留用户提供的一页 A4 原件；来源字节校验见[测试规范](testing.md#313-简历结构事实与打印合同)。两张简历页的主要查看与下载入口指向当前语言文件，材料区同时提供两种语言，网页语言切换仍对应 `resume.html` 与 `en/resume.html`。材料区布局与移动端行为见[设计规范](design.md#34-网格与流程)。
+
 HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原图必须保持有效路径。使用宽度描述符的 `<picture><source>` 必须各自带与实际布局一致的 `sizes`，不能只把 `sizes` 写在无 `srcset` 的回退 `<img>` 上。外链新窗口必须带安全 `rel`。资源文件名区分大小写，因为 Pages 运行于大小写敏感环境。
 
 ## 8. SEO 与可索引边界

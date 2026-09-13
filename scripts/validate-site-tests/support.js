@@ -90,6 +90,7 @@ const FIXTURE_SOURCE_DIRECTORIES = [
 ];
 const FIXTURE_SOURCE_FILES = [
   'docs/Shibo-Yan-Resume.pdf',
+  'docs/Shibo-Yan-Resume-EN.pdf',
   'docs/Shibo-Yan-Undergraduate-Transcript.pdf',
   'scripts/generate-sitemap.js',
   'scripts/run-validator-tests.js',
@@ -113,6 +114,7 @@ const FIXTURE_CONTENT_FILES = new Set([
   'assets/js/stats.js',
   'assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css',
   'docs/Shibo-Yan-Resume.pdf',
+  'docs/Shibo-Yan-Resume-EN.pdf',
   'manifest.en.webmanifest',
   'manifest.webmanifest',
   'robots.txt',
@@ -159,7 +161,9 @@ const RESUME_SERVICE_CONTRACT_ISSUE =
 const RESUME_TYPOGRAPHY_CSS_ISSUE =
   'resume typography must use the smaller page scale and normal-weight organization and practice entries';
 const RESUME_PDF_SOURCE_CONTRACT_ISSUE =
-  'downloadable resume PDF must remain byte-identical to the user-provided one-page source file';
+  'downloadable resume PDFs must remain byte-identical to the approved Chinese and English one-page source files';
+const RESUME_PDF_LINK_CONTRACT_ISSUE =
+  'resume PDF actions must use the matching language, explicit download filename, and safe new-tab viewing in the hero and materials';
 const PROOF_RAIL_CSS_ISSUE =
   'assets/css/site.css: proof rails must use one card size and expose grab and dragging states';
 const PROOF_RAIL_DRAG_ISSUE =
@@ -632,6 +636,7 @@ module.exports = {
   RESUME_SERVICE_CONTRACT_ISSUE,
   RESUME_TYPOGRAPHY_CSS_ISSUE,
   RESUME_PDF_SOURCE_CONTRACT_ISSUE,
+  RESUME_PDF_LINK_CONTRACT_ISSUE,
   PROOF_RAIL_CSS_ISSUE,
   PROOF_RAIL_DRAG_ISSUE,
   HOME_HERO_MOBILE_CSS_ISSUE,

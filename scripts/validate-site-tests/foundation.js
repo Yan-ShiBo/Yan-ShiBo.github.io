@@ -24,6 +24,7 @@ const {
   RESUME_SERVICE_CONTRACT_ISSUE,
   RESUME_TYPOGRAPHY_CSS_ISSUE,
   RESUME_PDF_SOURCE_CONTRACT_ISSUE,
+  RESUME_PDF_LINK_CONTRACT_ISSUE,
   PROOF_RAIL_CSS_ISSUE,
   PROOF_RAIL_DRAG_ISSUE,
   HOME_HERO_MOBILE_CSS_ISSUE,
@@ -344,7 +345,7 @@ function assertContentMutationsRejected(t, issue, mutations) {
   }
 }
 
-test('resume and profile synchronized content rejects KTV, organization, or typography drift', (t) => {
+test('resume and profile synchronized content rejects KTV, organization, typography, or PDF drift', (t) => {
   assertContentMutationsRejected(t, RESUME_KTV_CONTRACT_ISSUE, [
     {
       name: 'Chinese KTV entry restores legacy uni-app',
@@ -539,17 +540,87 @@ test('resume and profile synchronized content rejects KTV, organization, or typo
   ]);
 
   assertContentMutationsRejected(t, RESUME_PDF_SOURCE_CONTRACT_ISSUE, [
-    {
-      name: 'Downloadable resume is replaced by a generated PDF',
-      file: 'docs/Shibo-Yan-Resume.pdf',
-      mutate(rootDir) {
-        fs.writeFileSync(
-          path.join(rootDir, this.file),
-          Buffer.from('%PDF-1.7\n% generated replacement\n', 'ascii')
-        );
-      }
+    'docs/Shibo-Yan-Resume.pdf',
+    'docs/Shibo-Yan-Resume-EN.pdf'
+  ].map((file) => ({
+    name: `${file} has same-length byte drift`,
+    file,
+    mutate(rootDir) {
+      const absolutePath = path.join(rootDir, this.file);
+      const bytes = fs.readFileSync(absolutePath);
+      bytes[bytes.length - 1] ^= 1;
+      fs.writeFileSync(absolutePath, bytes);
     }
-  ]);
+  })));
+
+  assertContentMutationsRejected(t, RESUME_PDF_SOURCE_CONTRACT_ISSUE, [{
+    name: 'Chinese and English PDF files are swapped',
+    file: 'docs/Shibo-Yan-Resume.pdf',
+    mutate(rootDir) {
+      const chinesePath = path.join(rootDir, this.file);
+      const englishPath = path.join(rootDir, 'docs/Shibo-Yan-Resume-EN.pdf');
+      const chineseBytes = fs.readFileSync(chinesePath);
+      const englishBytes = fs.readFileSync(englishPath);
+      fs.writeFileSync(chinesePath, englishBytes);
+      fs.writeFileSync(englishPath, chineseBytes);
+    }
+  }]);
+
+  assertContentMutationsRejected(t, RESUME_PDF_LINK_CONTRACT_ISSUE, [
+    {
+      name: 'English hero opens the Chinese PDF',
+      file: 'en/resume.html',
+      search: 'href="../docs/Shibo-Yan-Resume-EN.pdf"',
+      replacement: 'href="../docs/Shibo-Yan-Resume.pdf"'
+    },
+    {
+      name: 'Chinese hero download becomes an ordinary view link',
+      file: 'resume.html',
+      search: 'download="闫士博_中文简历.pdf"',
+      replacement: ''
+    },
+    {
+      name: 'English hero download uses the Chinese filename',
+      file: 'en/resume.html',
+      search: 'download="Shibo_Yan_Resume_EN.pdf"',
+      replacement: 'download="闫士博_中文简历.pdf"'
+    },
+    {
+      name: 'English PDF in Chinese materials has the wrong language metadata',
+      file: 'resume.html',
+      search: 'href="./docs/Shibo-Yan-Resume-EN.pdf" hreflang="en"',
+      replacement: 'href="./docs/Shibo-Yan-Resume-EN.pdf" hreflang="zh-CN"'
+    },
+    {
+      name: 'Chinese PDF in English materials has unsafe new-tab viewing',
+      file: 'en/resume.html',
+      search: 'href="../docs/Shibo-Yan-Resume.pdf" hreflang="zh-CN" type="application/pdf" rel="noopener noreferrer"',
+      replacement: 'href="../docs/Shibo-Yan-Resume.pdf" hreflang="zh-CN" type="application/pdf"'
+    },
+    {
+      name: 'English materials mislabel a Chinese download',
+      file: 'en/resume.html',
+      search: '> Download Chinese PDF</a>',
+      replacement: '> Download English PDF</a>'
+    },
+    {
+      name: 'English research download points to the Chinese PDF',
+      file: 'en/research.html',
+      search: 'href="../docs/Shibo-Yan-Resume-EN.pdf"',
+      replacement: 'href="../docs/Shibo-Yan-Resume.pdf"'
+    },
+    {
+      name: 'Chinese research download opens a new tab instead',
+      file: 'research.html',
+      search: 'download="闫士博_中文简历.pdf"',
+      replacement: 'target="_blank"'
+    }
+  ].map((mutation) => ({
+    ...mutation,
+    mutate(rootDir) {
+      replaceOnce(rootDir, this.file, this.search, this.replacement);
+    }
+  })));
 });
 
 test('modeling award requires the approved Certificate Authority Cup identity', (t) => {

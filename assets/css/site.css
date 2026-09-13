@@ -2257,8 +2257,18 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
 .resume-hero__actions{
   display:flex;
   flex-wrap:wrap;
+  min-width:0;
+  max-width:360px;
   gap:10px;
   justify-content:flex-end;
+}
+
+.resume-hero__actions .button{
+  min-width:0;
+  min-height:44px;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
 }
 
 .resume-section-block > .resume-layout{
@@ -2654,6 +2664,10 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
   margin-inline:auto;
 }
 
+.resume-materials .section-title-wrap h2{
+  overflow-wrap:anywhere;
+}
+
 .resume-materials__actions{
   margin-top:24px;
 }
@@ -2663,6 +2677,50 @@ body.menu-open .back-to-top{opacity:0;visibility:hidden;pointer-events:none;tran
   max-width:100%;
   white-space:normal;
   text-wrap:balance;
+}
+
+.resume-documents{
+  margin-top:24px;
+}
+
+.resume-document{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto;
+  align-items:center;
+  gap:16px 24px;
+  padding:20px 0;
+  border-top:1px solid var(--hairline);
+}
+
+.resume-document > div{min-width:0}
+
+.resume-document h3{
+  margin:0;
+  font-size:18px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+
+.resume-document p,
+.resume-materials__hint{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.6;
+}
+
+.resume-document__actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.resume-document__actions .button{
+  min-width:0;
+  min-height:44px;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
 }
 
 html.reveal-ready [data-reveal]{
@@ -3091,6 +3149,8 @@ body.lightbox-open{overflow:hidden}
   .lightbox-image{max-height:calc(100vh - 96px)}
   .resume-hero{padding-top:48px;padding-bottom:48px}
   .resume-hero__inner{gap:22px}
+  .resume-document{grid-template-columns:minmax(0, 1fr)}
+  .resume-document__actions{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr))}
   .resume-page .resume-main{padding:22px}
   .resume-layout > .resume-main > .resume-ledger-section + .resume-ledger-section{margin-top:40px}
   .resume-ledger-heading{grid-template-columns:34px minmax(0, 1fr);gap:12px}
@@ -3128,7 +3188,8 @@ body.lightbox-open{overflow:hidden}
   .resume-page .resume-portrait{grid-template-columns:88px minmax(0, 1fr)}
   .resume-page .resume-portrait img{width:88px}
   .resume-portrait figcaption strong{font-size:19px}
-  .resume-hero__actions{display:grid;grid-template-columns:1fr}
+  .resume-hero__actions{display:grid;grid-template-columns:1fr;max-width:none}
+  .resume-document__actions{grid-template-columns:minmax(0, 1fr)}
   .resume-materials__actions{display:grid;grid-template-columns:1fr}
   .resume-materials__actions .button.small{width:100%}
 }

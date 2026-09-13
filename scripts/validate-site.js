@@ -204,7 +204,9 @@ const PROFILE_CONTACT_CSS_ISSUE =
 const RESUME_ANCHOR_CONTRACT_ISSUE =
   'resume anchor bar must link once, in order, to the six stable heading IDs';
 const RESUME_MATERIALS_CONTRACT_ISSUE =
-  'resume materials must expose only the PDF resume, transcript PDF, and profile links without previews or lightbox media';
+  'resume materials must expose two language-specific view/download pairs, transcript PDF, and profile links without previews or lightbox media';
+const RESUME_PDF_LINK_CONTRACT_ISSUE =
+  'resume PDF actions must use the matching language, explicit download filename, and safe new-tab viewing in the hero and materials';
 const RESUME_ACADEMIC_FACTS_ISSUE =
   'resume must show degree GPA 3.95 / 5.00 and degree-required course rank 8 / 120, never 8 / 124';
 const RESUME_KTV_CONTRACT_ISSUE =
@@ -220,9 +222,21 @@ const RESUME_SERVICE_CONTRACT_ISSUE =
 const RESUME_TYPOGRAPHY_CSS_ISSUE =
   'resume typography must use the smaller page scale and normal-weight organization and practice entries';
 const RESUME_PDF_SOURCE_CONTRACT_ISSUE =
-  'downloadable resume PDF must remain byte-identical to the user-provided one-page source file';
-const RESUME_PDF_SOURCE_SHA256 =
-  '0656540eecf90265d7bb451d4e91b337d34d2988c7922d3f3bd3d01da9b12f36';
+  'downloadable resume PDFs must remain byte-identical to the approved Chinese and English one-page source files';
+const RESUME_PDF_SOURCES = {
+  'zh-CN': {
+    file: 'docs/Shibo-Yan-Resume.pdf',
+    download: '闫士博_中文简历.pdf',
+    bytes: 313238,
+    sha256: '09d0bc6f709f251eadf4385178700b8984e0f25425af8dff4a3b87ced7322a6b'
+  },
+  en: {
+    file: 'docs/Shibo-Yan-Resume-EN.pdf',
+    download: 'Shibo_Yan_Resume_EN.pdf',
+    bytes: 250840,
+    sha256: '1e3d90e03365b493881b4c6cd4503054ab98a8ef81e8386f39c76f0e7f0786e9'
+  }
+};
 const RESUME_HEADING_IDS = [
   'resume-education-title',
   'resume-research-title',
@@ -234,8 +248,13 @@ const RESUME_HEADING_IDS = [
 const RESUME_PAGE_CONTRACTS = [
   {
     file: 'resume.html',
+    pdfLanguages: ['zh-CN', 'en'],
+    resourcePrefix: './',
     materials: [
       './docs/Shibo-Yan-Resume.pdf',
+      './docs/Shibo-Yan-Resume.pdf',
+      './docs/Shibo-Yan-Resume-EN.pdf',
+      './docs/Shibo-Yan-Resume-EN.pdf',
       './docs/Shibo-Yan-Undergraduate-Transcript.pdf',
       'profile.html#graduate'
     ],
@@ -275,7 +294,12 @@ const RESUME_PAGE_CONTRACTS = [
   },
   {
     file: 'en/resume.html',
+    pdfLanguages: ['en', 'zh-CN'],
+    resourcePrefix: '../',
     materials: [
+      '../docs/Shibo-Yan-Resume-EN.pdf',
+      '../docs/Shibo-Yan-Resume-EN.pdf',
+      '../docs/Shibo-Yan-Resume.pdf',
       '../docs/Shibo-Yan-Resume.pdf',
       '../docs/Shibo-Yan-Undergraduate-Transcript.pdf',
       'profile.html#graduate'
@@ -2018,6 +2042,35 @@ function getActiveElementText(html, element) {
   return getVisibleBodyText(`<body>${html.slice(element.end, closingTag.index)}</body>`);
 }
 
+function resumePdfLinkMatches(html, element, language, prefix, download, pageLanguage) {
+  if (!element || element.name !== 'a') return false;
+  const source = RESUME_PDF_SOURCES[language];
+  const attributes = element.attributes;
+  const text = getActiveElementText(html, element);
+  const languageLabel = pageLanguage === 'zh-CN'
+    ? (language === 'zh-CN' ? '中文' : '英文')
+    : (language === 'zh-CN' ? 'Chinese' : 'English');
+  const actionLabel = pageLanguage === 'zh-CN'
+    ? (download ? '下载' : '查看')
+    : (download ? 'Download' : 'View');
+  if (
+    attributes.href !== `${prefix}${source.file}` ||
+    attributes.hreflang !== language ||
+    attributes.type !== 'application/pdf' ||
+    !text.includes(languageLabel) ||
+    !text.includes(actionLabel)
+  ) return false;
+
+  if (download) {
+    return attributes.download === source.download && !Object.hasOwn(attributes, 'target');
+  }
+  const rel = String(attributes.rel || '').split(/\s+/);
+  return attributes.target === '_blank' &&
+    rel.includes('noopener') &&
+    rel.includes('noreferrer') &&
+    !Object.hasOwn(attributes, 'download');
+}
+
 function validateResumeContentContract(rootDir, issues) {
   const ccfATitle =
     'Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning';
@@ -2093,7 +2146,7 @@ function validateResumeContentContract(rootDir, issues) {
       .filter((element) => element.name === 'a')
       .map((element) => element.attributes.href || '');
     const hasForbiddenMaterial = materialElements.some((element) => (
-      element.name === 'img' ||
+      ['img', 'iframe', 'object', 'embed'].includes(element.name) ||
       hasClass(element.attributes, 'doc-preview') ||
       hasClass(element.attributes, 'proof-grid') ||
       Object.hasOwn(element.attributes, 'data-lightbox')
@@ -2104,6 +2157,60 @@ function validateResumeContentContract(rootDir, issues) {
       hasForbiddenMaterial
     ) {
       addIssue(issues, contract.file, RESUME_MATERIALS_CONTRACT_ISSUE);
+    }
+
+    const documentRows = materialElements.filter((element) => (
+      hasClass(element.attributes, 'resume-document')
+    ));
+    const documentActionsMatch = documentRows.length === 2 && documentRows.every((row, index) => {
+      const actionGroups = descendantsOf(row).filter((element) => (
+        hasClass(element.attributes, 'resume-document__actions')
+      ));
+      const links = actionGroups.length === 1
+        ? descendantsOf(actionGroups[0]).filter((element) => element.name === 'a')
+        : [];
+      return links.length === 2 && links.every((link, actionIndex) => (
+        resumePdfLinkMatches(
+          html, link, contract.pdfLanguages[index], contract.resourcePrefix,
+          actionIndex === 1, contract.pdfLanguages[0]
+        )
+      ));
+    });
+    const heroActionGroups = elements.filter((element) => (
+      hasClass(element.attributes, 'resume-hero__actions') &&
+      hasHtmlAncestorClass(element, 'resume-hero')
+    ));
+    const heroLinks = heroActionGroups.length === 1
+      ? descendantsOf(heroActionGroups[0]).filter((element) => element.name === 'a')
+      : [];
+    const heroActionsMatch = heroLinks.length === 3 &&
+      heroLinks.slice(0, 2).every((link, index) => (
+        resumePdfLinkMatches(
+          html, link, contract.pdfLanguages[0], contract.resourcePrefix,
+          index === 1, contract.pdfLanguages[0]
+        )
+      )) &&
+      heroLinks[2].attributes.href === 'mailto:yan3425@email.swu.edu.cn';
+    if (!documentActionsMatch || !heroActionsMatch) {
+      addIssue(issues, contract.file, RESUME_PDF_LINK_CONTRACT_ISSUE);
+    }
+
+    const researchFile = contract.file.replace('resume.html', 'research.html');
+    const researchPath = path.join(rootDir, researchFile);
+    if (fs.existsSync(researchPath)) {
+      const researchHtml = fs.readFileSync(researchPath, 'utf8');
+      const researchPdfLinks = collectActiveHtmlElements(researchHtml).filter((element) => (
+        element.name === 'a' && /Shibo-Yan-Resume(?:-EN)?\.pdf/.test(element.attributes.href || '')
+      ));
+      if (
+        researchPdfLinks.length !== 1 ||
+        !resumePdfLinkMatches(
+          researchHtml, researchPdfLinks[0], contract.pdfLanguages[0],
+          contract.resourcePrefix, true, contract.pdfLanguages[0]
+        )
+      ) {
+        addIssue(issues, researchFile, RESUME_PDF_LINK_CONTRACT_ISSUE);
+      }
     }
 
     if (
@@ -2282,19 +2389,18 @@ function validateResumeResponsivePortraits(rootDir, issues) {
 }
 
 function validateResumePdfSourceContract(rootDir, issues) {
-  const file = 'docs/Shibo-Yan-Resume.pdf';
-  const absolutePath = path.join(rootDir, file);
-  if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
-    addIssue(issues, file, RESUME_PDF_SOURCE_CONTRACT_ISSUE);
-    return;
-  }
+  for (const source of Object.values(RESUME_PDF_SOURCES)) {
+    const absolutePath = path.join(rootDir, source.file);
+    if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
+      addIssue(issues, source.file, RESUME_PDF_SOURCE_CONTRACT_ISSUE);
+      continue;
+    }
 
-  const digest = crypto
-    .createHash('sha256')
-    .update(fs.readFileSync(absolutePath))
-    .digest('hex');
-  if (digest !== RESUME_PDF_SOURCE_SHA256) {
-    addIssue(issues, file, RESUME_PDF_SOURCE_CONTRACT_ISSUE);
+    const bytes = fs.readFileSync(absolutePath);
+    const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+    if (bytes.length !== source.bytes || digest !== source.sha256) {
+      addIssue(issues, source.file, RESUME_PDF_SOURCE_CONTRACT_ISSUE);
+    }
   }
 }
 
