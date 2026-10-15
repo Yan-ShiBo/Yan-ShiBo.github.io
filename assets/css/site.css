@@ -4351,6 +4351,11 @@ body.lightbox-open{overflow:hidden}
 
 .research-publication__status--accepted{color:var(--primary)}
 
+.research-publications li > div > .research-publication__details{
+  grid-column:1 / -1;
+  min-width:0;
+}
+
 .research-publications li > div{
   min-width:0;
   display:grid;

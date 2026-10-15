@@ -89,6 +89,7 @@ const FIXTURE_SOURCE_DIRECTORIES = [
   'en'
 ];
 const FIXTURE_SOURCE_FILES = [
+  'docs/Shibo-Yan-MEMOCODE-2026.pdf',
   'docs/Shibo-Yan-Resume.pdf',
   'docs/Shibo-Yan-Resume-EN.pdf',
   'docs/Shibo-Yan-Undergraduate-Transcript.pdf',
@@ -99,6 +100,7 @@ const FIXTURE_SOURCE_FILES = [
   'worker/src/index.mjs'
 ];
 const FIXTURE_CONTENT_FILES = new Set([
+  'docs/Shibo-Yan-MEMOCODE-2026.pdf',
   'assets/css/site.css',
   'assets/icons/app-icon-192.png',
   'assets/icons/app-icon-512.png',
@@ -161,7 +163,7 @@ const RESUME_SERVICE_CONTRACT_ISSUE =
 const RESUME_TYPOGRAPHY_CSS_ISSUE =
   'resume typography must use the smaller page scale and normal-weight organization and practice entries';
 const RESUME_PDF_SOURCE_CONTRACT_ISSUE =
-  'downloadable resume PDFs must remain byte-identical to the approved Chinese and English one-page source files';
+  'downloadable resume and published-paper PDFs must remain byte-identical to the approved source files';
 const RESUME_PDF_LINK_CONTRACT_ISSUE =
   'resume PDF actions must use the matching language, explicit download filename, and safe new-tab viewing in the hero and materials';
 const PROOF_RAIL_CSS_ISSUE =

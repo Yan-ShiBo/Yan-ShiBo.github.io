@@ -208,9 +208,11 @@ sequenceDiagram
 - `assets/profile/`：全站共享头像、简历页专用正式照片，以及由原 JPEG 派生的 240/480/960 像素宽 AVIF/WebP 响应式资源；
 - `worker/`：统计 Worker 源码、Wrangler 配置、D1 迁移与后端测试；
 - `assets/vendor/`：本地 Font Awesome 样式与字体；
-- `docs/`：项目文档以及明确允许公开的简历、成绩单材料。
+- `docs/`：项目文档以及明确允许公开的简历、成绩单和已发表论文。
 
 中文简历 PDF 继续使用稳定地址 `docs/Shibo-Yan-Resume.pdf`，英文简历使用独立地址 `docs/Shibo-Yan-Resume-EN.pdf`。两份文件均直接保留用户提供的一页 A4 原件；来源字节校验见[测试规范](testing.md#313-简历结构事实与打印合同)。两张简历页的主要查看与下载入口指向当前语言文件，材料区同时提供两种语言，网页语言切换仍对应 `resume.html` 与 `en/resume.html`。材料区布局与移动端行为见[设计规范](design.md#34-网格与流程)。
+
+已发表论文保留为 `docs/Shibo-Yan-MEMOCODE-2026.pdf`（MEMOCODE 2026，5 页，135–139），两研究页共用同一英文原件，分别提供查看与下载。科研助理证明共用 `assets/images/proofs/research-assistant-{agreement,signature}-{full,thumb}.webp`，展示图为 1800×2400，缩略图为 384×512；仅校正原照片方向并等比缩放、压缩，不改写证明内容。
 
 HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原图必须保持有效路径。使用宽度描述符的 `<picture><source>` 必须各自带与实际布局一致的 `sizes`，不能只把 `sizes` 写在无 `srcset` 的回退 `<img>` 上。外链新窗口必须带安全 `rel`。资源文件名区分大小写，因为 Pages 运行于大小写敏感环境。
 
@@ -289,7 +291,7 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 
 项目节点的本地化名称和描述必须与当前页面可见文本一致，`keywords` 来自可见技术标签且每项最多四个，`contributor` 只引用 `/#person`。`codeRepository` 是可选字段：只有公开仓库存在时才声明。项目图不使用 `creator`，也不写入奖项或等级、日期、证明图片、测试账号等未批准字段。普通收藏式 fork、无公开说明的研究仓库和未发表材料不进入库存。
 
-项目页采用公开实现可核验的事实口径。根据后续用户授权，MicFamily 在项目页、在线简历和个人档案中统一使用 Vue / Spring Boot / MyBatis-Plus / MySQL 口径，不使用 `uni-app`、精确依赖版本或“严格前后端分离”，并描述为 Spring Boot 单体部署下的前后端分层；这一局部合同不影响 PersevereStudy 考勤项目及个人技能中已有依据的 `uni-app` 事实。CBF-Rover 项目节点只写数值动力学仿真、Gazebo、在线 CBF 与仍在推进的形式化证书模块，不把内部环境标识 `exact` 或 `q-SBC` 状态写入名称、说明和关键词；简历与档案既有的 readiness 边界继续由各自合同维护。
+项目页采用获授权材料与公开实现可核验的事实口径。MicFamily 在项目页、在线简历和个人档案中统一使用 Vue / Spring Boot / MyBatis-Plus / MySQL，不使用 `uni-app`、精确依赖版本或“严格前后端分离”；该局部合同不影响其他项目中已有依据的 `uni-app`。CBF-Rover 沿用原稳定 ID 与仓库，展示随机扰动下的安全控制系统；阶段、方法和概率保证的表达边界统一见[设计规范](design.md#6-内容设计)。
 
 ### 8.5 研究图
 

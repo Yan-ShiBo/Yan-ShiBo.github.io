@@ -469,6 +469,13 @@ test('resume and profile synchronized content rejects KTV, organization, typogra
   ]);
 
   assertContentMutationsRejected(t, RESUME_SERVICE_CONTRACT_ISSUE, [
+    ...['resume.html', 'en/resume.html'].map((file) => ({
+      name: `${file} restores the research-assistant dates contradicted by the agreement`,
+      file,
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, '2023.09—2024.07', '2023.06—2024.06');
+      }
+    })),
     {
       name: 'Chinese organization section without the Student Union entry',
       file: 'resume.html',
@@ -540,6 +547,7 @@ test('resume and profile synchronized content rejects KTV, organization, typogra
   ]);
 
   assertContentMutationsRejected(t, RESUME_PDF_SOURCE_CONTRACT_ISSUE, [
+    'docs/Shibo-Yan-MEMOCODE-2026.pdf',
     'docs/Shibo-Yan-Resume.pdf',
     'docs/Shibo-Yan-Resume-EN.pdf'
   ].map((file) => ({

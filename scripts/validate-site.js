@@ -212,7 +212,7 @@ const RESUME_ACADEMIC_FACTS_ISSUE =
 const RESUME_KTV_CONTRACT_ISSUE =
   'resume KTV entry must match the approved MicFamily web-stack summary and exclude legacy uni-app or decoupled-architecture claims';
 const RESUME_CBF_ROVER_CONTRACT_ISSUE =
-  'resume CBF-Rover entry must name exact and Gazebo validation and state that fixed-geometry q-SBC is not ready';
+  'resume CBF-Rover entry must preserve its research workflow and distinguish empirical robot validation from formal bounds';
 const RESUME_AWARDS_CONTRACT_ISSUE =
   'resume awards must preserve the approved PDF-aligned selection, order, and Certificate Authority Cup identity';
 const RESUME_CCF_A_CONTRACT_ISSUE =
@@ -222,19 +222,19 @@ const RESUME_SERVICE_CONTRACT_ISSUE =
 const RESUME_TYPOGRAPHY_CSS_ISSUE =
   'resume typography must use the smaller page scale and normal-weight organization and practice entries';
 const RESUME_PDF_SOURCE_CONTRACT_ISSUE =
-  'downloadable resume PDFs must remain byte-identical to the approved Chinese and English one-page source files';
+  'downloadable resume and published-paper PDFs must remain byte-identical to the approved source files';
 const RESUME_PDF_SOURCES = {
   'zh-CN': {
     file: 'docs/Shibo-Yan-Resume.pdf',
     download: '闫士博_中文简历.pdf',
-    bytes: 313238,
-    sha256: '09d0bc6f709f251eadf4385178700b8984e0f25425af8dff4a3b87ced7322a6b'
+    bytes: 1493185,
+    sha256: '1f841daa92a950bc452bf520328c8f741f933af9766095a5400a4273228557b5'
   },
   en: {
     file: 'docs/Shibo-Yan-Resume-EN.pdf',
     download: 'Shibo_Yan_Resume_EN.pdf',
-    bytes: 250840,
-    sha256: '1e3d90e03365b493881b4c6cd4503054ab98a8ef81e8386f39c76f0e7f0786e9'
+    bytes: 1425524,
+    sha256: 'c5ea46662924ad433e3613eff5218578d5bb511c57e453fc7a9bb559866de33f'
   }
 };
 const RESUME_HEADING_IDS = [
@@ -263,7 +263,7 @@ const RESUME_PAGE_CONTRACTS = [
       ['2022.05—2024.05', '清华社全国高等学校计算机与产业实践资源建设专家委员会（TIPCC）', '聘请志愿者'],
       ['2021.09—2022.08', '沙坪坝区基层服务青年优才', '宣传策划组组长', '校级 2021—2022 年度优秀项目'],
       ['2019.09—2020.05', '计算机与信息科学学院 软件学院学生会', '学习科技部', '干事'],
-      ['2023.06—2024.06', '西南大学计算机与信息科学学院 软件学院', '科研助理'],
+      ['2023.09—2024.07', '西南大学计算机与信息科学学院 软件学院', '科研助理'],
       ['2021.09—2022.12', '百度松果菁英班', '优秀结课学员', '总积分排名第 2']
     ],
     gpaPattern: /学位(?:平均分)?绩点\s*3\.95\s*\/\s*5\.00/,
@@ -274,7 +274,7 @@ const RESUME_PAGE_CONTRACTS = [
     ktvDate: '2022.06—2022.08',
     ktvSummaryFragments: ['协调团队完成系统开发与联调', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', '实习评分 94 分'],
     ktvForbiddenPatterns: [/uni-app/i, /前后端分离/],
-    cbfReadiness: '固定几何 q-SBC 仍处于未就绪状态',
+    cbfValidationBoundary: '机器人闭环仿真提供经验验证',
     cbfForbiddenPatterns: [
       /完成(?:了)?(?:固定几何\s*)?q-SBC/i,
       /q-SBC\s*(?:已)?(?:完成|就绪)/i,
@@ -309,7 +309,7 @@ const RESUME_PAGE_CONTRACTS = [
       ['2022.05—2024.05', 'Tsinghua University Press National Expert Committee for University Computing and Industry Practice Resources (TIPCC)', 'Invited volunteer'],
       ['2021.09—2022.08', 'Shapingba District Grassroots Service Young Talent Program', 'Publicity planning team lead', 'University-level outstanding project, 2021—2022'],
       ['2019.09—2020.05', 'Student Union, School of Computer and Information Science / School of Software', 'Learning and Technology Department', 'Officer'],
-      ['2023.06—2024.06', 'School of Computer and Information Science / School of Software, Southwest University', 'Research assistant'],
+      ['2023.09—2024.07', 'School of Computer and Information Science / School of Software, Southwest University', 'Research assistant'],
       ['2021.09—2022.12', 'Baidu Pinecone Elite Program', 'Outstanding graduate', 'Ranked 2nd overall']
     ],
     gpaPattern: /Degree GPA\s*:?\s*3\.95\s*\/\s*5\.00/i,
@@ -320,7 +320,7 @@ const RESUME_PAGE_CONTRACTS = [
     ktvDate: '2022.06—2022.08',
     ktvSummaryFragments: ['Coordinated the team through system development and integration', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', 'internship score of 94'],
     ktvForbiddenPatterns: [/uni-app/i, /decoupled front-end\/back-end/i],
-    cbfReadiness: 'the fixed-geometry q-SBC remains not ready',
+    cbfValidationBoundary: 'Robot closed-loop simulations provide empirical validation',
     cbfForbiddenPatterns: [
       /completed (?:the )?(?:fixed-geometry )?q-SBC/i,
       /q-SBC (?:is )?(?:complete|ready)/i,
@@ -989,9 +989,9 @@ const RESEARCH_ALLOWED_KEYS = ['@type', '@id', 'name', 'description'];
 const EXPECTED_PROJECT_FACTS = {
   'zh-CN': [
     {
-      name: 'CBF-Rover：移动机器人在线安全控制仿真',
-      description: '面向随机扰动与动态障碍，构建移动机器人动力学、分层仿真与在线 CBF 安全过滤，并在数值动力学仿真和 Gazebo 中检查闭环行为。',
-      keywords: ['移动机器人', '在线 CBF', 'Gazebo Classic', 'ROS 2']
+      name: 'CBF-Rover：随机扰动下移动机器人安全控制系统',
+      description: '面向随机扰动与动态障碍，结合强化学习、稀疏多项式控制器与随机障碍证书优化，并集成在线 CBF 动作修正和批量闭环仿真。',
+      keywords: ['Python', 'MOSEK Fusion', 'SOS / SDP', '在线 CBF']
     },
     {
       name: 'Research Memory：本地科研知识检索',
@@ -1041,9 +1041,9 @@ const EXPECTED_PROJECT_FACTS = {
   ],
   en: [
     {
-      name: 'CBF-Rover: Online Safety-Control Simulation for Mobile Robots',
-      description: 'For mobile robots under stochastic disturbances and dynamic obstacles, this project combines robot dynamics, layered simulation, and online CBF safety filtering, then checks closed-loop behavior in numerical dynamics simulation and Gazebo.',
-      keywords: ['Mobile Robots', 'Online CBF', 'Gazebo Classic', 'ROS 2']
+      name: 'CBF-Rover: Safe Control for Mobile Robots under Stochastic Disturbances',
+      description: 'For stochastic disturbances and dynamic obstacles, this project combines reinforcement learning, sparse polynomial controllers, and stochastic barrier-certificate optimization with online CBF action correction and batch closed-loop simulation.',
+      keywords: ['Python', 'MOSEK Fusion', 'SOS / SDP', 'Online CBF']
     },
     {
       name: 'Research Memory: Local Research Knowledge Retrieval',
@@ -2251,9 +2251,8 @@ function validateResumeContentContract(rootDir, issues) {
     const cbfEntries = entryTexts.filter((text) => text.includes('CBF-Rover'));
     if (
       cbfEntries.length !== 1 ||
-      !cbfEntries[0].includes('exact') ||
-      !cbfEntries[0].includes('Gazebo') ||
-      !cbfEntries[0].includes(contract.cbfReadiness) ||
+      !['2025.03—2026.07', 'SBC', 'SOS / SDP', 'CBF', 'MOSEK Fusion'].every((term) => cbfEntries[0].includes(term)) ||
+      !cbfEntries[0].includes(contract.cbfValidationBoundary) ||
       contract.cbfForbiddenPatterns.some((pattern) => pattern.test(cbfEntries[0]))
     ) {
       addIssue(issues, contract.file, RESUME_CBF_ROVER_CONTRACT_ISSUE);
@@ -2388,8 +2387,13 @@ function validateResumeResponsivePortraits(rootDir, issues) {
   }
 }
 
-function validateResumePdfSourceContract(rootDir, issues) {
-  for (const source of Object.values(RESUME_PDF_SOURCES)) {
+function validateDownloadablePdfSourceContract(rootDir, issues) {
+  const sources = [...Object.values(RESUME_PDF_SOURCES), {
+    file: 'docs/Shibo-Yan-MEMOCODE-2026.pdf',
+    bytes: 305896,
+    sha256: '6a46dc1388cde729b7a63b572d9b5cadad40e6aaec25a640809c64a699128279'
+  }];
+  for (const source of sources) {
     const absolutePath = path.join(rootDir, source.file);
     if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
       addIssue(issues, source.file, RESUME_PDF_SOURCE_CONTRACT_ISSUE);
@@ -7419,7 +7423,7 @@ function validateRepository(rootDir) {
   validateProfileKtvFacts(absoluteRoot, issues);
   validateResumeContentContract(absoluteRoot, issues);
   validateResumeResponsivePortraits(absoluteRoot, issues);
-  validateResumePdfSourceContract(absoluteRoot, issues);
+  validateDownloadablePdfSourceContract(absoluteRoot, issues);
 
   for (const page of NOT_FOUND_PAGES) {
     if (!existingHtml.has(page.file)) continue;
