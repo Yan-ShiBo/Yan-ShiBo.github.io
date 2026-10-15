@@ -2376,8 +2376,8 @@ function validateResumeResponsivePortraits(rootDir, issues) {
       image?.name === 'img' &&
       image.attributes.src === `${contract.prefix}assets/profile/resume-photo.jpg` &&
       image.attributes.sizes === sizes &&
-      image.attributes.width === '1500' &&
-      image.attributes.height === '2000' &&
+      image.attributes.width === '1086' &&
+      image.attributes.height === '1448' &&
       image.attributes.loading === 'eager' &&
       image.attributes.fetchpriority === 'high';
 
