@@ -212,7 +212,7 @@ const RESUME_ACADEMIC_FACTS_ISSUE =
 const RESUME_KTV_CONTRACT_ISSUE =
   'resume KTV entry must match the approved MicFamily web-stack summary and exclude legacy uni-app or decoupled-architecture claims';
 const RESUME_CBF_ROVER_CONTRACT_ISSUE =
-  'resume CBF-Rover entry must preserve its research workflow and distinguish empirical robot validation from formal bounds';
+  'resume CBF-Rover entry must describe SAC acceleration, braking, and steering, CBF constraints, and bounds limited to certificate-verified controllers';
 const RESUME_AWARDS_CONTRACT_ISSUE =
   'resume awards must preserve the approved PDF-aligned selection, order, and Certificate Authority Cup identity';
 const RESUME_CCF_A_CONTRACT_ISSUE =
@@ -227,8 +227,8 @@ const RESUME_PDF_SOURCES = {
   'zh-CN': {
     file: 'docs/Shibo-Yan-Resume.pdf',
     download: '闫士博_中文简历.pdf',
-    bytes: 1493185,
-    sha256: '1f841daa92a950bc452bf520328c8f741f933af9766095a5400a4273228557b5'
+    bytes: 1504119,
+    sha256: '1126c5ac6c5ae91474295768a9ac23cbcae6b6c26251114ee984619889bfdd7f'
   },
   en: {
     file: 'docs/Shibo-Yan-Resume-EN.pdf',
@@ -274,7 +274,8 @@ const RESUME_PAGE_CONTRACTS = [
     ktvDate: '2022.06—2022.08',
     ktvSummaryFragments: ['协调团队完成系统开发与联调', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', '实习评分 94 分'],
     ktvForbiddenPatterns: [/uni-app/i, /前后端分离/],
-    cbfValidationBoundary: '机器人闭环仿真提供经验验证',
+    sacActions: '加减速与转向',
+    cbfValidationBoundary: '概率下界仅适用于通过证书验证的控制器及其建模假设',
     cbfForbiddenPatterns: [
       /完成(?:了)?(?:固定几何\s*)?q-SBC/i,
       /q-SBC\s*(?:已)?(?:完成|就绪)/i,
@@ -320,7 +321,8 @@ const RESUME_PAGE_CONTRACTS = [
     ktvDate: '2022.06—2022.08',
     ktvSummaryFragments: ['Coordinated the team through system development and integration', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', 'internship score of 94'],
     ktvForbiddenPatterns: [/uni-app/i, /decoupled front-end\/back-end/i],
-    cbfValidationBoundary: 'Robot closed-loop simulations provide empirical validation',
+    sacActions: 'acceleration, braking, and steering',
+    cbfValidationBoundary: 'probability lower bounds apply only to controllers verified by a certificate under the model assumptions',
     cbfForbiddenPatterns: [
       /completed (?:the )?(?:fixed-geometry )?q-SBC/i,
       /q-SBC (?:is )?(?:complete|ready)/i,
@@ -989,9 +991,9 @@ const RESEARCH_ALLOWED_KEYS = ['@type', '@id', 'name', 'description'];
 const EXPECTED_PROJECT_FACTS = {
   'zh-CN': [
     {
-      name: 'CBF-Rover：随机扰动下移动机器人安全控制系统',
-      description: '面向随机扰动与动态障碍，结合强化学习、稀疏多项式控制器与随机障碍证书优化，并集成在线 CBF 动作修正和批量闭环仿真。',
-      keywords: ['Python', 'MOSEK Fusion', 'SOS / SDP', '在线 CBF']
+      name: 'CBF-Rover：车辆强化学习控制与概率安全验证系统',
+      description: '面向封闭道路的路径跟踪、静态避障与目标到达，用 SAC 学习车辆加减速和转向策略，以 CBF 约束闭环控制，并在固定场景中用随机障碍证书验证控制器。',
+      keywords: ['SAC', 'CBF', 'SOS', 'SBC']
     },
     {
       name: 'Research Memory：本地科研知识检索',
@@ -1041,9 +1043,9 @@ const EXPECTED_PROJECT_FACTS = {
   ],
   en: [
     {
-      name: 'CBF-Rover: Safe Control for Mobile Robots under Stochastic Disturbances',
-      description: 'For stochastic disturbances and dynamic obstacles, this project combines reinforcement learning, sparse polynomial controllers, and stochastic barrier-certificate optimization with online CBF action correction and batch closed-loop simulation.',
-      keywords: ['Python', 'MOSEK Fusion', 'SOS / SDP', 'Online CBF']
+      name: 'CBF-Rover: Reinforcement Learning for Vehicle Control and Probabilistic Safety Verification',
+      description: 'On closed courses, a SAC policy controls acceleration, braking, and steering to follow a path, avoid static obstacles, and reach the goal. CBF constraints govern closed-loop control, and stochastic barrier certificates verify controllers in fixed scenarios.',
+      keywords: ['SAC', 'CBF', 'SOS', 'SBC']
     },
     {
       name: 'Research Memory: Local Research Knowledge Retrieval',
@@ -2251,7 +2253,7 @@ function validateResumeContentContract(rootDir, issues) {
     const cbfEntries = entryTexts.filter((text) => text.includes('CBF-Rover'));
     if (
       cbfEntries.length !== 1 ||
-      !['2025.03—2026.07', 'SBC', 'SOS / SDP', 'CBF', 'MOSEK Fusion'].every((term) => cbfEntries[0].includes(term)) ||
+      !['2025.03—2026.07', 'SAC', contract.sacActions, 'CBF', 'SOS', 'SBC'].every((term) => cbfEntries[0].includes(term)) ||
       !cbfEntries[0].includes(contract.cbfValidationBoundary) ||
       contract.cbfForbiddenPatterns.some((pattern) => pattern.test(cbfEntries[0]))
     ) {

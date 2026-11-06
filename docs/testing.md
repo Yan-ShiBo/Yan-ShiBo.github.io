@@ -283,7 +283,7 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - `>= 1069px` 的主体继续使用 `280–320px` 侧栏和可收缩正文，不能因新增锚点或打印规则扩大侧栏。
 - Hero 按当前页面语言提供 PDF 查看、PDF 下载和学校邮箱三个主要操作；材料区按当前页面语言优先展示两条 `.resume-document`，每条的 `.resume-document__actions` 都包含该语言的查看、下载两个链接，随后保留本科成绩单 PDF 与对应语言完整档案链接，共六个材料入口。简历 PDF 链接必须具有准确的 `hreflang` 与 `type="application/pdf"`；查看链接使用 `target="_blank"` 和 `rel="noopener noreferrer"`，下载链接使用中文 `闫士博_中文简历.pdf` 或英文 `Shibo_Yan_Resume_EN.pdf` 的显式 `download` 文件名且不带 `target`。研究页下载入口同样必须指向当前语言原件。验证器拒绝语言路径、标签、查看/下载属性或文件名错配；不得把内容尚未同步的 PDF 称作“当前版本”，也不得残留 PDF 整页预览、成绩单图片、成绩单 Lightbox 或空文档卡片。
 - 打印规则由 `.resume-page` 或简历命名页面限定，并以 A4 纵向检查；打印时站点导航、抽屉、锚点、按钮、材料链接、页脚和返回顶部不可见，屏幕装饰与 sticky 被移除，履历正文完整且条目尽量不跨页。共享页面不得被简历专用重排选择器命中。
-- 下载版中英文简历必须保持为用户于 2026-10-15 提供的一页 A4 原文件，不得由在线简历打印或重新导出。中文 `docs/Shibo-Yan-Resume.pdf` 为 `1493185` 字节，SHA-256 为 `1F841DAA92A950BC452BF520328C8F741F933AF9766095A5400A4273228557B5`；英文 `docs/Shibo-Yan-Resume-EN.pdf` 为 `1425524` 字节，SHA-256 为 `C5EA46662924AD433E3613EFF5218578D5BB511C57E453FC7A9BB559866DE33F`。已发表论文 `docs/Shibo-Yan-MEMOCODE-2026.pdf` 为 `305896` 字节、5 页，SHA-256 为 `6A46DC1388CDE729B7A63B572D9B5CADAD40E6AAEC25A640809C64A699128279`。验证器拒绝三份文件的字节漂移及简历语言互换。发布前渲染简历全文并检查论文相关页面；在线内容独立验收，未同步事实见[维护记录](maintenance.md)。
+- 下载版简历保留用户提供的一页 A4 原文件（中文版 2026-11-06，英文版 2026-10-15），不得由在线简历打印或重新导出。中文 `docs/Shibo-Yan-Resume.pdf` 为 `1504119` 字节，SHA-256 为 `1126C5AC6C5AE91474295768A9AC23CBCAE6B6C26251114EE984619889BFDD7F`；英文 `docs/Shibo-Yan-Resume-EN.pdf` 为 `1425524` 字节，SHA-256 为 `C5EA46662924AD433E3613EFF5218578D5BB511C57E453FC7A9BB559866DE33F`。已发表论文 `docs/Shibo-Yan-MEMOCODE-2026.pdf` 为 `305896` 字节、5 页，SHA-256 为 `6A46DC1388CDE729B7A63B572D9B5CADAD40E6AAEC25A640809C64A699128279`。验证器拒绝三份文件的字节漂移及简历语言互换。发布前渲染简历全文并检查论文相关页面；在线内容独立验收，未同步事实见[维护记录](maintenance.md)。
 
 事实核对不得只比较中英文页面彼此一致，还要回到正式材料与用户确认：
 
@@ -292,8 +292,8 @@ Lightbox 的 `inert` 合同同时检查调用链接线与隔离行为：`openLig
 - 根据后续用户授权，MicFamily / KTV 在项目页、在线简历和个人档案中统一采用公开实现口径：Vue / Spring Boot / MyBatis-Plus / MySQL，不写 `uni-app`、精确版本或严格前后端分离。在线简历继续显示 `2022.06—2022.08` 实习期、团队开发联调与 94 分；档案和项目页继续显示 `2022.06—2022.07` 项目开发期。验证器的禁止检查必须限定在唯一 KTV 条目内，不得误伤 PersevereStudy 考勤项目及个人技能中已有依据的 `uni-app`。
 - 组织与实践章节保留既有 TIPCC、基层服务青年优才、学生会、科研助理和百度松果菁英班五项顺序；科研助理按协议使用 2023.09—2024.07，不在科研章节重复，并链接对应语言档案的 `#research-assistant`。条目名称和角色维持 `font-weight:400` 与 `h3` 语义。变异测试拒绝旧任期、条目缺失及错误顺序。
 - 2020 年建模奖项必须按证书写作第九届“认证杯”国际数学建模竞赛 Honorable Mention / Certificate Authority Cup，不得写作 MCM/ICM。
-- CBF-Rover 简历条目核对阶段 2025.03—2026.07、SBC / SOS / SDP、在线 CBF 与 MOSEK Fusion，并明确机器人闭环仿真为经验验证。方法与形式化保证的公开边界见[设计规范](design.md#6-内容设计)。项目页可见名称、摘要、四标签与 JSON-LD 必须一致。
-- CCF A 类会议投稿在本轮简历中原样保留完整题目 *Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning*、中文“在投”与英文 `Submitted` 状态标签，以及“第二作者（导师第一作者）”作者顺序。该用户授权意味着简历验收不得把它替换成匿名概述或随其他论文改写状态；研究页及其他未授权材料仍按各自公开边界检查。
+- CBF-Rover 简历条目核对阶段 2025.03—2026.07、SAC 加减速与转向控制、CBF 和 SOS / SBC，并核对概率下界只适用于通过证书验证的控制器及其建模假设。方法与形式化保证的公开边界见[设计规范](design.md#6-内容设计)。项目页可见名称、摘要、四标签与 JSON-LD 必须一致。
+- CCF A 类会议投稿在本轮简历中原样保留完整题目 *Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning*、中文“在投”与英文 `Submitted` 状态标签，以及“第二作者（导师第一作者）”作者顺序。该用户授权意味着简历验收不得把它替换成匿名概述或随其他论文改写状态；研究页及其他未授权材料仍按各自公开边界检查。另核对 DAC 2027 条目标注为第一作者、稿件已完成且拟投稿，不能与上述在投论文混淆。
 
 新增材料的浏览器验收：在两研究页检查论文引文、正文与按钮不重叠，查看/下载指向相同 PDF；在两档案的 `#research-assistant` 检查两页协议顺序、图片方向、放大加载、Escape 关闭与焦点归还，以及简历深链接。以 320、375、760、761、833、834、1068、1069、1440px 检查页面横向溢出，并验证无 JavaScript 时原生资源链接仍存在。HTTP 200、Content-Type 与文件哈希检查不能代替实体手机的 PDF 保存对话框验收。
 
