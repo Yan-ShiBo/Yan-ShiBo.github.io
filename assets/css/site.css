@@ -4356,6 +4356,29 @@ body.lightbox-open{overflow:hidden}
   min-width:0;
 }
 
+.research-page .research-publication__figure{margin:20px 0}
+
+.research-page .research-publication__figure > a{
+  display:block;
+  border:1px solid var(--hairline);
+  border-radius:var(--radius-sm);
+  overflow:hidden;
+  cursor:zoom-in;
+}
+
+.research-page .research-publication__figure img{
+  display:block;
+  width:100%;
+  height:auto;
+}
+
+.research-page .research-publication__figure figcaption{
+  margin-top:10px;
+  color:var(--ink-muted-80);
+  font-size:13px;
+  line-height:1.55;
+}
+
 .research-publications li > div{
   min-width:0;
   display:grid;
