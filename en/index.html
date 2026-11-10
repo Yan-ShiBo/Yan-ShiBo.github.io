@@ -157,9 +157,9 @@
 </article>
 <article class="panel">
 <span class="kicker">Engineering</span>
-<h3>CBF-Rover: Reinforcement Learning for Vehicle Control and Probabilistic Safety Verification</h3>
-<p>I modeled a vehicle on a closed course, trained a SAC policy for acceleration, braking, and steering, and used CBFs to enforce obstacle and input constraints as it tracks a path and approaches its goal under random disturbances.</p>
-<div class="action-row"><a class="button small primary" href="projects.html#project-list"><i aria-hidden="true" class="fa fa-code-fork"></i> View the project record</a></div>
+<h3>Larac-Drive: Vehicle RL &amp; Probabilistic Reach-Avoid Verification</h3>
+<p>I train a SAC policy to coordinate acceleration and lateral maneuvers on structured roads. When the lead vehicle brakes or another vehicle cuts in, an online filter checks headway and lateral limits and applies fallback braking if it cannot find a feasible input.</p>
+<div class="action-row"><a class="button small primary" href="projects.html#larac-drive"><i aria-hidden="true" class="fa fa-code-fork"></i> View the project record</a></div>
 </article>
 </div>
 </section>
@@ -172,7 +172,7 @@
 <li><strong>Published paper</strong><span>My first-author paper, <em>Learning-Aided Reach-Avoid Controller Synthesis with Formal Guarantees for Stochastic Systems</em>, is published online in MEMOCODE 2026 (a constituent conference of ESWEEK 2026). The original paper is linked under <a class="link-inline" href="research.html#research-outcomes">research outcomes</a>.</span></li>
 <li><strong>Journal submission</strong><span>A paper on safety guarantees for Bayesian neural-network control policies has been submitted to <em>Formal Aspects of Computing</em>; my supervisor is first author, and I am second author.</span></li>
 <li><strong>Conference submission</strong><span>Follow-up work on reach-avoid controller synthesis and formal probabilistic guarantees for stochastic systems has been submitted to a CCF Class A conference.</span></li>
-<li><strong>Project results</strong><span>I developed CBF-Rover from March 2025 to July 2026. It replays trajectories and compares goal-reaching rates, collision rates, tracking error, and control runtime. Verified controllers also receive a reach-avoid probability lower bound for their modeled scenario.</span></li>
+<li><strong>Project results</strong><span>I have developed Larac-Drive independently since March 2025. In closed-loop simulations the safety filter reduced safety violations and control oscillations during severe cut-ins and hard braking. For the longitudinal emergency subsystem under random lead-vehicle braking, the certified reach-avoid probability lower bound agreed with Monte Carlo estimates.</span></li>
 </ul>
 </article>
 </section>

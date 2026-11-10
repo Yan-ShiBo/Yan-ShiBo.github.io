@@ -157,9 +157,9 @@
 </article>
 <article class="panel">
 <span class="kicker">Engineering</span>
-<h3>CBF-Rover：车辆强化学习控制与概率安全验证系统</h3>
-<p>我为封闭道路建立车辆运动学模型，用 SAC 训练加减速和转向策略，并以 CBF 施加避障与输入约束，使车辆在随机扰动下跟踪路径、绕开静态障碍并到达目标。</p>
-<div class="action-row"><a class="button small primary" href="projects.html#project-list"><i aria-hidden="true" class="fa fa-code-fork"></i> 查看项目记录</a></div>
+<h3>Larac-Drive：随机扰动下车辆强化学习控制与可达规避概率验证系统</h3>
+<p>我在结构化道路场景中训练 SAC 策略，让车辆协调加减速与横向避障。前车急刹或邻车切入时，系统在线检查安全时距和横向位置约束；若无法找到可行控制量，则切换为制动。</p>
+<div class="action-row"><a class="button small primary" href="projects.html#larac-drive"><i aria-hidden="true" class="fa fa-code-fork"></i> 查看项目记录</a></div>
 </article>
 </div>
 </section>
@@ -172,7 +172,7 @@
 <li><strong>论文发表</strong><span>我的第一作者论文《Learning-Aided Reach-Avoid Controller Synthesis with Formal Guarantees for Stochastic Systems》已在 MEMOCODE 2026（ESWEEK 2026 会议周组成会议） 在线发表，原文入口见<a class="link-inline" href="research.html#research-outcomes">科研成果</a>。</span></li>
 <li><strong>期刊在投</strong><span>一篇关于贝叶斯神经网络控制策略安全保证的论文已投稿至 <em>Formal Aspects of Computing</em>；导师一作，本人二作。</span></li>
 <li><strong>会议在投</strong><span>一篇关于随机系统可达—规避控制器合成与形式化概率保证的后续研究已投稿至 CCF A 类会议。</span></li>
-<li><strong>项目成果</strong><span>2025 年 3 月至 2026 年 7 月独立开发 CBF-Rover。系统可回放轨迹并批量比较到达成功率、碰撞率、跟踪误差与控制耗时；对通过验证的控制器，另给出相应场景中的可达—规避概率下界。</span></li>
+<li><strong>项目成果</strong><span>自 2025 年 3 月起独立开发 Larac-Drive。闭环仿真中，安全约束降低了极限切入和急刹时的安全违约率与控制抖动；针对前车随机制动的纵向应急避撞子系统，已求得与 Monte Carlo 结果一致的可达—规避概率下界。</span></li>
 </ul>
 </article>
 </section>

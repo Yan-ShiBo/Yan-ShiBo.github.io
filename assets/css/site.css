@@ -1542,7 +1542,9 @@ body.menu-open .drawer-backdrop{opacity:1;pointer-events:auto}
 
 /* 点击页内锚点时，不让标题被 sticky 导航遮住 */
 .section-block[id],
-.timeline-stage[id]{
+.timeline-stage[id],
+.project-page .project-case[id],
+.project-page .project-case__content[id]{
   scroll-margin-top:calc(var(--header-total-h) + var(--anchor-h) + 12px);
 }
 

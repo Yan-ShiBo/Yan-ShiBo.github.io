@@ -178,7 +178,7 @@
       <section class="resume-ledger-section" aria-labelledby="resume-projects-title">
         <header class="resume-ledger-heading"><span aria-hidden="true" class="resume-ledger-index">03</span><div><span class="kicker">Projects &amp; Internship</span><h2 id="resume-projects-title">项目与实习经历</h2></div></header>
         <div class="resume-entry-list">
-          <article class="resume-entry"><div class="resume-entry__date">2025.03—2026.07</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>CBF-Rover：车辆强化学习控制与概率安全验证系统</h3><span>独立开发</span></div><p>建立车辆运动学模型与封闭道路仿真环境，研究随机扰动下的路径跟踪、静态避障和目标到达。设计状态观测、控制输入与奖励函数，用 SAC 学习加减速与转向策略，通过控制障碍函数（CBF）施加避障与输入约束。</p><p>在固定场景中对策略做稀疏多项式近似，通过平方和（SOS）优化求解随机障碍证书（SBC），用证书反馈调整控制器参数。批量仿真比较到达成功率、碰撞率、跟踪误差与控制耗时；可达—规避概率下界仅适用于通过证书验证的控制器及其建模假设。</p></div></article>
+          <article class="resume-entry"><div class="resume-entry__date">2025.03—至今</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>Larac-Drive：随机扰动下车辆强化学习控制与可达规避概率验证系统</h3><span>独立开发</span></div><p>在 Frenet 坐标系下用 SAC 学习纵向加速度和等效路径曲率，以 IDM、MPC 为基线。CBF/HOCBF-QP 约束安全时距和横向位置，不可行时降级制动。在急刹与极限切入仿真中，相比无约束 SAC，安全违约率和控制抖动均下降，单步推理与求解满足实时要求。</p><p>形式化验证仅针对前车随机制动下的纵向应急避撞闭环。用 PAC 采样近似控制律，通过 SOS/SDP 求解随机障碍证书（SBC）；迭代优化后的可达—规避概率下界与 Monte Carlo 估计一致。<a class="link-inline" href="projects.html#larac-drive">项目详情</a></p></div></article>
           <article class="resume-entry"><div class="resume-entry__date">2022.12—2023.06</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>基于人脸识别的多端考勤系统</h3><span>本科毕业设计 · 校优秀毕业论文二等奖</span></div><p>设计并实现基于人脸检测与识别的多端考勤系统，通过拍照或图片上传识别到课学生，并生成出勤简表。</p></div></article>
           <article class="resume-entry"><div class="resume-entry__date">2022.06—2022.08</div><div class="resume-entry__body"><div class="resume-entry__heading"><h3>重庆中软国际信息技术有限公司 · MicFamily：KTV 运营管理系统</h3><span>项目经理兼技术经理 · 优秀实习生</span></div><p>协调团队完成系统开发与联调，采用 Vue、Spring Boot、MyBatis-Plus 与 MySQL；实习评分 94 分，代码开源于 <a class="link-inline" href="https://github.com/Yan-ShiBo/MicFamily" rel="noopener noreferrer" target="_blank">GitHub</a>。</p></div></article>
         </div>
@@ -213,7 +213,7 @@
     <div class="section-title-wrap"><span class="kicker">Downloads &amp; Materials</span><h2 id="resume-materials-title">下载与材料</h2><p>中英文简历均为一页 A4 PDF，可分别查看或下载。PDF 保留原文件，最新履历内容以本页为准。</p></div>
     <div class="resume-documents">
       <section class="resume-document" aria-labelledby="resume-pdf-zh-title">
-        <div><h3 id="resume-pdf-zh-title">中文简历</h3><p>PDF · 1 页 · 1.43 MB</p></div>
+        <div><h3 id="resume-pdf-zh-title">中文简历</h3><p>PDF · 1 页 · 1.44 MB</p></div>
         <div class="resume-document__actions">
           <a class="button small primary" href="./docs/Shibo-Yan-Resume.pdf" hreflang="zh-CN" type="application/pdf" rel="noopener noreferrer" target="_blank" aria-label="查看中文简历 PDF（新标签页）"><i aria-hidden="true" class="fa fa-external-link"></i> 查看中文 PDF</a>
           <a class="button small" href="./docs/Shibo-Yan-Resume.pdf" hreflang="zh-CN" type="application/pdf" download="闫士博_中文简历.pdf"><i aria-hidden="true" class="fa fa-download"></i> 下载中文 PDF</a>

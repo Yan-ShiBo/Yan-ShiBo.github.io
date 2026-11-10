@@ -25,10 +25,6 @@ const RESEARCH_IDS = [
 ];
 const EXPECTED_PROJECT_REPOSITORIES = new Map([
   [
-    'https://yan-shibo.github.io/#project-vision-obstacle-avoidance-rover',
-    'https://github.com/Yan-ShiBo/CBF-Rover'
-  ],
-  [
     'https://yan-shibo.github.io/#project-persevere-study',
     'https://github.com/Yan-ShiBo/PersevereStudy'
   ],
@@ -211,8 +207,8 @@ const RESUME_ACADEMIC_FACTS_ISSUE =
   'resume must show degree GPA 3.95 / 5.00 and degree-required course rank 8 / 120, never 8 / 124';
 const RESUME_KTV_CONTRACT_ISSUE =
   'resume KTV entry must match the approved MicFamily web-stack summary and exclude legacy uni-app or decoupled-architecture claims';
-const RESUME_CBF_ROVER_CONTRACT_ISSUE =
-  'resume CBF-Rover entry must describe SAC acceleration, braking, and steering, CBF constraints, and bounds limited to certificate-verified controllers';
+const RESUME_LARAC_DRIVE_CONTRACT_ISSUE =
+  'resume Larac-Drive entry must describe the ongoing control project and limit its reach-avoid guarantee to the longitudinal emergency subsystem';
 const RESUME_AWARDS_CONTRACT_ISSUE =
   'resume awards must preserve the approved PDF-aligned selection, order, and Certificate Authority Cup identity';
 const RESUME_CCF_A_CONTRACT_ISSUE =
@@ -227,14 +223,14 @@ const RESUME_PDF_SOURCES = {
   'zh-CN': {
     file: 'docs/Shibo-Yan-Resume.pdf',
     download: '闫士博_中文简历.pdf',
-    bytes: 1504119,
-    sha256: '1126c5ac6c5ae91474295768a9ac23cbcae6b6c26251114ee984619889bfdd7f'
+    bytes: 1511702,
+    sha256: 'e0fc2f03ab704d89dfceb105df6c0373b9a5f3f637482c42f8beba4bd858d7b0'
   },
   en: {
     file: 'docs/Shibo-Yan-Resume-EN.pdf',
     download: 'Shibo_Yan_Resume_EN.pdf',
-    bytes: 1425524,
-    sha256: 'c5ea46662924ad433e3613eff5218578d5bb511c57e453fc7a9bb559866de33f'
+    bytes: 1427546,
+    sha256: 'dedbdb4e32d5a208363c3b1e040ec57bee82f93fabb3bc3580d1a7c8982fe4ae'
   }
 };
 const RESUME_HEADING_IDS = [
@@ -274,13 +270,9 @@ const RESUME_PAGE_CONTRACTS = [
     ktvDate: '2022.06—2022.08',
     ktvSummaryFragments: ['协调团队完成系统开发与联调', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', '实习评分 94 分'],
     ktvForbiddenPatterns: [/uni-app/i, /前后端分离/],
-    sacActions: '加减速与转向',
-    cbfValidationBoundary: '概率下界仅适用于通过证书验证的控制器及其建模假设',
-    cbfForbiddenPatterns: [
-      /完成(?:了)?(?:固定几何\s*)?q-SBC/i,
-      /q-SBC\s*(?:已)?(?:完成|就绪)/i,
-      /完成障碍证书合成/
-    ],
+    driveDate: '2025.03—至今',
+    driveInputs: '纵向加速度和等效路径曲率',
+    driveVerificationScope: '形式化验证仅针对前车随机制动下的纵向应急避撞闭环',
     modelingAward: '第九届“认证杯”国际数学建模竞赛',
     forbiddenAwards: [
       ['2024', '研究生学业奖学金二等奖']
@@ -321,13 +313,9 @@ const RESUME_PAGE_CONTRACTS = [
     ktvDate: '2022.06—2022.08',
     ktvSummaryFragments: ['Coordinated the team through system development and integration', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', 'internship score of 94'],
     ktvForbiddenPatterns: [/uni-app/i, /decoupled front-end\/back-end/i],
-    sacActions: 'acceleration, braking, and steering',
-    cbfValidationBoundary: 'probability lower bounds apply only to controllers verified by a certificate under the model assumptions',
-    cbfForbiddenPatterns: [
-      /completed (?:the )?(?:fixed-geometry )?q-SBC/i,
-      /q-SBC (?:is )?(?:complete|ready)/i,
-      /completed barrier-certificate synthesis/i
-    ],
+    driveDate: '2025.03—Present',
+    driveInputs: 'longitudinal acceleration and equivalent path curvature',
+    driveVerificationScope: 'Formal verification covers only the longitudinal emergency collision-avoidance subsystem under stochastic lead-vehicle braking',
     modelingAward: 'Certificate Authority Cup International Mathematical Contest in Modeling',
     forbiddenAwards: [
       ['2024', 'Second-Class Graduate Academic Scholarship']
@@ -991,9 +979,9 @@ const RESEARCH_ALLOWED_KEYS = ['@type', '@id', 'name', 'description'];
 const EXPECTED_PROJECT_FACTS = {
   'zh-CN': [
     {
-      name: 'CBF-Rover：车辆强化学习控制与概率安全验证系统',
-      description: '面向封闭道路的路径跟踪、静态避障与目标到达，用 SAC 学习车辆加减速和转向策略，以 CBF 约束闭环控制，并在固定场景中用随机障碍证书验证控制器。',
-      keywords: ['SAC', 'CBF', 'SOS', 'SBC']
+      name: 'Larac-Drive：随机扰动下车辆强化学习控制与可达规避概率验证系统',
+      description: '面向结构化道路，以 SAC 协同控制车辆纵向加速度和等效路径曲率，用 CBF/HOCBF-QP 在线约束跟驰与避障。对前车随机制动下的纵向应急避撞子系统，用随机障碍证书求解可达—规避概率下界。',
+      keywords: ['SAC', 'CBF/HOCBF-QP', 'PAC', 'SOS/SDP']
     },
     {
       name: 'Research Memory：本地科研知识检索',
@@ -1043,9 +1031,9 @@ const EXPECTED_PROJECT_FACTS = {
   ],
   en: [
     {
-      name: 'CBF-Rover: Reinforcement Learning for Vehicle Control and Probabilistic Safety Verification',
-      description: 'On closed courses, a SAC policy controls acceleration, braking, and steering to follow a path, avoid static obstacles, and reach the goal. CBF constraints govern closed-loop control, and stochastic barrier certificates verify controllers in fixed scenarios.',
-      keywords: ['SAC', 'CBF', 'SOS', 'SBC']
+      name: 'Larac-Drive: Vehicle RL & Probabilistic Reach-Avoid Verification',
+      description: 'On structured roads, a SAC policy commands longitudinal acceleration and equivalent path curvature. A CBF/HOCBF-QP safety filter constrains both inputs online. Stochastic barrier certificates bound the reach-avoid probability for the longitudinal emergency subsystem under random lead-vehicle braking.',
+      keywords: ['SAC', 'CBF/HOCBF-QP', 'PAC', 'SOS/SDP']
     },
     {
       name: 'Research Memory: Local Research Knowledge Retrieval',
@@ -1796,12 +1784,12 @@ function validateProjectPageStructure(rootDir, issues) {
       /(?:spring\s*boot|mysql|mybatis(?:-plus)?|vue)\s+(?:v(?:ersion)?\s*)?\d+(?:\.\d+)+/i,
       /\bjava\s+(?:1\.)?8\b/i
     ].some((pattern) => pattern.test(micFamilyText));
-    const cbfRover = visibleProjects.find((element) => (
+    const laracDrive = visibleProjects.find((element) => (
       element.attributes['data-project-id'] === 'project-vision-obstacle-avoidance-rover'
     ));
-    const cbfRoverText = elementText(cbfRover);
-    const hasForbiddenCbfFact = /\bexact\b/i.test(cbfRoverText) ||
-      /q[\s‑–—-]*sbc/i.test(cbfRoverText);
+    const driveText = elementText(laracDrive);
+    const hasObsoleteDriveFact = /\bexact\b/i.test(driveText) ||
+      /q[\s‑–—-]*sbc/i.test(driveText);
 
     if (
       !mainElement ||
@@ -1813,7 +1801,7 @@ function validateProjectPageStructure(rootDir, issues) {
       stableCanonicalJson(visibleProjectIds) !== stableCanonicalJson(expectedProjectIds) ||
       !hasValidProjectTags ||
       hasForbiddenMicFamilyFact ||
-      hasForbiddenCbfFact
+      hasObsoleteDriveFact
     ) {
       addIssue(issues, file, PROJECT_PAGE_STRUCTURE_ISSUE);
     }
@@ -2250,14 +2238,13 @@ function validateResumeContentContract(rootDir, issues) {
       addIssue(issues, contract.file, RESUME_KTV_CONTRACT_ISSUE);
     }
 
-    const cbfEntries = entryTexts.filter((text) => text.includes('CBF-Rover'));
+    const driveEntries = entryTexts.filter((text) => text.includes('Larac-Drive'));
     if (
-      cbfEntries.length !== 1 ||
-      !['2025.03—2026.07', 'SAC', contract.sacActions, 'CBF', 'SOS', 'SBC'].every((term) => cbfEntries[0].includes(term)) ||
-      !cbfEntries[0].includes(contract.cbfValidationBoundary) ||
-      contract.cbfForbiddenPatterns.some((pattern) => pattern.test(cbfEntries[0]))
+      driveEntries.length !== 1 ||
+      ![contract.driveDate, contract.driveInputs, contract.driveVerificationScope,
+        'SAC', 'HOCBF', 'QP', 'PAC', 'SOS/SDP', 'SBC'].every((term) => driveEntries[0].includes(term))
     ) {
-      addIssue(issues, contract.file, RESUME_CBF_ROVER_CONTRACT_ISSUE);
+      addIssue(issues, contract.file, RESUME_LARAC_DRIVE_CONTRACT_ISSUE);
     }
 
     const awardLists = elements.filter((element) => (

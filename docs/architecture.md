@@ -278,7 +278,7 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 
 | 顺序 | 层级 | 项目 | 稳定 ID | `codeRepository` |
 | ---: | --- | --- | --- | --- |
-| 1 | 代表案例 | CBF-Rover | `https://yan-shibo.github.io/#project-vision-obstacle-avoidance-rover` | `https://github.com/Yan-ShiBo/CBF-Rover` |
+| 1 | 代表案例 | Larac-Drive | `https://yan-shibo.github.io/#project-vision-obstacle-avoidance-rover` | 未提供公开仓库，省略 |
 | 2 | 代表案例 | Research Memory | `https://yan-shibo.github.io/#project-personal-knowledge-base` | `https://github.com/Yan-ShiBo/PersonalKnowledgeBase` |
 | 3 | 代表案例 | 中英双语个人学术主页 | `https://yan-shibo.github.io/#project-portfolio` | `https://github.com/Yan-ShiBo/Yan-ShiBo.github.io` |
 | 4 | 本地工具 | LocalReadTranslate | `https://yan-shibo.github.io/#project-local-read-translate` | `https://github.com/Yan-ShiBo/LocalReadTranslate` |
@@ -291,7 +291,7 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 
 项目节点的本地化名称和描述必须与当前页面可见文本一致，`keywords` 来自可见技术标签且每项最多四个，`contributor` 只引用 `/#person`。`codeRepository` 是可选字段：只有公开仓库存在时才声明。项目图不使用 `creator`，也不写入奖项或等级、日期、证明图片、测试账号等未批准字段。普通收藏式 fork、无公开说明的研究仓库和未发表材料不进入库存。
 
-项目页采用获授权材料与公开实现可核验的事实口径。MicFamily 在项目页、在线简历和个人档案中统一使用 Vue / Spring Boot / MyBatis-Plus / MySQL，不使用 `uni-app`、精确依赖版本或“严格前后端分离”；该局部合同不影响其他项目中已有依据的 `uni-app`。CBF-Rover 沿用原稳定 ID 与仓库，展示随机扰动下的安全控制系统；阶段、方法和概率保证的表达边界统一见[设计规范](design.md#6-内容设计)。
+项目页采用获授权材料与公开实现可核验的事实口径。MicFamily 在项目页、在线简历和个人档案中统一使用 Vue / Spring Boot / MyBatis-Plus / MySQL，不使用 `uni-app`、精确依赖版本或“严格前后端分离”；该局部合同不影响其他项目中已有依据的 `uni-app`。Larac-Drive 保留原结构化数据 ID；中英文项目卡的当前锚点为 `#larac-drive`，旧 `#cbf-rover` 链接仍可定位该条目。项目阶段和概率保证的适用范围见[设计规范](design.md#6-内容设计)。
 
 ### 8.5 研究图
 
