@@ -227,14 +227,14 @@ const RESUME_PDF_SOURCES = {
   'zh-CN': {
     file: 'docs/Shibo-Yan-Resume.pdf',
     download: '闫士博_中文简历.pdf',
-    bytes: 1511002,
-    sha256: '21c3764aab04bc1ea70017232c4402a9a6cff79931f155ef6f40aff11a418929'
+    bytes: 1510973,
+    sha256: 'a0ebebfef0c413bec127c6a23cc857d414a17e04a3e1a981ed5471b803a2ac5e'
   },
   en: {
     file: 'docs/Shibo-Yan-Resume-EN.pdf',
     download: 'Shibo_Yan_Resume_EN.pdf',
-    bytes: 1428184,
-    sha256: 'aeea241addc67b049a08b554c0a26345b35f8a770c301e594fc562a38bb95de8'
+    bytes: 1428178,
+    sha256: 'a20b13d2a24b5df111607d1b4e3fbfffbbd8ae81b741f1d37c76725c22b1a3ed'
   }
 };
 const RESUME_HEADING_IDS = [
