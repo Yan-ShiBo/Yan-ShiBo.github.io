@@ -157,8 +157,8 @@
 </article>
 <article class="panel">
 <span class="kicker">Engineering</span>
-<h3>Larac-Drive: Vehicle RL &amp; Probabilistic Reach-Avoid Verification</h3>
-<p>I train a SAC policy to coordinate acceleration and lateral maneuvers on structured roads. When the lead vehicle brakes or another vehicle cuts in, an online filter checks headway and lateral limits and applies fallback braking if it cannot find a feasible input.</p>
+<h3>Larac-Drive: Reinforcement Learning for Vehicle Control and Probabilistic Reach-Avoid Verification under Stochastic Disturbances</h3>
+<p>I train a reinforcement learning policy to coordinate acceleration and steering on structured roads. When a lead vehicle brakes hard or another vehicle cuts in, the controller accounts for time headway, road boundaries, and smooth changes in the commands.</p>
 <div class="action-row"><a class="button small primary" href="projects.html#larac-drive"><i aria-hidden="true" class="fa fa-code-fork"></i> View the project record</a></div>
 </article>
 </div>
@@ -171,8 +171,8 @@
 <ul class="meta-list home-update-list">
 <li><strong>Published paper</strong><span>My first-author paper, <em>Learning-Aided Reach-Avoid Controller Synthesis with Formal Guarantees for Stochastic Systems</em>, is published online in MEMOCODE 2026 (a constituent conference of ESWEEK 2026). The original paper is linked under <a class="link-inline" href="research.html#research-outcomes">research outcomes</a>.</span></li>
 <li><strong>Journal submission</strong><span>A paper on safety guarantees for Bayesian neural-network control policies has been submitted to <em>Formal Aspects of Computing</em>; my supervisor is first author, and I am second author.</span></li>
-<li><strong>Conference submission</strong><span>Follow-up work on reach-avoid controller synthesis and formal probabilistic guarantees for stochastic systems has been submitted to a CCF Class A conference.</span></li>
-<li><strong>Project results</strong><span>I have developed Larac-Drive independently since March 2025. In closed-loop simulations the safety filter reduced safety violations and control oscillations during severe cut-ins and hard braking. For the longitudinal emergency subsystem under random lead-vehicle braking, the certified reach-avoid probability lower bound agreed with Monte Carlo estimates.</span></li>
+<li><strong>Conference submission</strong><span>My first-author paper on sparse polynomial learning and barrier certificate verification is under submission to DAC 2027. A second paper on reach-avoid controller synthesis for stochastic systems is under submission to a CCF Class A conference. <a class="link-inline" href="research.html#research-outcomes">See research outcomes</a>.</span></li>
+<li><strong>Project results</strong><span>In Larac-Drive simulations, online constraints reduced headway and road-boundary violation rates, and a smoothing cost reduced command fluctuations. I used Monte Carlo estimates and confidence intervals to assess the conservatism of the probability lower bound for the longitudinal emergency controller.</span></li>
 </ul>
 </article>
 </section>

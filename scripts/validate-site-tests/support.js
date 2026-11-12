@@ -156,6 +156,8 @@ const RESUME_KTV_CONTRACT_ISSUE =
   'resume KTV entry must match the approved MicFamily web-stack summary and exclude legacy uni-app or decoupled-architecture claims';
 const RESUME_AWARDS_CONTRACT_ISSUE =
   'resume awards must preserve the approved PDF-aligned selection, order, and Certificate Authority Cup identity';
+const DAC_PUBLICATION_ISSUE =
+  'DAC 2027 entry must preserve the title, author list, first authorship, and current submission status';
 const RESUME_CCF_A_CONTRACT_ISSUE =
   'resume CCF Class A entry must preserve the full title, author order, and submitted status';
 const RESUME_SERVICE_CONTRACT_ISSUE =
@@ -635,6 +637,7 @@ module.exports = {
   RESUME_KTV_CONTRACT_ISSUE,
   RESUME_AWARDS_CONTRACT_ISSUE,
   RESUME_CCF_A_CONTRACT_ISSUE,
+  DAC_PUBLICATION_ISSUE,
   RESUME_SERVICE_CONTRACT_ISSUE,
   RESUME_TYPOGRAPHY_CSS_ISSUE,
   RESUME_PDF_SOURCE_CONTRACT_ISSUE,

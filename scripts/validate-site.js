@@ -213,6 +213,10 @@ const RESUME_AWARDS_CONTRACT_ISSUE =
   'resume awards must preserve the approved PDF-aligned selection, order, and Certificate Authority Cup identity';
 const RESUME_CCF_A_CONTRACT_ISSUE =
   'resume CCF Class A entry must preserve the full title, author order, and submitted status';
+const DAC_PUBLICATION_ISSUE =
+  'DAC 2027 entry must preserve the title, author list, first authorship, and current submission status';
+const DAC_TITLE = 'Safe Controller Synthesis via Sparse Polynomial Learning and Efficient Barrier Certificate Verification';
+const DAC_AUTHORS = 'Shibo Yan, Hengjun Zhao, Xia Zeng, Zhengfeng Yang, Zhiming Liu';
 const RESUME_SERVICE_CONTRACT_ISSUE =
   'resume organization and practice section must preserve the five approved entries, dates, roles, and PDF order';
 const RESUME_TYPOGRAPHY_CSS_ISSUE =
@@ -223,14 +227,14 @@ const RESUME_PDF_SOURCES = {
   'zh-CN': {
     file: 'docs/Shibo-Yan-Resume.pdf',
     download: '闫士博_中文简历.pdf',
-    bytes: 1511702,
-    sha256: 'e0fc2f03ab704d89dfceb105df6c0373b9a5f3f637482c42f8beba4bd858d7b0'
+    bytes: 1511002,
+    sha256: '21c3764aab04bc1ea70017232c4402a9a6cff79931f155ef6f40aff11a418929'
   },
   en: {
     file: 'docs/Shibo-Yan-Resume-EN.pdf',
     download: 'Shibo_Yan_Resume_EN.pdf',
-    bytes: 1427546,
-    sha256: 'dedbdb4e32d5a208363c3b1e040ec57bee82f93fabb3bc3580d1a7c8982fe4ae'
+    bytes: 1428184,
+    sha256: 'aeea241addc67b049a08b554c0a26345b35f8a770c301e594fc562a38bb95de8'
   }
 };
 const RESUME_HEADING_IDS = [
@@ -265,14 +269,16 @@ const RESUME_PAGE_CONTRACTS = [
     gpaPattern: /学位(?:平均分)?绩点\s*3\.95\s*\/\s*5\.00/,
     rankPattern: /学位课程排名\s*8\s*\/\s*120/,
     ccfAStatus: '在投',
+    dacStatus: '在投',
+    dacRole: '第一作者',
     ccfAVenue: 'CCF A 类会议',
     ccfAAuthor: '第二作者（导师第一作者）',
     ktvDate: '2022.06—2022.08',
     ktvSummaryFragments: ['协调团队完成系统开发与联调', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', '实习评分 94 分'],
     ktvForbiddenPatterns: [/uni-app/i, /前后端分离/],
     driveDate: '2025.03—至今',
-    driveInputs: '纵向加速度和等效路径曲率',
-    driveVerificationScope: '形式化验证仅针对前车随机制动下的纵向应急避撞闭环',
+    driveInputs: '纵向加速度和车辆曲率',
+    driveVerificationScope: '同车道前车随机制动下的三维纵向应急子系统',
     modelingAward: '第九届“认证杯”国际数学建模竞赛',
     forbiddenAwards: [
       ['2024', '研究生学业奖学金二等奖']
@@ -308,14 +314,16 @@ const RESUME_PAGE_CONTRACTS = [
     gpaPattern: /Degree GPA\s*:?\s*3\.95\s*\/\s*5\.00/i,
     rankPattern: /Degree-required course rank\s*:?\s*8\s*\/\s*120/i,
     ccfAStatus: 'Submitted',
+    dacStatus: 'Under submission',
+    dacRole: 'first author',
     ccfAVenue: 'CCF Class A conference',
     ccfAAuthor: 'Second author (advisor first)',
     ktvDate: '2022.06—2022.08',
     ktvSummaryFragments: ['Coordinated the team through system development and integration', 'Vue', 'Spring Boot', 'MyBatis-Plus', 'MySQL', 'internship score of 94'],
     ktvForbiddenPatterns: [/uni-app/i, /decoupled front-end\/back-end/i],
     driveDate: '2025.03—Present',
-    driveInputs: 'longitudinal acceleration and equivalent path curvature',
-    driveVerificationScope: 'Formal verification covers only the longitudinal emergency collision-avoidance subsystem under stochastic lead-vehicle braking',
+    driveInputs: 'longitudinal acceleration and vehicle curvature',
+    driveVerificationScope: 'three-state longitudinal emergency subsystem under stochastic braking by a same-lane lead vehicle',
     modelingAward: 'Certificate Authority Cup International Mathematical Contest in Modeling',
     forbiddenAwards: [
       ['2024', 'Second-Class Graduate Academic Scholarship']
@@ -979,8 +987,8 @@ const RESEARCH_ALLOWED_KEYS = ['@type', '@id', 'name', 'description'];
 const EXPECTED_PROJECT_FACTS = {
   'zh-CN': [
     {
-      name: 'Larac-Drive：随机扰动下车辆强化学习控制与可达规避概率验证系统',
-      description: '面向结构化道路，以 SAC 协同控制车辆纵向加速度和等效路径曲率，用 CBF/HOCBF-QP 在线约束跟驰与避障。对前车随机制动下的纵向应急避撞子系统，用随机障碍证书求解可达—规避概率下界。',
+      name: 'Larac-Drive：随机扰动下车辆强化学习控制与可达—规避概率验证系统',
+      description: '用 SAC 学习车辆的横纵向控制，用在线安全约束维持安全时距和道路边界。针对同车道前车随机制动，用随机障碍证书计算三维纵向应急子系统的可达—规避概率下界。',
       keywords: ['SAC', 'CBF/HOCBF-QP', 'PAC', 'SOS/SDP']
     },
     {
@@ -1031,8 +1039,8 @@ const EXPECTED_PROJECT_FACTS = {
   ],
   en: [
     {
-      name: 'Larac-Drive: Vehicle RL & Probabilistic Reach-Avoid Verification',
-      description: 'On structured roads, a SAC policy commands longitudinal acceleration and equivalent path curvature. A CBF/HOCBF-QP safety filter constrains both inputs online. Stochastic barrier certificates bound the reach-avoid probability for the longitudinal emergency subsystem under random lead-vehicle braking.',
+      name: 'Larac-Drive: Reinforcement Learning for Vehicle Control and Probabilistic Reach-Avoid Verification under Stochastic Disturbances',
+      description: 'A SAC policy controls longitudinal acceleration and vehicle curvature, with online constraints on time headway and road boundaries. For stochastic braking by a same-lane lead vehicle, stochastic barrier certificates give a reach-avoid probability lower bound for the three-state longitudinal emergency subsystem.',
       keywords: ['SAC', 'CBF/HOCBF-QP', 'PAC', 'SOS/SDP']
     },
     {
@@ -2061,6 +2069,28 @@ function resumePdfLinkMatches(html, element, language, prefix, download, pageLan
     !Object.hasOwn(attributes, 'download');
 }
 
+function dacPublicationMatches(html, elements, containerClass, statusClass, contract) {
+  const items = elements.filter((element) => (
+    element.name === 'li' && hasHtmlAncestorClass(element, containerClass) &&
+    getActiveElementText(html, element).includes('DAC 2027')
+  ));
+  if (items.length !== 1) return false;
+
+  const item = items[0];
+  const children = elements.filter((element) => hasHtmlAncestor(element, item));
+  const titles = children.filter((element) => element.name === 'cite');
+  const statuses = children.filter((element) => hasClass(element.attributes, statusClass));
+  const hasAuthors = children.some((element) => {
+    if (element.name !== 'p' && element.name !== 'span') return false;
+    const text = getActiveElementText(html, element)
+      .replace(/\s*,\s*/g, ', ').replace(/,? and /g, ', ').replace(/\.$/, '');
+    return text === DAC_AUTHORS;
+  });
+  return titles.length === 1 && getActiveElementText(html, titles[0]) === DAC_TITLE &&
+    statuses.length === 1 && getActiveElementText(html, statuses[0]) === contract.dacStatus &&
+    hasAuthors && getActiveElementText(html, item).toLowerCase().includes(contract.dacRole);
+}
+
 function validateResumeContentContract(rootDir, issues) {
   const ccfATitle =
     'Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning';
@@ -2189,7 +2219,11 @@ function validateResumeContentContract(rootDir, issues) {
     const researchPath = path.join(rootDir, researchFile);
     if (fs.existsSync(researchPath)) {
       const researchHtml = fs.readFileSync(researchPath, 'utf8');
-      const researchPdfLinks = collectActiveHtmlElements(researchHtml).filter((element) => (
+      const researchElements = collectActiveHtmlElements(researchHtml);
+      if (!dacPublicationMatches(researchHtml, researchElements, 'research-publications', 'research-publication__status', contract)) {
+        addIssue(issues, researchFile, DAC_PUBLICATION_ISSUE);
+      }
+      const researchPdfLinks = researchElements.filter((element) => (
         element.name === 'a' && /Shibo-Yan-Resume(?:-EN)?\.pdf/.test(element.attributes.href || '')
       ));
       if (
@@ -2271,6 +2305,9 @@ function validateResumeContentContract(rootDir, issues) {
       addIssue(issues, contract.file, RESUME_AWARDS_CONTRACT_ISSUE);
     }
 
+    if (!dacPublicationMatches(html, elements, 'resume-publications', 'resume-status', contract)) {
+      addIssue(issues, contract.file, DAC_PUBLICATION_ISSUE);
+    }
     const publicationContainers = elements.filter((element) => (
       hasClass(element.attributes, 'resume-publications')
     ));

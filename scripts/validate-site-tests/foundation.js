@@ -21,6 +21,7 @@ const {
   RESUME_KTV_CONTRACT_ISSUE,
   RESUME_AWARDS_CONTRACT_ISSUE,
   RESUME_CCF_A_CONTRACT_ISSUE,
+  DAC_PUBLICATION_ISSUE,
   RESUME_SERVICE_CONTRACT_ISSUE,
   RESUME_TYPOGRAPHY_CSS_ISSUE,
   RESUME_PDF_SOURCE_CONTRACT_ISSUE,
@@ -743,7 +744,7 @@ test('modeling award rejects MCM/ICM aliases even when approved wording remains'
   ]);
 });
 
-test('resume CCF A facts reject full-title or submission-status drift', (t) => {
+test('publication records reject title, author and submission-status drift', (t) => {
   const title =
     'Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning';
   const shortenedTitle =
@@ -786,6 +787,36 @@ test('resume CCF A facts reject full-title or submission-status drift', (t) => {
           `<span class="resume-status">Submitted</span><div><cite>${title}`,
           `<span class="resume-status">Under review</span><div><cite>${title}`
         );
+      }
+    }
+  ]);
+  assertContentMutationsRejected(t, DAC_PUBLICATION_ISSUE, [
+    {
+      name: 'Chinese resume with an incorrect DAC author order',
+      file: 'resume.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, 'Hengjun Zhao, Xia Zeng, Zhengfeng Yang', 'Xia Zeng, Hengjun Zhao, Zhengfeng Yang');
+      }
+    },
+    {
+      name: 'English resume with an outdated DAC status',
+      file: 'en/resume.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, 'class="resume-status">Under submission', 'class="resume-status">Planned');
+      }
+    },
+    {
+      name: 'Chinese research page without the full DAC title',
+      file: 'research.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, 'via Sparse Polynomial Learning', 'via Polynomial Learning');
+      }
+    },
+    {
+      name: 'English research page with an incomplete DAC author list',
+      file: 'en/research.html',
+      mutate(rootDir) {
+        replaceOnce(rootDir, this.file, 'Hengjun Zhao, Xia Zeng, Zhengfeng Yang', 'Hengjun Zhao, Zhengfeng Yang');
       }
     }
   ]);
