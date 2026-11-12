@@ -144,16 +144,16 @@
       <div class="project-list profile-project-list">
         <div class="project-item profile-project-item">
           <div class="profile-project-head">
-            <h4 class="profile-project-title">Larac-Drive：随机扰动下车辆强化学习控制与可达—规避概率验证系统</h4>
+            <h4 class="profile-project-title">Larac-Drive｜随机扰动下车辆强化学习控制与可达—规避概率验证系统｜独立开发</h4>
             <span class="profile-project-date">2025.03 - 至今</span>
           </div>
           <div class="project-stack profile-project-stack">
             <span>SAC</span><span>CBF/HOCBF-QP</span><span>PAC</span><span>SOS/SDP</span>
           </div>
-          <p class="profile-project-desc">在结构化道路上研究自适应跟驰、前车急刹与邻车切入，兼顾跟踪性能、安全与控制平顺性。</p>
+          <p class="profile-project-desc profile-project-desc--background">面向结构化道路中的车辆自适应跟驰、前车急刹与邻车切入任务，研究前车制动不确定性及车辆运动约束下的学习型横纵向控制方法，兼顾跟踪性能、运行安全与控制平顺性。</p>
           <ul class="note-list profile-project-notes">
-            <li><strong>整车控制</strong>：在无侧滑 Frenet 运动学模型中，以跟踪误差和控制变化率为奖励惩罚项，训练 SAC 策略控制纵向加速度和车辆曲率，并与 IDM、MPC 比较。鲁棒 CBF 和 HOCBF 分别约束安全时距和道路边界，QP 平滑控制指令，低速或 QP 不可行时启用紧急制动。</li>
-            <li><strong>纵向概率验证</strong>：对同车道前车随机制动的三维纵向应急子系统，采用具有 PAC 统计误差保证的方法将应急策略近似为多项式控制器，通过 SOS/SDP 求解随机障碍证书，并依据证书期望下降条件迭代优化控制器系数。验证后的多项式控制器用于指定状态域内的应急控制；其可达—规避概率下界与 Monte Carlo 估计及置信区间比较，用于评估证书的保守程度。</li>
+            <li><strong>工作</strong>：在 Frenet 坐标系下建立基于无侧滑假设的车辆运动学模型，以纵向加速度与车辆曲率为控制输入，在奖励函数中引入跟踪误差与控制变化率惩罚，采用 SAC 训练横纵向控制策略，并实现 IDM、MPC 对照基线；针对纵向安全时距与横向道路边界分别构造鲁棒控制障碍函数（CBF）及高阶控制障碍函数（HOCBF），通过引入控制平滑代价的二次规划（QP）施加在线安全约束，并设计低速及 QP 不可行工况下的紧急制动机制；针对同车道前车随机制动工况，建立三维纵向应急控制子系统，采用具有 PAC 统计误差保证的方法将应急策略近似为多项式控制器，通过平方和（SOS）/半定规划（SDP）求解随机障碍证书（SBC），依据证书的期望下降条件迭代优化控制器系数，以提高可认证的可达—规避概率下界，并将验证后的多项式控制器用于指定状态域内的应急控制。</li>
+            <li><strong>结果</strong>：在正常跟驰、前车急刹及邻车切入等工况下完成闭环仿真与基线对比，在线安全约束降低了安全时距约束及道路边界约束的违约率，控制平滑优化减小了控制指令波动，并完成策略单步推理与 QP 求解耗时评估；针对纵向应急多项式控制器的闭环系统求得可达—规避概率下界，并结合 Monte Carlo 仿真估计及置信区间评估了证书的保守程度。</li>
             <li><strong>项目记录</strong>：<a class="link-inline" href="projects.html#larac-drive">查看建模方法、基线与验证结果</a>。</li>
           </ul>
         </div>

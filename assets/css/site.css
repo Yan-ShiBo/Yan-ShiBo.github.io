@@ -3781,6 +3781,11 @@ body.lightbox-open{overflow:hidden}
   color: var(--text);
 }
 
+.profile-project-desc--background {
+  font-size: 14px;
+  color: var(--ink-muted-48);
+}
+
 .profile-project-notes {
   margin: 0;
   font-size: 0.95rem;
