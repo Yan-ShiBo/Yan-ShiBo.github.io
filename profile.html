@@ -122,11 +122,11 @@
     <div class="info-card">
       <h3>学术科研</h3>
       <ul>
-        <li><strong>参与国家自然科学基金项目</strong>：参与国家自然科学基金面上项目“面向神经网络控制系统安全验证的多项式代数方法研究”，项目编号 62472362，2025.01–2028.12。</li>
-        <li><strong>CCF C 类会议论文已发表</strong>：<em>Learning-Aided Reach-Avoid Controller Synthesis with Formal Guarantees for Stochastic Systems</em>，MEMOCODE 2026（ESWEEK 2026 会议周组成会议），本人一作，已在线发表。<a class="link-inline" href="research.html#research-outcomes">论文信息与原文</a>。</li>
-        <li><strong>CCF B 类期刊论文在投</strong>：<em>Safety Guarantees for Nonlinear Systems with Bayesian Neural Network Control Policies</em>，<em>Formal Aspects of Computing</em>（导师一作，本人二作）。</li>
-        <li><strong>CCF A 类会议论文在投</strong>：<em>Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning</em>（导师一作，本人二作）。</li>
-        <li><strong>DAC 2027 会议论文在投</strong>：<em>Safe Controller Synthesis via Sparse Polynomial Learning and Efficient Barrier Certificate Verification</em>，CCF A 类会议。作者依次为 <strong>Shibo Yan</strong>、Hengjun Zhao、Xia Zeng、Zhengfeng Yang、Zhiming Liu。</li>
+        <li><strong>参与国家自然科学基金项目</strong>：国家自然科学基金面上项目“面向神经网络控制系统安全验证的多项式代数方法研究”，项目编号 62472362，2025.01–2028.12。</li>
+        <li><strong>CCF C 类会议论文已发表</strong>：<span lang="en"><strong>Shibo Yan</strong>, Xia Zeng, Hengjun Zhao, Zhengfeng Yang, Zhiming Liu</span>，<em lang="en">Learning-Aided Reach-Avoid Controller Synthesis with Formal Guarantees for Stochastic Systems</em>，MEMOCODE 2026（ESWEEK 2026 会议周组成会议），第一作者，已在线发表。<a class="link-inline" href="research.html#research-outcomes">论文信息与原文</a>。</li>
+        <li><strong>CCF B 类期刊论文在投</strong>：<span lang="en">Xia Zeng, <strong>Shibo Yan</strong>, Zhiming Liu, Zhengfeng Yang</span>，<em lang="en">Safety Guarantees for Nonlinear Systems with Bayesian Neural Network Control Policies</em>，<em lang="en">Formal Aspects of Computing</em>，第二作者（导师第一作者）。</li>
+        <li><strong>CCF A 类会议论文在投</strong>：<span lang="en">Xia Zeng, <strong>Shibo Yan</strong>, Hengjun Zhao, Zhiming Liu, Zhengfeng Yang</span>，<em lang="en">Formal Reach-Avoid Controller Synthesis for Stochastic Systems via Iterative Neural-Symbolic Learning</em>，第二作者（导师第一作者）。</li>
+        <li><strong>DAC 2027 会议论文在投</strong>：<span lang="en"><strong>Shibo Yan</strong>, Hengjun Zhao, Xia Zeng, Zhengfeng Yang, Zhiming Liu</span>，<em lang="en">Safe Controller Synthesis via Sparse Polynomial Learning and Efficient Barrier Certificate Verification</em>，CCF A 类会议，第一作者。</li>
         <li><strong>学术训练</strong>：在华东师范大学参加 2024 年可信软件国际暑期学校。</li>
       </ul>
     </div>
@@ -152,8 +152,8 @@
           </div>
           <p class="profile-project-desc">在结构化道路上研究自适应跟驰、前车急刹与邻车切入，兼顾跟踪性能、安全与控制平顺性。</p>
           <ul class="note-list profile-project-notes">
-            <li><strong>整车控制</strong>：在 Frenet 坐标系下训练 SAC 策略，控制纵向加速度和车辆曲率，并与 IDM、MPC 比较。鲁棒 CBF 和 HOCBF 分别约束安全时距和道路边界，QP 平滑控制指令，低速或 QP 不可行时启用紧急制动。</li>
-            <li><strong>纵向概率验证</strong>：对同车道前车随机制动的三维纵向应急子系统，以 PAC 误差保证近似出多项式控制器，并用 SOS/SDP 求解随机障碍证书。依据证书改进控制器系数后，将可达—规避概率下界与 Monte Carlo 估计及其置信区间比较，评估证书的保守程度。</li>
+            <li><strong>整车控制</strong>：在无侧滑 Frenet 运动学模型中，以跟踪误差和控制变化率为奖励惩罚项，训练 SAC 策略控制纵向加速度和车辆曲率，并与 IDM、MPC 比较。鲁棒 CBF 和 HOCBF 分别约束安全时距和道路边界，QP 平滑控制指令，低速或 QP 不可行时启用紧急制动。</li>
+            <li><strong>纵向概率验证</strong>：对同车道前车随机制动的三维纵向应急子系统，采用具有 PAC 统计误差保证的方法将应急策略近似为多项式控制器，通过 SOS/SDP 求解随机障碍证书，并依据证书期望下降条件迭代优化控制器系数。验证后的多项式控制器用于指定状态域内的应急控制；其可达—规避概率下界与 Monte Carlo 估计及置信区间比较，用于评估证书的保守程度。</li>
             <li><strong>项目记录</strong>：<a class="link-inline" href="projects.html#larac-drive">查看建模方法、基线与验证结果</a>。</li>
           </ul>
         </div>
