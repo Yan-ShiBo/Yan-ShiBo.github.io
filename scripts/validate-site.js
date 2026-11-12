@@ -227,14 +227,14 @@ const RESUME_PDF_SOURCES = {
   'zh-CN': {
     file: 'docs/Shibo-Yan-Resume.pdf',
     download: '闫士博_中文简历.pdf',
-    bytes: 1510973,
-    sha256: 'a0ebebfef0c413bec127c6a23cc857d414a17e04a3e1a981ed5471b803a2ac5e'
+    bytes: 1511064,
+    sha256: '7a2057aec844a44cd2db1ced10d85562c751a217d0ac69029148bf80f864074a'
   },
   en: {
     file: 'docs/Shibo-Yan-Resume-EN.pdf',
     download: 'Shibo_Yan_Resume_EN.pdf',
-    bytes: 1428178,
-    sha256: 'a20b13d2a24b5df111607d1b4e3fbfffbbd8ae81b741f1d37c76725c22b1a3ed'
+    bytes: 1428648,
+    sha256: '47fd93102d134a8f7288a670f89fb22c9a1ae0a809f5763db38715a8d03258e7'
   }
 };
 const RESUME_HEADING_IDS = [
@@ -1022,7 +1022,7 @@ const EXPECTED_PROJECT_FACTS = {
       keywords: ['FastAPI', 'Browser Extension', 'SQLite / ChromaDB', 'Ollama']
     },
     {
-      name: '勤学考勤：基于人脸识别技术的多端智能考勤系统',
+      name: '勤学考勤 | 基于人脸识别技术的多端智能考勤系统',
       description: '考勤是教育教学管理中不可或缺的一环，但传统的课堂点名方式费时费力，且存在代签、漏签及出勤数据管理不便等问题。为提高高校教学管理效率，设计并开发了一套基于人脸识别技术的智能移动考勤系统，通过课堂合照实现学生身份自动识别与出勤统计，减少人工考勤工作量，提高考勤的准确性与公平性。',
       keywords: ['uni-app / Vue.js', 'Spring Boot / MySQL', 'RetinaFace / FaceNet', 'SVM']
     },
@@ -1074,7 +1074,7 @@ const EXPECTED_PROJECT_FACTS = {
       keywords: ['FastAPI', 'Browser Extension', 'SQLite / ChromaDB', 'Ollama']
     },
     {
-      name: 'Qinxue Attendance: Multi-Platform Intelligent Attendance System Using Face Recognition',
+      name: 'Qinxue Attendance | Multi-Platform Intelligent Attendance System Using Face Recognition',
       description: 'Attendance is an essential part of educational administration, but traditional classroom roll calls are time-consuming and labor-intensive, with problems such as proxy attendance, missed records, and inconvenient attendance-data management. To improve university teaching administration, I designed and developed an intelligent mobile attendance system based on face recognition. It automatically identifies students and compiles attendance statistics from classroom group photos, reducing manual work and improving accuracy and fairness.',
       keywords: ['uni-app / Vue.js', 'Spring Boot / MySQL', 'RetinaFace / FaceNet', 'SVM']
     },
