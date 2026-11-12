@@ -285,7 +285,7 @@ HTML 中的本地图片应声明 `alt`、`width` 和 `height`；缩略图与原�
 | 5 | 本地工具 | bilingual-subtitle-pipeline | `https://yan-shibo.github.io/#project-bilingual-subtitle-pipeline` | `https://github.com/Yan-ShiBo/bilingual-subtitle-pipeline` |
 | 6 | 本地工具 | photo-selector | `https://yan-shibo.github.io/#project-photo-selector` | `https://github.com/Yan-ShiBo/photo-selector` |
 | 7 | 本地工具 | BiliClaw-Extended | `https://yan-shibo.github.io/#project-biliclaw-extended` | `https://github.com/Yan-ShiBo/BiliClaw-Extended` |
-| 8 | 软件工程 | PersevereStudy | `https://yan-shibo.github.io/#project-persevere-study` | `https://github.com/Yan-ShiBo/PersevereStudy` |
+| 8 | 软件工程 | 勤学考勤（PersevereStudy） | `https://yan-shibo.github.io/#project-persevere-study` | `https://github.com/Yan-ShiBo/PersevereStudy` |
 | 9 | 软件工程 | MicFamily | `https://yan-shibo.github.io/#project-mic-family` | `https://github.com/Yan-ShiBo/MicFamily` |
 | 10 | 开发基础设施 | codex-skills-kit | `https://yan-shibo.github.io/#project-codex-skills-kit` | `https://github.com/Yan-ShiBo/codex-skills-kit` |
 

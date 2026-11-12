@@ -1022,9 +1022,9 @@ const EXPECTED_PROJECT_FACTS = {
       keywords: ['FastAPI', 'Browser Extension', 'SQLite / ChromaDB', 'Ollama']
     },
     {
-      name: '基于人脸识别技术的多端考勤系统',
-      description: '通过摄像头拍照或上传照片识别到课学生，并在 Android、微信小程序和 Web 端生成考勤记录、出勤简表与阶段性报告。',
-      keywords: ['uni-app', 'Spring Boot', 'MySQL', 'Python']
+      name: '勤学考勤：基于人脸识别技术的多端智能考勤系统',
+      description: '考勤是教育教学管理中不可或缺的一环，但传统的课堂点名方式费时费力，且存在代签、漏签及出勤数据管理不便等问题。为提高高校教学管理效率，设计并开发了一套基于人脸识别技术的智能移动考勤系统，通过课堂合照实现学生身份自动识别与出勤统计，减少人工考勤工作量，提高考勤的准确性与公平性。',
+      keywords: ['uni-app / Vue.js', 'Spring Boot / MySQL', 'RetinaFace / FaceNet', 'SVM']
     },
     {
       name: 'MicFamily：KTV 运营管理系统',
@@ -1074,9 +1074,9 @@ const EXPECTED_PROJECT_FACTS = {
       keywords: ['FastAPI', 'Browser Extension', 'SQLite / ChromaDB', 'Ollama']
     },
     {
-      name: 'Multi-Platform Attendance System Using Face Recognition',
-      description: 'The system identifies students from camera-captured or uploaded images and produces attendance records, summaries, and periodic reports across Android, WeChat Mini Program, and Web clients.',
-      keywords: ['uni-app', 'Spring Boot', 'MySQL', 'Python']
+      name: 'Qinxue Attendance: Multi-Platform Intelligent Attendance System Using Face Recognition',
+      description: 'Attendance is an essential part of educational administration, but traditional classroom roll calls are time-consuming and labor-intensive, with problems such as proxy attendance, missed records, and inconvenient attendance-data management. To improve university teaching administration, I designed and developed an intelligent mobile attendance system based on face recognition. It automatically identifies students and compiles attendance statistics from classroom group photos, reducing manual work and improving accuracy and fairness.',
+      keywords: ['uni-app / Vue.js', 'Spring Boot / MySQL', 'RetinaFace / FaceNet', 'SVM']
     },
     {
       name: 'MicFamily: KTV Operations Management System',
